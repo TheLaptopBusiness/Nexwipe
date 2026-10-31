@@ -10,33 +10,187 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as HardwareRouteImport } from './routes/hardware'
+import { Route as PilotRouteImport } from './routes/pilot'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProductRouteImport } from './routes/product'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HardwareRoute = HardwareRouteImport.update({
+  id: '/hardware',
+  path: '/hardware',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PilotRoute = PilotRouteImport.update({
+  id: '/pilot',
+  path: '/pilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductRoute = ProductRouteImport.update({
+  id: '/product',
+  path: '/product',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowRoute = WorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth_/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/onboarding'
+    | '/auth/callback'
+    | '/invite/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/onboarding'
+    | '/auth/callback'
+    | '/invite/$token'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/_authenticated/onboarding'
+    | '/auth_/callback'
+    | '/invite/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  HardwareRoute: typeof HardwareRoute
+  PilotRoute: typeof PilotRoute
+  PricingRoute: typeof PricingRoute
+  ProductRoute: typeof ProductRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SupportRoute: typeof SupportRoute
+  WorkflowRoute: typeof WorkflowRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +202,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hardware': {
+      id: '/hardware'
+      path: '/hardware'
+      fullPath: '/hardware'
+      preLoaderRoute: typeof HardwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pilot': {
+      id: '/pilot'
+      path: '/pilot'
+      fullPath: '/pilot'
+      preLoaderRoute: typeof PilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product': {
+      id: '/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof ProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflow': {
+      id: '/workflow'
+      path: '/workflow'
+      fullPath: '/workflow'
+      preLoaderRoute: typeof WorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  HardwareRoute: HardwareRoute,
+  PilotRoute: PilotRoute,
+  PricingRoute: PricingRoute,
+  ProductRoute: ProductRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SupportRoute: SupportRoute,
+  WorkflowRoute: WorkflowRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
 });
 
-export function slugify(name: string): string {
+function slugify(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFKD")
