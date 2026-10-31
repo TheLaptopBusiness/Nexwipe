@@ -93,7 +93,7 @@ function StaffDashboard() {
   });
 
   const memberById = new Map((members.data ?? []).map((m) => [m.user_id, m]));
-  const noData = counts.data?.total === 0 && !site && client === ALL;
+  const noData = counts.data?.total === 0 && site === ALL && client === ALL;
 
   return (
     <div className="space-y-6">
