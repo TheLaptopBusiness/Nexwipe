@@ -21,7 +21,7 @@ Hardware compatibility stays **unverified** until this sheet is complete and rev
 
 Stop if any row is empty or the board is not SETZER (then the unit is not the candidate).
 
-## Destructive step 1 — entering Developer Mode (ChromeOS performs a wipe)
+## DESTRUCTIVE step 1 — entering Developer Mode (ChromeOS wipes the unit)
 
 | Item | Value |
 |---|---|
@@ -34,7 +34,8 @@ Stop if any row is empty or the board is not SETZER (then the unit is not the ca
 
 | Item | Value |
 |---|---|
-| Image filename and SHA-256 | |
+| Image filename and SHA-256 (from `SHA256SUMS`) | |
+| `sha256sum -c SHA256SUMS` passed before writing the stick | |
 | USB-boot setting used and how (exact flag/menu on this unit) | |
 | Boots? Failure screen / message if not (photo) | |
 | Agent version on screen (`0.1.0-cb-discovery`) | |
@@ -52,6 +53,19 @@ Stop if any row is empty or the board is not SETZER (then the unit is not the ca
 | EXT_CSD readable? | — | |
 | Boot USB shown as excluded? | — | |
 
+## Confinement (from the report, see SAFETY.md)
+
+| Value | Expected | Seen |
+|---|---|---|
+| `confinement.cap_eff` | `0000000000000000` | |
+| `confinement.no_new_privs` / `seccomp_mode` | `1` / `2` | |
+| `confinement.active_swap` | `[]` | |
+| `confinement.internal_mounts` | `[]` | |
+| Every internal storage `kernel_read_only` | `true` | |
+| Flags `process_confinement_missing`, `swap_active`, `internal_storage_mounted`, `internal_storage_not_read_only` | none | |
+
+Any unexpected value: stop, photograph, do not continue to G4.
+
 ## Evidence upload (G4)
 
 | Check | Result |
@@ -63,7 +77,7 @@ Stop if any row is empty or the board is not SETZER (then the unit is not the ca
 | Restart and re-report | |
 | Credential revoked in the app → station shows revoked, stops reporting | |
 
-## Restoration (G5) — destructive step 2 (ChromeOS performs a wipe)
+## Restoration (G5) — DESTRUCTIVE step 2 (ChromeOS wipes the unit again)
 
 | Item | Value |
 |---|---|
