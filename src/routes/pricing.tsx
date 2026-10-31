@@ -80,7 +80,7 @@ function PricingPage() {
                   ))}
                 </ul>
                 <Button asChild className="mt-8 w-full" variant={featured ? "default" : "outline"}>
-                  <Link to="/pilot">Choose {p.name}</Link>
+                  <Link to="/signup">Choose {p.name}</Link>
                 </Button>
               </div>
             );
@@ -93,15 +93,21 @@ function PricingPage() {
         </p>
 
         <div className="mt-10 flex flex-col items-start gap-4 rounded-xl border border-border bg-card p-6 shadow-card sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-lg font-medium text-foreground">Try NexWipe with 10 free wipes. No credit card required.</p>
-          <Button asChild>
-            <Link to="/pilot">Start free</Link>
-          </Button>
+          <p className="text-lg font-medium text-foreground">Create your account. No credit card required.</p>
+          <div className="flex gap-3">
+            <Button asChild>
+              <Link to="/signup">Start Now</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/demo">Book a Demo</Link>
+            </Button>
+          </div>
         </div>
 
         <p className="mt-6 text-sm text-muted-foreground">
-          NexWipe is in a read-only pilot: billing and production drive wiping are not live yet, and no payments are
-          taken. Choosing a plan requests pilot access.
+          Paid plans, wipe credits and production drive wiping are not available yet, and no payments are taken.
+          New accounts can use inventory and custody tracking, read-only station discovery and the clearly labeled
+          agent simulator. Choosing a plan creates your account; plan selection opens when billing launches.
         </p>
       </section>
     </PublicLayout>
