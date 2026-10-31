@@ -1,54 +1,59 @@
-# NextDrive — what is implemented, simulated and not built
+# NextDrive — status
 
-_Last updated: Phase 2._
+_Last updated: Phase 2b (preparation for the first real bootable-agent integration)._
 
-## Implemented (Phase 1)
+**NextDrive cannot erase a real drive today.** No production agent exists, and no erasure method has been implemented or tested on hardware. Everything below that touches jobs or evidence has only been exercised with the labelled simulator.
 
-- Public site: home, product (capabilities by real status), workflow, supported hardware, pricing (placeholders), support, pilot request form.
-- Email/password sign-up with email verification, Google sign-in, password reset, authenticator-app MFA (enroll, sign-in challenge, remove).
-- Organizations, roles enforced in the database, invitations (links are copied, **emails not sent**), team management, last-owner protection.
-- Sites, downstream clients, projects, batches, customer-viewer project grants.
-- Device inventory with rapid intake, CSV import/export, drives tracked separately with attach/detach history, custody timeline, append-only audit log, dashboard.
+## 1. Implemented and tested
 
-## Implemented (Phase 2)
+| Area | How it was tested |
+|---|---|
+| Organizations, roles, invitations, team management, sites, clients, projects, batches, inventory, drives, custody, audit (Phase 1) | `tests/db/phase1_acceptance.sql` (14/14 PASS, re-run under the MFA rule), browser flows |
+| **Two-step verification required for owners/administrators, enforced in the database** — owner/admin permissions only count in a two-step verified (AAL2) session; a blocking screen asks them to set up or enter a code | `tests/db/phase2b_security.sql` (MFA checks), browser: unverified owner sees the gate, verified owner gets full access |
+| **Invitation emails** — sent automatically; new users get an "invited" email, existing users a sign-in link that opens the invitation; link still shown once as a fallback | browser: invitation sent and received in a test mailbox |
+| Versioned policies, per-drive job state machine, authorizations, reviewer approval, laptop clearance (Phase 2) | `tests/db/phase2_acceptance.sql` (37 checks, PASS before the MFA change; claims since updated to two-step sessions), simulator |
+| Tenant isolation across station endpoints, jobs, evidence, discoveries, enrollment tokens and credentials | `tests/db/phase2b_security.sql` (33/33 PASS) |
+| Station credential revocation, nonce replay prevention, stale timestamps, duplicate submissions (events + evidence), idempotency-key misuse | `phase2b_security.sql` + `scripts/agent-contract-check.ts` (18/18 HTTP checks; transcript `docs/agent-api/transcript.md`) |
+| Read-only discovery intake: station reports → "Hardware reported by stations" → Add to inventory → station re-reports → laptop and drives marked station-verified; station boot USB never recorded | `phase2b_security.sql`, browser, and the read-only reference client run against the app with test hardware data |
+| Agent simulator (9 scenarios) | browser run, all PASS |
+| Unit tests (roles, CSV, jobs, discovery display) | `bunx vitest run` (28 PASS) |
+| Reference client refuses destructive commands | `agent-handoff/reference/test_readonly.py` |
 
-- **Versioned erasure policies**: owners/admins create policies; every change is a new immutable version. Jobs keep the version they were created with. Rules: manufacturers, interfaces, permitted methods (checked against interface), verification method/sample, evidence required, reviewer roles, separate-reviewer requirement, failure handling, authorization lifetime.
-- **Jobs, one per drive**, with a database-enforced state machine: draft → awaiting authorization → queued → running → verifying → awaiting validation → approved, plus failed, interrupted, unsupported, quarantined, cancelled (cancel only before execution). Execution outcome, verification outcome and reviewer approval are stored separately. Nothing is approved automatically.
-- **Authorizations** bound to org + job + agent + laptop + drive association + policy version; expire; single use; technician must re-enter asset tag and drive serial; station must confirm locally (type last 4 serial characters) and report the drive it actually sees. Mismatch quarantines the job.
-- **Laptop clearance**: a laptop can only be marked processed when every attached drive's latest job is approved. A failed/quarantined drive quarantines the laptop.
-- **Agent API v1** (`/api/public/agent/v1`): enroll, heartbeat, inventory, jobs, ack, events, evidence (text, ≤256 KB, SHA-256 checked), results, reconcile. Per-agent hashed credentials, revocation, timestamp window, nonce replay protection, monotonic sequence numbers, idempotency keys. Spec: `docs/agent-api/openapi.yaml`; examples: `docs/agent-api/examples.md`.
-- **Agents & stations** screen: enrollment tokens (single use, expiring), heartbeat/last seen, revoke.
-- **Jobs** screens: queue views (all, active, needs authorization, review, problems), job detail with live status (polling), authorization dialog, reviewer approve/reject, event history, evidence.
-- Missing heartbeat (3 min) turns active jobs **Interrupted**, never successful.
-- Billing flags on jobs: `billable_unit` is true only for an approved, non-simulated job (no charging yet — Phase 4).
+## 2. Implemented but unverified
 
-## Simulated (clearly labelled)
+- Invitation email for an **existing** account (sign-in link path): code path present, not exercised.
+- Invited new users setting a first password ("I joined from an invitation email" option): not exercised end-to-end; if the sign-in service requires the current password, they must use "Forgot password".
+- Invitation links on a **custom domain** require `APP_ALLOWED_ORIGINS` to list it.
+- Agent API behaviour on the published site (all HTTP checks ran against the preview server).
+- The reference client's hardware discovery on a real laptop (only tested with replayed test hardware data in this environment, which has no laptop hardware).
+- `tests/db/phase2_acceptance.sql` has not been re-run since its sessions were switched to two-step verified.
 
-- **Agent simulator** (`/app/simulator`): 9 scenarios — success, unsupported drive, execution failure, verification failure, network interruption + reconnection, duplicate/replayed events, revoked credentials, drive identity mismatch, multi-drive mixed results. It calls the real Agent API handler and database rules. Every simulated laptop, drive, agent, job and evidence file is labelled SIMULATED, cannot be billed, cannot produce a record or certificate, and simulated jobs can only run on simulator agents. **No disk is ever touched.**
+## 3. Simulated
 
-## Not built yet
+- Agent simulator jobs, laptops (`SIM-…`), drives, stations and evidence. Always labelled SIMULATED; can never be billable, certificate-eligible, run on a real station, or be added to real inventory.
 
-- Real bootable agent (separate deliverable; nothing in this app erases a drive).
-- Phase 3: realtime push (polling is used now), binary evidence storage, PDF records, QR verification, signing.
-- Phase 4: Stripe test billing, credit ledger, platform admin area.
-- Phase 5: production agent, hardware qualification, independent assessment, hardening.
-- Request signing (HMAC) or mTLS for agents — current protection is bearer credential + timestamp + nonce over HTTPS.
-- MFA not yet **required** server-side; invitation/notification emails; logo upload; retention, legal holds, account deletion.
+## 4. Not built
 
-## Automated checks
+- Phase 3: realtime updates (polling now), binary evidence storage, PDF records, QR verification, signing.
+- Phase 4: billing, credit ledger, platform admin.
+- Signed station requests / mTLS, credential rotation endpoint, station image attestation (see `docs/agent-api/station-auth.md`).
+- Branded invitation emails from your own domain (currently the default sign-in email sender and wording).
+- Logo upload, retention enforcement, legal holds, account deletion.
 
-- `tests/db/phase1_acceptance.sql` — 14 checks. All PASS.
-- `tests/db/phase2_acceptance.sql` — 37 checks (policy immutability, state machine, authorization binding/expiry/reuse, local confirmation, identity mismatch, idempotency, sequence gaps, nonce replay, evidence hash, reviewer permissions, multi-drive clearance, lost heartbeat, revocation, simulator isolation, billing flags, append-only events). All PASS.
-- `bunx vitest run` — role matrix, CSV rules, job transitions, clearance, method compatibility, API helpers.
-- All 9 simulator scenarios pass end-to-end in the preview.
+## 5. External development required
 
-## Production-readiness checklist (remaining work)
+- **The NextDrive bootable agent** (image, discovery, capability detection, local confirmation, privileged engine, evidence, credential storage, signed updates, recovery). Handoff: `agent-handoff/`. Milestone 1 is read-only; destructive testing only on designated disposable drives (Stage 2).
+- Per-model hardware qualification and method-support evidence (`agent-handoff/MILESTONES.md`).
+- Independent third-party assessment of the erasure engine.
+- An email sender domain owned by Used Tech Solutions for branded emails.
 
-- [ ] Phases 3–5 above
-- [ ] Agent request signing or mTLS; credential rotation
-- [ ] Enforce MFA (AAL2) for owner/admin actions
-- [ ] Email sender domain
-- [ ] Independent security review and penetration test
-- [ ] Backup/restore drill and documented RPO/RTO
-- [ ] Production agent built, qualified per model, independently assessed
-- [ ] Legal review of all public claims before launch
+## 6. Remaining launch blockers
+
+- [ ] Agent Milestone 1 passed on real Dell, HP and Lenovo laptops
+- [ ] Stage 2 destructive testing and method qualification evidence per drive/laptop combination
+- [ ] Signed station requests or mTLS; credential rotation
+- [ ] Phase 3 evidence storage + records; Phase 4 billing
+- [ ] Branded email domain
+- [ ] Independent security review / penetration test
+- [ ] Backup/restore drill, documented RPO/RTO; retention, legal holds, account deletion
+- [ ] Independent assessment of the engine; legal review of all public claims

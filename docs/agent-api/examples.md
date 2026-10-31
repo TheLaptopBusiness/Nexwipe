@@ -1,6 +1,6 @@
 # NextDrive Agent API — example requests
 
-Base URL: `https://<your-app>/api/public/agent/v1`. Spec: [`openapi.yaml`](./openapi.yaml).
+Base URL: `https://<your-app>/api/public/agent/v1`. Authoritative contract: [`CONTRACT.md`](./CONTRACT.md). Spec: [`openapi.yaml`](./openapi.yaml). Exact captured requests/responses: [`transcript.md`](./transcript.md).
 
 ```bash
 BASE=https://<your-app>/api/public/agent/v1

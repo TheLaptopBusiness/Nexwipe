@@ -23,3 +23,6 @@
 - Job state changes happen only in SQL (`agent_*` service-role RPCs and technician RPCs); browser roles have read-only access to Phase 2 tables — keeps the state machine un-bypassable.
 - Agent API code lives in `src/server/agent-api/` behind `src/routes/api/public/agent/v1/$.ts`; the simulator must call that same handler, never a separate fake path, so simulated runs exercise the real contract.
 - Anything simulated carries `is_simulated` set by trusted code only and must be visibly labelled in the UI; simulated jobs can never be billable or certificate-eligible.
+- Owner/admin rights require an AAL2 session inside `has_org_role`; never add a privileged path that checks membership without it (e.g. via `is_org_member`), or MFA enforcement is bypassed.
+- Invitation tokens are only ever known to `create_invitation`'s caller; send emails from the same server function that created the token, never by re-deriving tokens.
+- `agent-handoff/` is documentation plus a read-only reference client; never add erasure commands to this repository.

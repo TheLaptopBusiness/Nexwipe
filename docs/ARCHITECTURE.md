@@ -22,6 +22,7 @@ A browser cannot erase a remote laptop's drive. No dashboard action performs a w
 - `organizations` = NextDrive customer accounts. `clients` = that customer's downstream clients (schools, companies). They are separate concepts.
 - Every tenant table carries `org_id` and a `UNIQUE (org_id, id)` key. Child tables reference parents with **composite FKs `(org_id, parent_id)`**, so a row can never point at another org's data even if `org_id` is forged.
 - RLS checks membership through `has_org_role(org, roles[])`, `is_org_staff(org)`, `has_project_grant(project)`. The `org_id` sent by the browser is only a filter.
+- **MFA:** `has_org_role` only counts an owner/admin membership when the session JWT has `aal = aal2`. `is_org_member` (used only to read the organization row) does not, so the UI can show the two-step verification gate. Technicians, auditors and viewers are not affected.
 
 ## Roles
 
@@ -47,6 +48,12 @@ Integrity rules enforced in the database:
 ## Phase 2 schema (built)
 
 `policies`, `policy_versions` (immutable), `agents`, `agent_credentials`, `enrollment_tokens`, `agent_nonces`, `jobs` (one per drive; snapshot of target + policy version; generated `billable_unit`, `certificate_eligible`), `job_authorizations`, `job_events` (monotonic `seq`, unique idempotency key, append-only), `evidence_objects` (text content + sha256). State transitions are enforced in SQL; the browser has read-only table access and changes jobs only through RPCs (`create_job`, `submit_job`, `authorize_job`, `cancel_job`, `review_job`). Simulated rows are flagged `is_simulated` by server code only and isolated from real agents/policies.
+
+## Phase 2b additions
+
+- `agents.inventory_requested_at`; `create_device_from_discovery(discovery, asset_tag)` turns a station report into unverified inventory (skipping boot/removable media) and asks the station to re-report; only the station's re-report (service role) marks it verified.
+- Invitation emails: server function `src/lib/invitations.functions.ts` creates the invitation as the caller, then sends an auth invite (new user) or sign-in link (existing user) whose redirect is the one-time invitation URL.
+- Agent contract: `docs/agent-api/CONTRACT.md`; bootable agent handoff: `agent-handoff/`.
 
 ## Planned schema (Phases 3–4)
 
