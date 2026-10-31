@@ -895,6 +895,7 @@ export type Database = {
       is_org_member: { Args: { _org: string }; Returns: boolean }
       is_org_staff: { Args: { _org: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      is_untrusted_caller: { Args: never; Returns: boolean }
       preview_invitation: {
         Args: { _token: string }
         Returns: {
