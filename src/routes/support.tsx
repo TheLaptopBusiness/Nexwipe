@@ -5,9 +5,9 @@ export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
       { title: "Support — NexWipe" },
-      { name: "description", content: "Help with NexWipe accounts, inventory and the pilot program." },
+      { name: "description", content: "Help with NexWipe accounts, setup and inventory." },
       { property: "og:title", content: "Support — NexWipe" },
-      { property: "og:description", content: "Help with NexWipe accounts, inventory and the pilot program." },
+      { property: "og:description", content: "Help with NexWipe accounts, setup and inventory." },
     ],
   }),
   component: SupportPage,
@@ -27,8 +27,10 @@ function SupportPage() {
       <section className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-4xl font-semibold text-foreground">Support</h1>
         <p className="mt-3 text-muted-foreground">
-          Pilot customers get direct support during onboarding. Existing customers can reach us through the{" "}
-          <Link to="/pilot" className="text-foreground underline underline-offset-4">contact form</Link>.
+          Need help getting set up?{" "}
+          <Link to="/demo" className="text-foreground underline underline-offset-4">Book a demo</Link> or send us a
+          message through the same form. New here?{" "}
+          <Link to="/signup" className="text-foreground underline underline-offset-4">Create an account</Link>.
         </p>
         <dl className="mt-10 divide-y divide-border rounded-xl border border-border bg-card">
           {FAQ.map((f) => (

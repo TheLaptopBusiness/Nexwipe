@@ -17,6 +17,7 @@ import { Route as PilotRouteImport } from './routes/pilot'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ProductRouteImport } from './routes/product'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WorkflowRouteImport } from './routes/workflow'
@@ -84,6 +85,11 @@ const ProductRoute = ProductRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -487,6 +499,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ProductRoute: typeof ProductRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   WelcomeRoute: typeof WelcomeRoute
   WorkflowRoute: typeof WorkflowRoute
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -836,6 +856,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ProductRoute: ProductRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   WelcomeRoute: WelcomeRoute,
   WorkflowRoute: WorkflowRoute,
