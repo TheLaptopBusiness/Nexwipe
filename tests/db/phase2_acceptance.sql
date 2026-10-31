@@ -86,6 +86,8 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
   res := public.agent_enroll(tok, 'Bench 1', '0.0.1', 'test', 'bench1');
   cred := res->>'credential'; ag := (res->>'agent_id')::uuid;
+  -- Stations enroll read-only; job tests need a lab station that trusted server code (service role) has unlocked.
+  UPDATE public.agents SET read_only = false WHERE id = ag;
   BEGIN
     PERFORM public.agent_enroll(tok, 'Again', null, null, null);
     r := r || ' [enrollment_token_single_use FAIL]';
@@ -216,6 +218,7 @@ BEGIN
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
   res := public.agent_enroll(tok, 'Bench 2', null, null, null); cred2 := res->>'credential'; ag2 := (res->>'agent_id')::uuid;
+  UPDATE public.agents SET read_only = false WHERE id = ag2;
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal2')::text, true);
   -- New job on drive two of laptop A-1 (previous job is closed)

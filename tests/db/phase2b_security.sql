@@ -59,6 +59,7 @@ BEGIN
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
   ag_a := (public.agent_enroll(tok, 'Bench A', null, null, null)->>'agent_id')::uuid;
+  UPDATE public.agents SET read_only = false WHERE id = ag_a;  -- lab station unlocked by trusted code
 
   -- Org B with its own station
   PERFORM set_config('role', 'authenticated', true);
@@ -68,6 +69,7 @@ BEGIN
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
   res := public.agent_enroll(tok, 'Bench B', null, null, null); ag_b := (res->>'agent_id')::uuid; cred_b := res->>'credential';
+  UPDATE public.agents SET read_only = false WHERE id = ag_b;
 
   -- A job in org A authorized for station A
   PERFORM set_config('role', 'authenticated', true);
