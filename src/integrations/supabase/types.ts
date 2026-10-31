@@ -987,6 +987,7 @@ export type Database = {
           payload: Json
           received_at: string
           request_hash: string | null
+          response: Json | null
           source: string
           to_status: Database["public"]["Enums"]["job_status"] | null
         }
@@ -1005,6 +1006,7 @@ export type Database = {
           payload?: Json
           received_at?: string
           request_hash?: string | null
+          response?: Json | null
           source: string
           to_status?: Database["public"]["Enums"]["job_status"] | null
         }
@@ -1023,6 +1025,7 @@ export type Database = {
           payload?: Json
           received_at?: string
           request_hash?: string | null
+          response?: Json | null
           source?: string
           to_status?: Database["public"]["Enums"]["job_status"] | null
         }
@@ -1674,7 +1677,117 @@ export type Database = {
       }
     }
     Functions: {
+      _insert_policy_version: {
+        Args: {
+          _note: string
+          _org: string
+          _policy: string
+          _rules: Json
+          _version: number
+        }
+        Returns: string
+      }
+      _log_job_event: {
+        Args: {
+          _actor: string
+          _agent: string
+          _from: Database["public"]["Enums"]["job_status"]
+          _job: string
+          _message: string
+          _org: string
+          _payload: Json
+          _source: string
+          _to: Database["public"]["Enums"]["job_status"]
+          _type: string
+        }
+        Returns: number
+      }
+      _policy_support_reason: {
+        Args: {
+          _iface: Database["public"]["Enums"]["drive_interface"]
+          _mfr: string
+          _pv: Database["public"]["Tables"]["policy_versions"]["Row"]
+        }
+        Returns: string
+      }
+      _revoke_agent: {
+        Args: { _actor: string; _agent: string; _reason: string }
+        Returns: undefined
+      }
+      _sweep_jobs: { Args: { _org: string }; Returns: number }
+      _sync_device_after_job: { Args: { _job: string }; Returns: undefined }
       accept_invitation: { Args: { _token: string }; Returns: string }
+      agent_authenticate: {
+        Args: { _credential: string; _nonce: string; _timestamp: string }
+        Returns: Json
+      }
+      agent_enroll: {
+        Args: {
+          _hostname: string
+          _name: string
+          _platform: string
+          _token: string
+          _version: string
+        }
+        Returns: Json
+      }
+      agent_heartbeat: {
+        Args: { _agent: string; _state: string; _version: string }
+        Returns: Json
+      }
+      agent_job_event: {
+        Args: {
+          _agent: string
+          _idem: string
+          _job: string
+          _occurred_at: string
+          _payload: Json
+          _seq: number
+          _type: string
+        }
+        Returns: Json
+      }
+      agent_list_jobs: { Args: { _agent: string }; Returns: Json }
+      agent_reconcile: { Args: { _agent: string; _jobs: Json }; Returns: Json }
+      agent_report_inventory: {
+        Args: { _agent: string; _payload: Json }
+        Returns: Json
+      }
+      agent_upload_evidence: {
+        Args: {
+          _agent: string
+          _content: string
+          _content_type: string
+          _filename: string
+          _idem: string
+          _job: string
+          _kind: string
+          _sha256: string
+        }
+        Returns: Json
+      }
+      authorize_job: {
+        Args: {
+          _agent: string
+          _confirm_asset_tag: string
+          _confirm_drive_serial: string
+          _job: string
+        }
+        Returns: string
+      }
+      cancel_job: {
+        Args: { _job: string; _reason: string }
+        Returns: undefined
+      }
+      create_enrollment_token: {
+        Args: {
+          _label: string
+          _org: string
+          _site: string
+          _ttl_hours: number
+        }
+        Returns: string
+      }
       create_invitation: {
         Args: {
           _email: string
@@ -1683,8 +1796,25 @@ export type Database = {
         }
         Returns: string
       }
+      create_job: {
+        Args: { _device: string; _drive: string; _policy: string }
+        Returns: string
+      }
       create_organization: {
         Args: { _name: string; _slug: string }
+        Returns: string
+      }
+      create_policy: {
+        Args: {
+          _description: string
+          _name: string
+          _org: string
+          _rules: Json
+        }
+        Returns: string
+      }
+      create_policy_version: {
+        Args: { _note: string; _policy: string; _rules: Json }
         Returns: string
       }
       device_all_drives_approved: {
@@ -1715,6 +1845,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      manufacturer_allowed: {
+        Args: { _allowed: string[]; _mfr: string }
+        Returns: boolean
+      }
       method_fits_interface: {
         Args: {
           _i: Database["public"]["Enums"]["drive_interface"]
@@ -1731,9 +1865,28 @@ export type Database = {
           role: Database["public"]["Enums"]["org_role"]
         }[]
       }
+      review_job: {
+        Args: { _approve: boolean; _job: string; _notes: string }
+        Returns: undefined
+      }
+      revoke_agent: {
+        Args: { _agent: string; _reason: string }
+        Returns: undefined
+      }
+      revoke_enrollment_token: { Args: { _token: string }; Returns: undefined }
       revoke_invitation: { Args: { _invitation: string }; Returns: undefined }
       revoke_member: { Args: { _membership: string }; Returns: undefined }
+      set_policy_archived: {
+        Args: { _archived: boolean; _policy: string }
+        Returns: undefined
+      }
       shares_org_with: { Args: { _user: string }; Returns: boolean }
+      simulator_prepare: {
+        Args: { _org: string; _scenario: string }
+        Returns: Json
+      }
+      submit_job: { Args: { _job: string }; Returns: undefined }
+      sweep_jobs: { Args: { _org: string }; Returns: number }
       update_member_role: {
         Args: {
           _membership: string
