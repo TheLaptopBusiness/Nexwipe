@@ -66,7 +66,7 @@ export function DeviceJobs({ deviceId, isSimulated }: { deviceId: string; isSimu
     setBusy(true);
     const { data, error } = await supabase.rpc("create_job", { _device: deviceId, _drive: driveId, _policy: policyId });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["device-jobs", deviceId] });
     setOpen(false);
     navigate({ to: "/app/jobs/$jobId", params: { jobId: data as string } });

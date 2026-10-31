@@ -42,7 +42,7 @@ function PoliciesPage() {
       _rules: rules as never,
     });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Policy created as version 1");
     setOpen(false);
     setRules(DEFAULT_RULES);

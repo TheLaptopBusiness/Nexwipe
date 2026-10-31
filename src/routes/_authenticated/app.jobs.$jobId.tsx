@@ -302,7 +302,7 @@ function Actions({ job }: { job: JobRow }) {
     setBusy(true);
     const { error } = await fn();
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success(ok);
     refresh();
   }
@@ -340,7 +340,7 @@ function AuthorizeDialog({ job, onClose, onDone }: { job: JobRow; onClose: () =>
     setBusy(true);
     const { error } = await supabase.rpc("authorize_job", { _job: job.id, _agent: agentId, _confirm_asset_tag: tag, _confirm_drive_serial: serial });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Authorized. The agent must also confirm the drive locally before starting.");
     onDone();
     onClose();
@@ -382,7 +382,7 @@ function ReviewDialog({ job, onClose, onDone }: { job: JobRow; onClose: () => vo
     setBusy(true);
     const { error } = await supabase.rpc("review_job", { _job: job.id, _approve: approve, _notes: notes });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success(approve ? "Job approved" : "Job rejected and quarantined");
     onDone();
     onClose();

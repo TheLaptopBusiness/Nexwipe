@@ -42,7 +42,7 @@ function PolicyDetail() {
     setBusy(true);
     const { error } = await supabase.rpc("create_policy_version", { _policy: policyId, _rules: rules as never, _note: note });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("New version created. Existing jobs keep their original version.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["policies", orgId] });
@@ -50,7 +50,7 @@ function PolicyDetail() {
 
   async function onArchive() {
     const { error } = await supabase.rpc("set_policy_archived", { _policy: policyId, _archived: !p!.is_archived });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["policies", orgId] });
   }
 

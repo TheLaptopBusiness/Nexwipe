@@ -29,7 +29,7 @@ function SimulatorPage() {
   async function start(id: ScenarioId) {
     setRunning(id);
     try {
-      const r = await run({ data: { orgId, scenario: id } });
+      const r = (await run({ data: { orgId, scenario: id } })) as ScenarioResult;
       setResults((prev) => ({ ...prev, [id]: r }));
       setSelected(id);
       if (!r.passed) toast.error("Scenario finished with unexpected results");

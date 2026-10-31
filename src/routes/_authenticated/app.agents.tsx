@@ -47,7 +47,7 @@ function AgentsPage() {
     setBusy(true);
     const { data, error } = await supabase.rpc("create_enrollment_token", { _org: orgId, _label: String(f.get("label")), _site: null as never, _ttl_hours: Number(f.get("ttl") || 24) });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setToken(data as string);
     qc.invalidateQueries({ queryKey: ["enrollment-tokens", orgId] });
   }
@@ -56,7 +56,7 @@ function AgentsPage() {
     if (!revoke) return;
     const { error } = await supabase.rpc("revoke_agent", { _agent: revoke.id, _reason: "Revoked by administrator" });
     setRevoke(null);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Agent revoked. Its credential no longer works and its queued jobs need re-authorization.");
     qc.invalidateQueries({ queryKey: ["agents", orgId] });
   }
