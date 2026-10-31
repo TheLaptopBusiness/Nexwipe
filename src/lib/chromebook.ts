@@ -10,6 +10,7 @@ export type ManagementStatus =
   | "deprovision_requested"
   | "admin_reported_deprovisioned"
   | "deprovision_confirmed_integration"
+  | "owner_reported_never_managed"
   | "online_setup_checked"
   | "blocked";
 
@@ -30,6 +31,7 @@ export const MANAGEMENT_LABEL: Record<ManagementStatus, { label: string; tone: T
   deprovision_requested: { label: "Deprovisioning requested", tone: "warning" },
   admin_reported_deprovisioned: { label: "Administrator-reported deprovisioned", tone: "info" },
   deprovision_confirmed_integration: { label: "Deprovisioning confirmed (authorized integration)", tone: "info" },
+  owner_reported_never_managed: { label: "Owner-reported never managed", tone: "info" },
   online_setup_checked: { label: "Post-reset online setup checked", tone: "success" },
   blocked: { label: "Blocked by enrollment or management", tone: "danger" },
 };
@@ -66,19 +68,20 @@ export const EVIDENCE_KIND_LABEL: Record<string, string> = {
   system: "System",
 };
 
+/** required = must be "pass" for resale; "when_fitted" = pass or not fitted; optional = a failure needs a review note. */
 export const DIAGNOSTIC_CHECKS = [
-  { key: "display", label: "Display" },
-  { key: "touchscreen", label: "Touchscreen (where fitted)" },
-  { key: "keyboard", label: "Keyboard" },
-  { key: "touchpad", label: "Touchpad" },
-  { key: "battery", label: "Battery" },
-  { key: "charging", label: "Charging" },
-  { key: "wifi", label: "Wi-Fi" },
-  { key: "camera", label: "Camera" },
-  { key: "microphone", label: "Microphone" },
-  { key: "speakers", label: "Speakers" },
-  { key: "ports", label: "Ports" },
-  { key: "hinges", label: "Hinges" },
+  { key: "display", label: "Display", need: "required" },
+  { key: "touchscreen", label: "Touchscreen (where fitted)", need: "when_fitted" },
+  { key: "keyboard", label: "Keyboard", need: "required" },
+  { key: "touchpad", label: "Touchpad", need: "required" },
+  { key: "battery", label: "Battery", need: "required" },
+  { key: "charging", label: "Charging", need: "required" },
+  { key: "wifi", label: "Wi-Fi", need: "required" },
+  { key: "camera", label: "Camera", need: "optional" },
+  { key: "microphone", label: "Microphone", need: "optional" },
+  { key: "speakers", label: "Speakers", need: "optional" },
+  { key: "ports", label: "Ports", need: "required" },
+  { key: "hinges", label: "Hinges", need: "required" },
 ] as const;
 
 export type DiagnosticResult = "pass" | "fail" | "not_fitted" | "not_tested";
@@ -91,6 +94,13 @@ export interface ChromebookState {
   diagnostics_status: string;
   release_decision: string;
   is_synthetic: boolean;
+  management_basis?: string | null;
+  reset_authorized_by?: string | null;
+  reset_authorized_at?: string | null;
+  reset_started_at?: string | null;
+  reset_completed_at?: string | null;
+  online_setup_checked_at?: string | null;
+  diagnostics?: unknown;
 }
 
 const MANAGED_OR_UNRESOLVED = ["management_observed", "deprovision_requested", "blocked"];
@@ -105,15 +115,35 @@ export function resetAuthorizationBlockers(r: ChromebookState): string[] {
   return out;
 }
 
-/** Why the device cannot be released as resale-ready (mirrors chromebook_review). */
-export function resaleBlockers(r: ChromebookState): string[] {
+/**
+ * Why the device cannot be released as resale-ready. Mirrors public._cb_resale_blockers, which
+ * chromebook_review and a database trigger enforce for every caller; the screen asks the server
+ * (chromebook_resale_check) and uses this only as an offline explanation and for tests.
+ */
+export function resaleBlockers(r: ChromebookState, reviewNotes = ""): string[] {
   const out: string[] = [];
-  if (r.is_synthetic) out.push("Synthetic test records can never be released for resale.");
-  if (r.ownership_status !== "recorded") out.push("Ownership authorization is missing.");
-  if (r.management_status !== "online_setup_checked" || r.online_setup_result !== "no_enrollment_prompt")
-    out.push("Needs an online setup check after reset showing no enrollment prompt.");
-  if (!["technician_completed", "evidence_collected"].includes(r.reset_status)) out.push("Reset is not completed.");
-  if (!["passed", "exceptions"].includes(r.diagnostics_status)) out.push("Diagnostics are incomplete.");
+  const t = (v?: string | null) => (v ? new Date(v).getTime() : null);
+  if (r.is_synthetic) out.push("Synthetic test records can never be released for resale");
+  if (r.ownership_status !== "recorded") out.push("Ownership authorization is missing");
+  if (!r.management_basis)
+    out.push("Management is unknown or unresolved: record an administrator deprovisioning report or the owner's never-managed report");
+  if (!r.reset_authorized_by || !r.reset_authorized_at) out.push("Reset authorization by an owner or administrator is missing");
+  if (!["evidence_collected", "reviewed"].includes(r.reset_status)) out.push("Reset completion evidence is missing");
+  const a = t(r.reset_authorized_at), st = t(r.reset_started_at), c = t(r.reset_completed_at), o = t(r.online_setup_checked_at);
+  if (st === null || c === null || (a !== null && a > st) || st > c) out.push("Reset timeline is incomplete or out of order");
+  if (r.management_status !== "online_setup_checked" || r.online_setup_result !== "no_enrollment_prompt" || o === null)
+    out.push("An online setup check after the reset, with no enrollment prompt, is required");
+  else if (c !== null && o < c) out.push("The online setup check must happen after the reset was completed");
+  const d = (r.diagnostics ?? {}) as Record<string, string>;
+  let optionalFail = false;
+  for (const chk of DIAGNOSTIC_CHECKS) {
+    const v = d[chk.key] ?? "not_tested";
+    if (v === "not_tested") out.push(`Diagnostics incomplete: ${chk.key} not tested`);
+    else if (chk.need === "required" && v !== "pass") out.push(`Required check not passed: ${chk.key} (${v})`);
+    else if (chk.need === "when_fitted" && v === "fail") out.push(`Required check not passed: ${chk.key} (fail)`);
+    else if (v === "fail") optionalFail = true;
+  }
+  if (optionalFail && !reviewNotes.trim()) out.push("Explain the optional diagnostic exceptions in the review notes");
   return out;
 }
 
@@ -126,9 +156,12 @@ export function nextStep(r: ChromebookState): string {
   if (["not_started", "failed_interrupted"].includes(r.reset_status)) return "Authorize the reset (owner or administrator).";
   if (r.reset_status === "authorized") return "Start the reset and record the method.";
   if (r.reset_status === "in_progress") return "Record the reset outcome.";
+  if (r.online_setup_result === "not_checked" && r.management_status === "unknown")
+    return "Record the owner's or administrator's management report, then do the online setup check.";
   if (r.online_setup_result === "not_checked") return "Reconnect to the internet and check the setup screens.";
   if (r.management_status === "blocked") return "Enrollment required: quarantine or return to the owner.";
   if (!["passed", "exceptions"].includes(r.diagnostics_status)) return "Complete the diagnostics checklist.";
+  if (!["evidence_collected", "reviewed"].includes(r.reset_status)) return "Record the reset completion evidence.";
   return "Ready for review.";
 }
 
