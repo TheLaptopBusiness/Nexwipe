@@ -167,7 +167,7 @@ function Inventory() {
                 {list.data!.rows.map((d) => (
                   <tr key={d.id} className="hover:bg-muted/40">
                     <td className="px-4 py-2.5">
-                      <Link to="/app/inventory/$deviceId" params={{ deviceId: d.id }} className="font-mono font-medium text-foreground hover:underline">
+                      <Link to="/app/inventory/$deviceId" params={{ deviceId: d.id }} className="whitespace-nowrap font-mono font-medium text-foreground hover:underline">
                         {d.asset_tag}
                       </Link>
                     </td>
