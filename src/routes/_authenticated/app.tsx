@@ -44,6 +44,7 @@ import { OrgProvider, useMyMemberships, useOrg } from "@/lib/org-context";
 import { useSignOut } from "@/lib/session";
 import { can, isPrivileged, ROLE_LABELS, type Capability } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { MfaGate } from "@/components/nd/mfa-gate";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -273,28 +274,9 @@ function UserMenu() {
   );
 }
 
-function MfaNotice() {
-  const { role } = useOrg();
-  const { data } = useQuery({
-    queryKey: ["mfa-factors"],
-    queryFn: async () => (await supabase.auth.mfa.listFactors()).data,
-    enabled: isPrivileged(role),
-  });
-  if (!isPrivileged(role) || !data || (data.totp ?? []).some((f) => f.status === "verified")) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-warning/30 bg-warning-soft px-6 py-2.5 text-sm text-warning">
-      <ShieldAlert className="size-4 shrink-0" aria-hidden />
-      <span className="flex-1">Owners and administrators should protect their account with two-step verification.</span>
-      <Link to="/app/account" className="font-medium underline underline-offset-4">
-        Set up now
-      </Link>
-    </div>
-  );
-}
-
 function Shell() {
   const [open, setOpen] = useState(false);
-  const { current } = useOrg();
+  const { current, role } = useOrg();
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 lg:block">
@@ -320,10 +302,11 @@ function Shell() {
           <ThemeToggle />
           <UserMenu />
         </header>
-        <MfaNotice />
         <main className={cn("flex-1 px-4 py-6 md:px-8 md:py-8")}>
           <div className="mx-auto max-w-[1600px]">
-            <Outlet />
+            <MfaGate role={role} orgName={current.org.name}>
+              <Outlet />
+            </MfaGate>
           </div>
         </main>
       </div>

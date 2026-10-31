@@ -104,7 +104,7 @@ function Mfa() {
     toast.success("Two-step verification enabled");
     setEnroll(null);
     setCode("");
-    qc.invalidateQueries({ queryKey: ["mfa-factors"] });
+    qc.invalidateQueries();
   }
   async function remove(id: string) {
     const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
@@ -119,7 +119,7 @@ function Mfa() {
         <h2 className="font-semibold text-foreground">Two-step verification</h2>
         {verified.length ? <ToneBadge tone="success" icon={ShieldCheck}>Enabled</ToneBadge> : <ToneBadge tone="warning" icon={ShieldOff}>Not enabled</ToneBadge>}
       </div>
-      <p className="text-sm text-muted-foreground">Use an authenticator app (such as 1Password, Authy or Google Authenticator). Strongly recommended for owners and administrators.</p>
+      <p className="text-sm text-muted-foreground">Use an authenticator app (such as 1Password, Authy or Google Authenticator). Required for organization owners and administrators: their permissions only work after verifying a code.</p>
       {verified.map((f) => (
         <div key={f.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
           <span className="text-foreground">Authenticator app</span>
