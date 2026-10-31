@@ -113,6 +113,13 @@
       "when": 1793479119811,
       "tag": "0015_chromebook_resale_gates",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793479215140,
+      "tag": "0016_chromebook_resale_blockers_fix",
+      "breakpoints": true
     }
   ]
 }
