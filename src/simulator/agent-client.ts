@@ -5,15 +5,17 @@ import { AGENT_API_BASE } from "@/lib/agent-api/schemas";
 
 export type Transport = (request: Request) => Promise<Response>;
 
+export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+
 export interface SimStep {
   n: number;
   label: string;
   method: string;
   path: string;
-  request?: unknown;
+  request: Json;
   status: number;
-  response: unknown;
-  note?: string;
+  response: Json;
+  note: string | null;
 }
 
 function randomId(bytes = 12): string {
@@ -31,7 +33,7 @@ interface Sent {
   method: string;
   path: string;
   headers: Record<string, string>;
-  body?: string;
+  body?: string | undefined;
 }
 
 export class SimAgentClient {
@@ -59,12 +61,12 @@ export class SimAgentClient {
   }
 
   note(label: string, note: string) {
-    this.steps.push({ n: this.steps.length + 1, label, method: "—", path: "—", status: 0, response: null, note });
+    this.steps.push({ n: this.steps.length + 1, label, method: "—", path: "—", request: null, status: 0, response: null, note });
   }
 
-  private async send(label: string, sent: Sent, note?: string): Promise<{ status: number; body: Record<string, unknown> }> {
+  private async send(label: string, sent: Sent, note?: string | undefined): Promise<{ status: number; body: Record<string, unknown> }> {
     const res = await this.transport(
-      new Request(this.origin + AGENT_API_BASE + sent.path, { method: sent.method, headers: sent.headers, body: sent.body }),
+      new Request(this.origin + AGENT_API_BASE + sent.path, { method: sent.method, headers: sent.headers, body: sent.body ?? null }),
     );
     const text = await res.text();
     let body: Record<string, unknown> = {};
@@ -73,13 +75,13 @@ export class SimAgentClient {
     } catch {
       body = { raw: text };
     }
-    const logged = sent.body ? redact(JSON.parse(sent.body)) : undefined;
-    this.steps.push({ n: this.steps.length + 1, label, method: sent.method, path: AGENT_API_BASE + sent.path, request: logged, status: res.status, response: redact(body), note });
+    const logged = sent.body ? (redact(JSON.parse(sent.body)) as Json) : null;
+    this.steps.push({ n: this.steps.length + 1, label, method: sent.method, path: AGENT_API_BASE + sent.path, request: logged, status: res.status, response: redact(body) as Json, note: note ?? null });
     this.lastSent = sent;
     return { status: res.status, body };
   }
 
-  async call(label: string, method: "GET" | "POST", path: string, body?: unknown, opts: { auth?: boolean; note?: string } = {}) {
+  async call(label: string, method: "GET" | "POST", path: string, body?: unknown, opts: { auth?: boolean; note?: string | undefined } = {}) {
     const headers: Record<string, string> = { "content-type": "application/json", "x-nd-agent-version": "sim-0.2.0" };
     if (opts.auth !== false) {
       headers["authorization"] = `Bearer ${this.credential ?? ""}`;
@@ -90,7 +92,7 @@ export class SimAgentClient {
   }
 
   /** Re-send the previous HTTP request byte-for-byte (same nonce) to exercise replay protection. */
-  async replayLast(label: string, note?: string) {
+  async replayLast(label: string, note?: string | undefined) {
     if (!this.lastSent) throw new Error("Nothing to replay");
     return this.send(label, this.lastSent, note);
   }

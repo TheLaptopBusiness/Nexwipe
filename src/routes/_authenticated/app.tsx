@@ -8,6 +8,7 @@ import {
   Building,
   ChevronsUpDown,
   CreditCard,
+  FlaskConical,
   FileText,
   FolderKanban,
   LayoutDashboard,
@@ -97,12 +98,13 @@ const NAV: { heading: string; items: NavItem[] }[] = [
     ],
   },
   {
-    heading: "Erasure (in development)",
+    heading: "Erasure",
     items: [
-      { to: "#", label: "Live jobs", icon: Activity, planned: "Phase 2–3" },
-      { to: "#", label: "Policies", icon: SlidersHorizontal, planned: "Phase 2" },
+      { to: "/app/jobs", label: "Jobs", icon: Activity, cap: "jobs.view" },
+      { to: "/app/policies", label: "Policies", icon: SlidersHorizontal, cap: "jobs.view" },
+      { to: "/app/agents", label: "Agents & stations", icon: Server, cap: "agents.view" },
+      { to: "/app/simulator", label: "Agent simulator", icon: FlaskConical, cap: "simulator.run" },
       { to: "#", label: "Reports", icon: FileText, planned: "Phase 3" },
-      { to: "#", label: "Agents & stations", icon: Server, planned: "Phase 2" },
       { to: "#", label: "Billing & credits", icon: CreditCard, planned: "Phase 4" },
     ],
   },
@@ -124,7 +126,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
     <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
       {NAV.map((group) => {
         const items = group.items.filter((i) => !i.cap || can(role, i.cap));
-        if (role === "customer_viewer" && group.heading.startsWith("Erasure")) return null;
+        if (role === "customer_viewer" && group.heading === "Erasure") return null;
         if (items.length === 0) return null;
         return (
           <div key={group.heading}>
@@ -209,7 +211,7 @@ function Sidebar({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
       </div>
       <SidebarNav onNavigate={onNavigate} />
       <div className="border-t border-sidebar-border px-5 py-3 text-[0.6875rem] leading-relaxed text-sidebar-foreground/50">
-        Phase 1 · No erasure is performed by this application.
+        Phase 2 · No erasure is performed by this application. The agent simulator never touches a disk.
       </div>
     </div>
   );

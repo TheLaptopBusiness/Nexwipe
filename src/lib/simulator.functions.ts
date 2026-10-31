@@ -54,7 +54,7 @@ export const runSimulatorScenario = createServerFn({ method: "POST" })
       async deviceStatus(deviceId) {
         const { data: row, error } = await sb.from("devices").select("status").eq("id", deviceId).single();
         fail(error);
-        return row.status;
+        return row?.status ?? "unknown";
       },
     };
     const transport = (req: Request) => {

@@ -1,0 +1,291 @@
+openapi: 3.1.0
+info:
+  title: NextDrive Agent API
+  version: "1.0.0"
+  description: |
+    Contract between a NextDrive erasure station (the bootable agent, a separate deliverable)
+    and NextDrive Cloud. The labelled simulator in this repository uses exactly this contract.
+
+    ## Authentication
+    * `POST /enroll` exchanges a single-use enrollment token (created by an owner or administrator)
+      for a per-agent credential `ndagt_…`. The credential is returned once and stored only as a SHA-256 hash.
+    * Every other request sends:
+      * `Authorization: Bearer ndagt_…`
+      * `X-ND-Timestamp`: ISO-8601 or Unix seconds, must be within ±300 s of server time
+      * `X-ND-Nonce`: 16–128 chars `[A-Za-z0-9_-]`, never reused (replays return 409 `replayed_request`)
+    * A revoked agent receives 401 on every request. Agents never receive backend service keys.
+
+    ## Jobs, sequencing and idempotency
+    * One job per drive. The agent only ever sees jobs that a technician authorized for it.
+    * Every job event (`ack`, `events`, `result`) carries `seq` (must equal the server's `last_seq + 1`)
+      and an `idempotency_key`. Re-sending the same key with the same body returns the original
+      outcome with `duplicate: true`; the same key with a different body, or a wrong `seq`, returns 409.
+      Sequence conflicts include `expected_seq`.
+    * Evidence uploads are idempotent by `idempotency_key` and do not consume a sequence number.
+    * Transitions are validated by the server:
+      `draft → awaiting_authorization → queued → running → verifying → awaiting_validation → approved`,
+      plus `failed`, `interrupted`, `unsupported`, `quarantined`, `cancelled`.
+      Only a human reviewer can approve. A missing heartbeat (3 min) makes an active job `interrupted`,
+      never successful.
+
+    ## Local confirmation (required before execution)
+    Before acknowledging a job the station MUST display the job's asset tag and full drive serial on its
+    local console and require the operator to (1) confirm and (2) type the last 4 characters of the drive
+    serial. The agent sends this in `local_confirmation`. The server rejects the acknowledgement (422)
+    unless `confirmed` is true and `typed_serial_suffix` matches. The agent also reports the drive and
+    system serial it actually observes; any mismatch blocks execution and quarantines the job (409
+    `drive_identity_mismatch`). An authorization is single use and expires; reusing it returns 409.
+
+    ## Destructive commands
+    The agent may only execute a method listed in the job's `policy.allowed_methods` and only after a
+    successful acknowledgement (`proceed: true`). Reporting any other method quarantines the job.
+servers:
+  - url: /api/public/agent/v1
+security:
+  - agentCredential: []
+paths:
+  /health:
+    get:
+      security: []
+      summary: Liveness and API version
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, api_version: { type: string }, server_time: { type: string, format: date-time } } } } } }
+  /enroll:
+    post:
+      security: []
+      summary: Exchange a single-use enrollment token for a per-agent credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enrollment_token, name]
+              properties:
+                enrollment_token: { type: string, example: ndenr_3f1c… }
+                name: { type: string, maxLength: 100 }
+                agent_version: { type: string, maxLength: 40 }
+                platform: { type: string, maxLength: 80 }
+                hostname: { type: string, maxLength: 120 }
+      responses:
+        "201":
+          description: Enrolled. Store the credential securely; it is not shown again.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id: { type: string, format: uuid }
+                  org_id: { type: string, format: uuid }
+                  credential: { type: string, example: ndagt_9a… }
+                  is_simulated: { type: boolean }
+                  heartbeat_interval_seconds: { type: integer, example: 30 }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /heartbeat:
+    post:
+      summary: Report liveness (every 30 s; 180 s without one interrupts active jobs)
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { state: { type: string, enum: [idle, busy, reconciling] }, agent_version: { type: string } } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer } } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /inventory:
+    post:
+      summary: Report discovered system and drive identities
+      description: Matches the laptop by system serial and drives by serial within the agent's organization. Real agents mark matched, attached records as agent-verified; simulated agents never do.
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [system, drives]
+              properties:
+                system: { type: object, required: [serial], properties: { manufacturer: { type: string }, model: { type: string }, serial: { type: string } } }
+                drives:
+                  type: array
+                  maxItems: 16
+                  items:
+                    type: object
+                    required: [serial]
+                    properties:
+                      serial: { type: string }
+                      model: { type: string }
+                      interface: { type: string, enum: [sata_hdd, sata_ssd, nvme_ssd, unsupported_other] }
+                      capacity_bytes: { type: integer }
+                      firmware: { type: string }
+                      capabilities: { type: object, additionalProperties: true }
+      responses:
+        "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
+  /jobs:
+    get:
+      summary: Jobs bound to this agent (queued, running, verifying, interrupted)
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      responses:
+        "200":
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        job_id: { type: string, format: uuid }
+                        job_number: { type: integer }
+                        status: { type: string }
+                        is_simulated: { type: boolean }
+                        next_seq: { type: integer }
+                        authorization: { type: [object, "null"], properties: { id: { type: string }, expires_at: { type: string }, local_confirmation_required: { type: boolean } } }
+                        target: { type: object, properties: { asset_tag: { type: string }, system_serial: { type: string }, drive_serial: { type: string }, drive_model: { type: string }, drive_interface: { type: string }, drive_capacity_bytes: { type: integer } } }
+                        policy: { type: object, properties: { policy_version_id: { type: string }, version: { type: integer }, allowed_methods: { type: array, items: { type: string } }, verification_method: { type: string, enum: [full_read, sample_read] }, verification_sample_pct: { type: [integer, "null"] }, require_evidence: { type: boolean } } }
+                        local_confirmation: { type: object, properties: { serial_suffix_length: { type: integer }, instruction: { type: string } } }
+  /jobs/{jobId}/ack:
+    post:
+      summary: Acknowledge after local confirmation; consumes the authorization and starts execution
+      parameters: [{ $ref: "#/components/parameters/JobId" }, { $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seq, idempotency_key, authorization_id, observed, local_confirmation]
+              properties:
+                seq: { type: integer, minimum: 1 }
+                idempotency_key: { type: string, minLength: 8, maxLength: 128 }
+                authorization_id: { type: string, format: uuid }
+                observed: { type: object, required: [drive_serial], properties: { system_serial: { type: string }, drive_serial: { type: string }, drive_model: { type: string }, capacity_bytes: { type: integer } } }
+                local_confirmation: { type: object, required: [confirmed, typed_serial_suffix], properties: { confirmed: { type: boolean }, typed_serial_suffix: { type: string }, operator: { type: string }, confirmed_at: { type: string, format: date-time } } }
+                occurred_at: { type: string, format: date-time }
+      responses:
+        "200": { description: "Proceed (`proceed: true`, `allowed_methods`)", content: { application/json: { schema: { $ref: "#/components/schemas/EventResult" } } } }
+        "409": { description: "Identity mismatch (job quarantined), authorization already used/revoked, sequence conflict" , content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "410": { description: Authorization expired; job returned to awaiting authorization }
+        "422": { description: Local confirmation missing or wrong }
+  /jobs/{jobId}/events:
+    post:
+      summary: Progress, log, unsupported, interrupted or resume
+      description: |
+        `progress`: send `measured: true` with `progress_pct` only for real measurements; otherwise only `phase` is shown.
+        `unsupported`: no permitted method is available (job → unsupported).
+        `interrupted`: the station lost state (job → interrupted). `resume`: after re-checking the drive (interrupted → running/verifying).
+      parameters: [{ $ref: "#/components/parameters/JobId" }, { $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seq, idempotency_key, type]
+              properties:
+                seq: { type: integer }
+                idempotency_key: { type: string }
+                type: { type: string, enum: [progress, log, unsupported, interrupted, resume] }
+                phase: { type: string }
+                progress_pct: { type: number, minimum: 0, maximum: 100 }
+                measured: { type: boolean }
+                message: { type: string }
+                reason: { type: string }
+                capabilities: { type: object, additionalProperties: true }
+                occurred_at: { type: string, format: date-time }
+      responses:
+        "200": { description: Accepted or duplicate, content: { application/json: { schema: { $ref: "#/components/schemas/EventResult" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+  /jobs/{jobId}/evidence:
+    post:
+      summary: Upload text evidence (≤ 256 KB). The server recomputes SHA-256 and rejects mismatches.
+      parameters: [{ $ref: "#/components/parameters/JobId" }, { $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotency_key, kind, filename, content, sha256]
+              properties:
+                idempotency_key: { type: string }
+                kind: { type: string, enum: [execution_log, verification_log, device_report, smart_data, other] }
+                filename: { type: string }
+                content_type: { type: string }
+                content: { type: string, maxLength: 262144 }
+                sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+      responses:
+        "201": { description: Stored }
+        "200": { description: Duplicate (same key and hash) }
+        "422": { description: Hash mismatch or too large }
+  /jobs/{jobId}/result:
+    post:
+      summary: Report the execution outcome, then the verification outcome
+      description: |
+        Execution `succeeded` requires a `method` permitted by the policy for this interface; otherwise the job is quarantined.
+        Verification `passed` requires the policy's verification method (and minimum sample) and, if required, uploaded evidence.
+        A passed verification moves the job to `awaiting_validation` — never to `approved`.
+      parameters: [{ $ref: "#/components/parameters/JobId" }, { $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seq, idempotency_key, stage, outcome]
+              properties:
+                seq: { type: integer }
+                idempotency_key: { type: string }
+                stage: { type: string, enum: [execution, verification] }
+                outcome: { type: string, enum: [succeeded, failed, passed] }
+                method: { type: string, description: "execution: erasure method; verification: full_read | sample_read" }
+                sample_pct: { type: integer }
+                detail: { type: object, additionalProperties: true }
+      responses:
+        "200": { description: Accepted, content: { application/json: { schema: { $ref: "#/components/schemas/EventResult" } } } }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /reconcile:
+    post:
+      summary: After reconnecting, compare local and server state per job
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { jobs: { type: array, items: { type: object, properties: { job_id: { type: string }, agent_last_seq: { type: integer } } } } } } } }
+      responses:
+        "200":
+          description: "Per job: `instruction` is one of continue, replay_from_server_seq (resend events after server_last_seq with their original keys), ack_required, report_state (job is interrupted: send resume or a result), stop."
+components:
+  securitySchemes:
+    agentCredential: { type: http, scheme: bearer, description: "Per-agent credential `ndagt_…`" }
+  parameters:
+    Timestamp: { name: X-ND-Timestamp, in: header, required: true, schema: { type: string } }
+    Nonce: { name: X-ND-Nonce, in: header, required: true, schema: { type: string, minLength: 16, maxLength: 128 } }
+    JobId: { name: jobId, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    EventResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        proceed: { type: boolean }
+        duplicate: { type: boolean }
+        event_id: { type: integer }
+        job_status: { type: string }
+        last_seq: { type: integer }
+        allowed_methods: { type: array, items: { type: string } }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: sequence_conflict }
+            message: { type: string }
+            expected_seq: { type: integer }
+  responses:
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }

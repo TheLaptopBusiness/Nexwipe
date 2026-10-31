@@ -25,14 +25,20 @@ import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAccountRouteImport } from './routes/_authenticated/app.account'
+import { Route as AuthenticatedAppAgentsRouteImport } from './routes/_authenticated/app.agents'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated/app.audit'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSimulatorRouteImport } from './routes/_authenticated/app.simulator'
 import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticated/app.sites'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
+import { Route as AuthenticatedAppJobsIndexRouteImport } from './routes/_authenticated/app.jobs.index'
+import { Route as AuthenticatedAppJobsJobIdRouteImport } from './routes/_authenticated/app.jobs.$jobId'
+import { Route as AuthenticatedAppPoliciesIndexRouteImport } from './routes/_authenticated/app.policies.index'
+import { Route as AuthenticatedAppPoliciesPolicyIdRouteImport } from './routes/_authenticated/app.policies.$policyId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
 import { Route as AuthenticatedAppProjectsProjectIdRouteImport } from './routes/_authenticated/app.projects.$projectId'
 import { Route as ApiPublicAgentV1SplatRouteImport } from './routes/api/public/agent/v1/$'
@@ -116,6 +122,11 @@ const AuthenticatedAppAccountRoute = AuthenticatedAppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAgentsRoute = AuthenticatedAppAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -138,6 +149,12 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSimulatorRoute =
+  AuthenticatedAppSimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppSitesRoute = AuthenticatedAppSitesRouteImport.update({
   id: '/sites',
   path: '/sites',
@@ -158,6 +175,30 @@ const AuthenticatedAppInventoryDeviceIdRoute =
   AuthenticatedAppInventoryDeviceIdRouteImport.update({
     id: '/inventory/$deviceId',
     path: '/inventory/$deviceId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppJobsIndexRoute =
+  AuthenticatedAppJobsIndexRouteImport.update({
+    id: '/jobs/',
+    path: '/jobs/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppJobsJobIdRoute =
+  AuthenticatedAppJobsJobIdRouteImport.update({
+    id: '/jobs/$jobId',
+    path: '/jobs/$jobId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPoliciesIndexRoute =
+  AuthenticatedAppPoliciesIndexRouteImport.update({
+    id: '/policies/',
+    path: '/policies/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPoliciesPolicyIdRoute =
+  AuthenticatedAppPoliciesPolicyIdRouteImport.update({
+    id: '/policies/$policyId',
+    path: '/policies/$policyId',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppProjectsIndexRoute =
@@ -193,16 +234,22 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/account': typeof AuthenticatedAppAccountRoute
+  '/app/agents': typeof AuthenticatedAppAgentsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
+  '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/jobs/': typeof AuthenticatedAppJobsIndexRoute
+  '/app/policies/': typeof AuthenticatedAppPoliciesIndexRoute
   '/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
@@ -220,16 +267,22 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/account': typeof AuthenticatedAppAccountRoute
+  '/app/agents': typeof AuthenticatedAppAgentsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
+  '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/jobs': typeof AuthenticatedAppJobsIndexRoute
+  '/app/policies': typeof AuthenticatedAppPoliciesIndexRoute
   '/app/projects': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
@@ -250,16 +303,22 @@ export interface FileRoutesById {
   '/auth_/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/account': typeof AuthenticatedAppAccountRoute
+  '/_authenticated/app/agents': typeof AuthenticatedAppAgentsRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/_authenticated/app/sites': typeof AuthenticatedAppSitesRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/_authenticated/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
+  '/_authenticated/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/_authenticated/app/jobs/': typeof AuthenticatedAppJobsIndexRoute
+  '/_authenticated/app/policies/': typeof AuthenticatedAppPoliciesIndexRoute
   '/_authenticated/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
@@ -280,16 +339,22 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app/account'
+    | '/app/agents'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/simulator'
     | '/app/sites'
     | '/app/team'
     | '/app/'
     | '/app/inventory/$deviceId'
+    | '/app/jobs/$jobId'
+    | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory/'
+    | '/app/jobs/'
+    | '/app/policies/'
     | '/app/projects/'
     | '/api/public/agent/v1/$'
   fileRoutesByTo: FileRoutesByTo
@@ -307,16 +372,22 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app/account'
+    | '/app/agents'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/simulator'
     | '/app/sites'
     | '/app/team'
     | '/app'
     | '/app/inventory/$deviceId'
+    | '/app/jobs/$jobId'
+    | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory'
+    | '/app/jobs'
+    | '/app/policies'
     | '/app/projects'
     | '/api/public/agent/v1/$'
   id:
@@ -336,16 +407,22 @@ export interface FileRouteTypes {
     | '/auth_/callback'
     | '/invite/$token'
     | '/_authenticated/app/account'
+    | '/_authenticated/app/agents'
     | '/_authenticated/app/audit'
     | '/_authenticated/app/clients'
     | '/_authenticated/app/hardware'
     | '/_authenticated/app/settings'
+    | '/_authenticated/app/simulator'
     | '/_authenticated/app/sites'
     | '/_authenticated/app/team'
     | '/_authenticated/app/'
     | '/_authenticated/app/inventory/$deviceId'
+    | '/_authenticated/app/jobs/$jobId'
+    | '/_authenticated/app/policies/$policyId'
     | '/_authenticated/app/projects/$projectId'
     | '/_authenticated/app/inventory/'
+    | '/_authenticated/app/jobs/'
+    | '/_authenticated/app/policies/'
     | '/_authenticated/app/projects/'
     | '/api/public/agent/v1/$'
   fileRoutesById: FileRoutesById
@@ -480,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAccountRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/agents': {
+      id: '/_authenticated/app/agents'
+      path: '/agents'
+      fullPath: '/app/agents'
+      preLoaderRoute: typeof AuthenticatedAppAgentsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audit': {
       id: '/_authenticated/app/audit'
       path: '/audit'
@@ -506,6 +590,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/simulator': {
+      id: '/_authenticated/app/simulator'
+      path: '/simulator'
+      fullPath: '/app/simulator'
+      preLoaderRoute: typeof AuthenticatedAppSimulatorRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/sites': {
@@ -536,6 +627,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInventoryDeviceIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/jobs/': {
+      id: '/_authenticated/app/jobs/'
+      path: '/jobs'
+      fullPath: '/app/jobs/'
+      preLoaderRoute: typeof AuthenticatedAppJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/jobs/$jobId': {
+      id: '/_authenticated/app/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/app/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedAppJobsJobIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/policies/': {
+      id: '/_authenticated/app/policies/'
+      path: '/policies'
+      fullPath: '/app/policies/'
+      preLoaderRoute: typeof AuthenticatedAppPoliciesIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/policies/$policyId': {
+      id: '/_authenticated/app/policies/$policyId'
+      path: '/policies/$policyId'
+      fullPath: '/app/policies/$policyId'
+      preLoaderRoute: typeof AuthenticatedAppPoliciesPolicyIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/projects/': {
       id: '/_authenticated/app/projects/'
       path: '/projects'
@@ -562,33 +681,45 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAccountRoute: typeof AuthenticatedAppAccountRoute
+  AuthenticatedAppAgentsRoute: typeof AuthenticatedAppAgentsRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSimulatorRoute: typeof AuthenticatedAppSimulatorRoute
   AuthenticatedAppSitesRoute: typeof AuthenticatedAppSitesRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
+  AuthenticatedAppJobsJobIdRoute: typeof AuthenticatedAppJobsJobIdRoute
+  AuthenticatedAppPoliciesPolicyIdRoute: typeof AuthenticatedAppPoliciesPolicyIdRoute
   AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
   AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
+  AuthenticatedAppJobsIndexRoute: typeof AuthenticatedAppJobsIndexRoute
+  AuthenticatedAppPoliciesIndexRoute: typeof AuthenticatedAppPoliciesIndexRoute
   AuthenticatedAppProjectsIndexRoute: typeof AuthenticatedAppProjectsIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAccountRoute: AuthenticatedAppAccountRoute,
+  AuthenticatedAppAgentsRoute: AuthenticatedAppAgentsRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSimulatorRoute: AuthenticatedAppSimulatorRoute,
   AuthenticatedAppSitesRoute: AuthenticatedAppSitesRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppInventoryDeviceIdRoute:
     AuthenticatedAppInventoryDeviceIdRoute,
+  AuthenticatedAppJobsJobIdRoute: AuthenticatedAppJobsJobIdRoute,
+  AuthenticatedAppPoliciesPolicyIdRoute: AuthenticatedAppPoliciesPolicyIdRoute,
   AuthenticatedAppProjectsProjectIdRoute:
     AuthenticatedAppProjectsProjectIdRoute,
   AuthenticatedAppInventoryIndexRoute: AuthenticatedAppInventoryIndexRoute,
+  AuthenticatedAppJobsIndexRoute: AuthenticatedAppJobsIndexRoute,
+  AuthenticatedAppPoliciesIndexRoute: AuthenticatedAppPoliciesIndexRoute,
   AuthenticatedAppProjectsIndexRoute: AuthenticatedAppProjectsIndexRoute,
 }
 

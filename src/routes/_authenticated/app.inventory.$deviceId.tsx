@@ -2,10 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Activity,
   ArrowLeft,
   FileText,
-  FolderArchive,
   HardDrive,
   History,
   Plus,
@@ -32,7 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ErrorBlock, LoadingBlock, Mono, errorMessage } from "@/components/nd/page";
-import { DEVICE_STATUS, StatusBadge, ToneBadge } from "@/components/nd/status-badge";
+import { DEVICE_STATUS, SimulatedBadge, StatusBadge, ToneBadge } from "@/components/nd/status-badge";
+import { DeviceEvidence, DeviceJobs } from "@/components/nd/device-jobs";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatBytes, formatDateTime, memberName, useMembers, useSites } from "@/lib/queries";
@@ -93,6 +92,7 @@ function DeviceDetail() {
           <h1 className="text-2xl font-semibold text-foreground">{[d.manufacturer, d.model].filter(Boolean).join(" ") || "Unidentified device"}</h1>
           <div className="mt-2 flex flex-wrap gap-2">
             <StatusBadge map={DEVICE_STATUS} value={d.status} />
+            {d.is_simulated && <SimulatedBadge />}
             {d.hardware_verified ? <ToneBadge tone="success">Agent verified identity</ToneBadge> : <ToneBadge tone="neutral">Identity unverified ({d.source.replace("_", " ")})</ToneBadge>}
             {d.manufacturer && !manufacturerInScope(d.manufacturer) && <ToneBadge tone="warning">Manufacturer outside initial scope</ToneBadge>}
           </div>
@@ -111,12 +111,8 @@ function DeviceDetail() {
         </TabsList>
         <TabsContent value="overview" className="mt-5"><Overview device={d} /></TabsContent>
         <TabsContent value="drives" className="mt-5"><Drives deviceId={d.id} /></TabsContent>
-        <TabsContent value="jobs" className="mt-5">
-          <EmptyState icon={Activity} title="No erasure jobs" description="The job engine and agent integration are not built yet (Phase 2). No erasure has been performed on this device by NextDrive." />
-        </TabsContent>
-        <TabsContent value="evidence" className="mt-5">
-          <EmptyState icon={FolderArchive} title="No evidence" description="Evidence storage arrives with the review workflow (Phase 3)." />
-        </TabsContent>
+        <TabsContent value="jobs" className="mt-5"><DeviceJobs deviceId={d.id} isSimulated={d.is_simulated} /></TabsContent>
+        <TabsContent value="evidence" className="mt-5"><DeviceEvidence deviceId={d.id} /></TabsContent>
         <TabsContent value="diagnostics" className="mt-5"><Diagnostics device={d} /></TabsContent>
         <TabsContent value="custody" className="mt-5"><Custody deviceId={d.id} /></TabsContent>
         <TabsContent value="reports" className="mt-5">
