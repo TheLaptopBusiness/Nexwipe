@@ -73,7 +73,7 @@ export function StationDiscoveries() {
                     {d.device_id ? (
                       <span className="inline-flex items-center gap-2">
                         <Link to="/app/inventory/$deviceId" params={{ deviceId: d.device_id }} className="font-mono text-sm hover:underline">{d.devices?.asset_tag}</Link>
-                        {d.devices?.hardware_verified ? <ToneBadge tone="success">Station-verified</ToneBadge> : <ToneBadge tone="neutral">Awaiting re-report</ToneBadge>}
+                        {d.is_simulated ? <ToneBadge tone="warning">Simulated record</ToneBadge> : d.devices?.hardware_verified ? <ToneBadge tone="success">Station-verified</ToneBadge> : <ToneBadge tone="neutral">Awaiting re-report</ToneBadge>}
                       </span>
                     ) : !d.is_simulated && can(role, "inventory.write") && d.system_serial ? (
                       <Button size="sm" variant="outline" onClick={() => setTarget({ id: d.id, serial: d.system_serial! })}><Plus /> Add to inventory</Button>
@@ -89,6 +89,7 @@ export function StationDiscoveries() {
                         <HardDrive className="size-3.5" aria-hidden />
                         <Mono className="text-foreground">{dr.serial ?? "no serial"}</Mono>
                         <span>· {dr.model ?? "unknown model"} · {dr.interfaceLabel}{dr.capacity ? ` · ${formatBytes(dr.capacity)}` : ""}</span>
+                        {dr.ignored && <ToneBadge tone="neutral">Station boot medium · not recorded</ToneBadge>}
                       </li>
                     ))}
                   </ul>

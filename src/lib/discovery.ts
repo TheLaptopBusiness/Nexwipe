@@ -2,7 +2,7 @@
 
 export interface DiscoveryPayload {
   system?: { manufacturer?: string; model?: string; serial?: string; cpu?: string };
-  drives?: Array<{ serial?: string; model?: string; interface?: string; capacity_bytes?: number }>;
+  drives?: Array<{ serial?: string; model?: string; interface?: string; capacity_bytes?: number; removable?: boolean; is_boot_medium?: boolean }>;
 }
 
 const IFACE: Record<string, string> = {
@@ -19,6 +19,8 @@ export function summarizeDiscovery(p: DiscoveryPayload | null | undefined) {
     model: typeof d?.model === "string" && d.model.trim() ? d.model.trim() : null,
     interfaceLabel: IFACE[d?.interface ?? ""] ?? "Unsupported / other",
     capacity: typeof d?.capacity_bytes === "number" && d.capacity_bytes > 0 ? d.capacity_bytes : null,
+    // Mirrors create_device_from_discovery: boot media and removable media never become laptop drives.
+    ignored: d?.is_boot_medium === true || d?.removable === true,
   }));
   return { title, drives };
 }
