@@ -69,7 +69,7 @@ export function StationDiscoveries() {
                   <span className="font-medium text-foreground">{s.title}</span>
                   {d.system_serial && <Mono className="text-xs text-muted-foreground">S/N {d.system_serial}</Mono>}
                   {d.is_simulated && <SimulatedBadge />}
-                  {d.is_read_only_test && <ToneBadge tone="info">Physical read-only test</ToneBadge>}
+                  {d.is_read_only_test && <ToneBadge tone="info">Read-only test station</ToneBadge>}
                   {flags.length > 0 && <ToneBadge tone="warning" icon={AlertTriangle}>Needs review</ToneBadge>}
                   <span className="text-xs text-muted-foreground">
                     from {d.agents?.name ?? "station"} · last {formatDateTime(d.last_reported_at)}
