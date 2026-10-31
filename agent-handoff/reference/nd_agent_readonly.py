@@ -34,29 +34,23 @@ CRED_FILE = os.path.join(STATE_DIR, "credential")
 AGENT_VERSION = "0.1.0-readonly-reference"
 HEARTBEAT_S = 30
 
-# The ONLY external commands this program may run. Each is read-only.
+# The ONLY external commands this program may run: exact (tool, first argument) pairs, all read-only.
 READ_ONLY_COMMANDS = {
-    "dmidecode": ["-s"],
-    "lsblk": ["-J", "-b", "-d", "-o"],
-    "udevadm": ["info", "--query=property", "--name"],
-    "nvme": ["id-ctrl", "id-ns", "list", "smart-log", "sanitize-log"],  # all read-only subcommands
-    "smartctl": ["-i", "-H", "-j", "-x"],
-    "findmnt": ["-n", "-o"],
+    ("dmidecode", "-s"),
+    ("lsblk", "-J"),
+    ("udevadm", "info"),
+    ("nvme", "id-ctrl"),
+    ("nvme", "id-ns"),
+    ("smartctl", "-i"),
+    ("findmnt", "-n"),
 }
-FORBIDDEN_TOKENS = ("sanitize ", "format", "--security", "--sanitize", "write", "dd", "blkdiscard", "secure-erase")
 
 
 def run_ro(argv: list[str]) -> str:
-    """Run an allow-listed, read-only command and return stdout ('' if unavailable)."""
-    tool = argv[0]
-    if tool not in READ_ONLY_COMMANDS:
-        raise RuntimeError(f"command not allow-listed: {tool}")
-    joined = " ".join(argv[1:])
-    if tool == "nvme" and argv[1] not in READ_ONLY_COMMANDS["nvme"]:
-        raise RuntimeError(f"nvme subcommand not allowed: {argv[1]}")
-    if any(t in joined for t in FORBIDDEN_TOKENS if not (tool == "nvme" and t == "sanitize " and argv[1] == "sanitize-log")):
-        raise RuntimeError(f"refusing potentially destructive invocation: {argv}")
-    if shutil.which(tool) is None:
+    """Run an allow-listed, read-only command and return stdout ('' if the tool is unavailable)."""
+    if len(argv) < 2 or (argv[0], argv[1]) not in READ_ONLY_COMMANDS:
+        raise RuntimeError(f"refusing command that is not on the read-only allow-list: {argv[:2]}")
+    if shutil.which(argv[0]) is None:
         return ""
     try:
         return subprocess.run(argv, capture_output=True, text=True, timeout=30, check=False).stdout
@@ -295,6 +289,8 @@ def cmd_run(a: argparse.Namespace) -> None:
             # Milestone 1: this build has NO erasure capability. Never ack.
             log(f"Job {j.get('job_number')} for drive {j.get('target', {}).get('drive_serial')} received — "
                 "REFUSED: this is a read-only build. The job remains queued until it expires or is cancelled.")
+        if a.once:
+            return
         time.sleep(HEARTBEAT_S)
 
 
@@ -306,7 +302,8 @@ def main() -> None:
     e.add_argument("--token")
     e.add_argument("--name", default=os.uname().nodename)
     sub.add_parser("discover", help="print the inventory payload without sending it")
-    sub.add_parser("run")
+    r = sub.add_parser("run")
+    r.add_argument("--once", action="store_true", help="one heartbeat/jobs cycle, then exit (for testing)")
     a = p.parse_args()
     if a.cmd != "discover" and not a.base.startswith(("https://", "http://localhost")):
         sys.exit("--base must be an https:// URL")
