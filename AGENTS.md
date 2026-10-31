@@ -25,4 +25,5 @@
 - Anything simulated carries `is_simulated` set by trusted code only and must be visibly labelled in the UI; simulated jobs can never be billable or certificate-eligible.
 - Owner/admin rights require an AAL2 session inside `has_org_role`; never add a privileged path that checks membership without it (e.g. via `is_org_member`), or MFA enforcement is bypassed.
 - Invitation tokens are only ever known to `create_invitation`'s caller; send emails from the same server function that created the token, never by re-deriving tokens.
-- `agent-handoff/` is documentation plus a read-only reference client; never add erasure commands to this repository.
+- `agent-handoff/` holds docs, the read-only station program (`station/`) and the USB build (`usb-image/`); never add erasure commands or destructive tools there — `verify-image.sh` and `station/nd_station/safety.py` enforce this.
+- Physical stations enroll read-only (`agents.read_only`, enforced by triggers on authorizations/events/evidence); only trusted server code may unlock one, never an app user.
