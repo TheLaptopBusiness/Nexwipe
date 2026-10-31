@@ -123,12 +123,6 @@ echo "kernel: root filesystem has linux-image-${DEB_KVER} ${IMG_PKG_VER}; builde
 in_builder dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort > "$OUT/builder-packages.txt"
 
 STAGE="B-kernel-pass1"
-log "Kernel source and config"
-rm -rf "$BUILDER/build"; mkdir -p "$BUILDER/build/linux"
-tar -xaf "$BUILDER"/usr/src/linux-source-"${KSERIES}".tar.* -C "$BUILDER/build/linux" --strip-components=1
-cp "$ROOT/boot/config-$DEB_KVER" "$BUILDER/build/linux/.config"
-cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
-in_builder sh -c 'cd /build/linux && scripts/kconfig/merge_config.sh -m .config /build/nexwipe-cb.config >/dev/null && make olddefconfig >/dev/null'
 check_kconfig() {  # $1 = 1 (pass 1) or 2 (pass 2)
 python3 - "$BUILDER/build/linux/.config" "$HERE/preflight.py" "$1" <<'PY'
 import re, sys, importlib.util
@@ -141,12 +135,26 @@ if bad:
 print(f"kernel config (pass {sys.argv[3]}): all required options present")
 PY
 }
-check_kconfig 1
-KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
-log "Pass 1: kernel ${KREL} + modules (log: logs/kernel-pass1-$TS.log)"
-in_builder sh -c "cd /build/linux && make -j$JOBS bzImage modules" > "$OUT/logs/kernel-pass1-$TS.log" 2>&1 \
-  || { tail -40 "$OUT/logs/kernel-pass1-$TS.log"; die "kernel pass 1 failed"; }
-in_builder sh -c "cd /build/linux && rm -rf /build/modroot && make -s INSTALL_MOD_PATH=/build/modroot INSTALL_MOD_STRIP=1 modules_install" >> "$OUT/logs/kernel-pass1-$TS.log" 2>&1
+
+if [[ "${KERNEL_TREE_READY:-0}" == 1 && -f "$BUILDER/build/linux/vmlinux" && -d "$BUILDER/build/modroot" ]]; then
+  log "Reusing the pass-1 kernel tree from a previous run (KERNEL_TREE_READY=1)"
+  cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
+  check_kconfig 1
+  KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
+else
+  log "Kernel source and config"
+  rm -rf "$BUILDER/build"; mkdir -p "$BUILDER/build/linux"
+  tar -xaf "$BUILDER"/usr/src/linux-source-"${KSERIES}".tar.* -C "$BUILDER/build/linux" --strip-components=1
+  cp "$ROOT/boot/config-$DEB_KVER" "$BUILDER/build/linux/.config"
+  cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
+  in_builder sh -c 'cd /build/linux && scripts/kconfig/merge_config.sh -m .config /build/nexwipe-cb.config >/dev/null && make olddefconfig >/dev/null'
+  check_kconfig 1
+  KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
+  log "Pass 1: kernel ${KREL} + modules (log: logs/kernel-pass1-$TS.log)"
+  in_builder sh -c "cd /build/linux && make -j$JOBS bzImage modules" > "$OUT/logs/kernel-pass1-$TS.log" 2>&1 \
+    || { tail -40 "$OUT/logs/kernel-pass1-$TS.log"; die "kernel pass 1 failed"; }
+  in_builder sh -c "cd /build/linux && rm -rf /build/modroot && make -s INSTALL_MOD_PATH=/build/modroot INSTALL_MOD_STRIP=1 modules_install" >> "$OUT/logs/kernel-pass1-$TS.log" 2>&1
+fi
 
 STAGE="B-initramfs"
 log "Installing modules for ${KREL}; removing the Debian kernel ${DEB_KVER} from the root filesystem"
@@ -162,6 +170,28 @@ WORK="$(grep -o '/var/tmp/mkinitramfs_[A-Za-z0-9]*' "$OUT/logs/initramfs-$TS.log
 [[ -n "$WORK" && -f "$ROOT$WORK/init" ]] || { cat "$OUT/logs/initramfs-$TS.log"; die "mkinitramfs work directory not found"; }
 rm -rf "$BUILDER/build/initramfs"; cp -a "$ROOT$WORK" "$BUILDER/build/initramfs"
 rm -rf "$ROOT$WORK" "$ROOT"/var/tmp/mkinitramfs* "$ROOT/tmp/nexwipe-initrd.img" "$ROOT/boot/"*
+log "Trimming the initramfs (all boot drivers are built into the kernel)"
+python3 - "$BUILDER/build/initramfs" <<'PY'
+import os, sys
+root, seen, n = sys.argv[1], {}, 0
+# The kernel's initramfs generator stores every hard link as a full copy (busybox applets would add ~240 MB).
+for dp, _, fn in os.walk(root):
+    for f in fn:
+        p = os.path.join(dp, f)
+        st = os.lstat(p)
+        if os.path.islink(p) or not os.path.isfile(p) or st.st_nlink < 2:
+            continue
+        key = (st.st_dev, st.st_ino)
+        if key in seen:
+            os.remove(p); os.symlink(os.path.relpath(seen[key], dp), p); n += 1
+        else:
+            seen[key] = p
+print(f"initramfs: replaced {n} hard links with symlinks")
+PY
+rm -rf "$BUILDER/build/initramfs/usr/lib/firmware" "$BUILDER/build/initramfs/usr/lib/udev/hwdb.bin"
+find "$BUILDER/build/initramfs/usr/lib/modules/$KREL/kernel" -type f -delete
+in_builder depmod -b /build/initramfs "$KREL"
+du -s --apparent-size -m "$BUILDER/build/initramfs" | awk '{print "initramfs: " $1 " MiB uncompressed"}'
 printf 'dir /dev 0755 0 0\nnod /dev/console 0600 0 0 c 5 1\n' > "$BUILDER/build/initramfs-extra.list"
 
 STAGE="B-kernel-pass2"
