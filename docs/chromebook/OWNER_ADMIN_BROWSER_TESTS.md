@@ -36,7 +36,7 @@ Use the test serials exactly as written so the results are easy to find.
 | 13 | Owner or technician | Step 3: try **Management observed** on the released record | Refused: "already released: an owner or administrator must quarantine it before management changes" |
 | 14 | Owner | Receive a second device `OWNTEST002` / `OWN-T2`, record authorization, step 7: note `browser test cleanup` → **Quarantine** | "Quarantined" |
 | 15 | Owner | Open **History** on both records | Every step above appears once, in order, with your name or the technician's; refused attempts do not appear |
-| 16 | Owner | Sign out, sign back in with password only and cancel at the two-step prompt | Owner-only actions are not available until the two-step code is entered |
+| 16 | Owner | Sign out. Sign in with the password only and stop at the two-step code screen; try opening `/app/chromebooks` directly | The app keeps asking for the code; no owner action (authorize, approve, quarantine) is reachable without it |
 
 When finished, quarantine `OWN-T1` with note `browser test only` so it can never be mistaken for stock.
 
