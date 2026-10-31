@@ -816,7 +816,58 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      batch_device_counts: {
+        Row: {
+          batch_id: string | null
+          org_id: string | null
+          processed: number | null
+          quarantined: number | null
+          received: number | null
+          released: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_org_id_batch_id_fkey"
+            columns: ["org_id", "batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "devices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_device_counts: {
+        Row: {
+          org_id: string | null
+          processed: number | null
+          project_id: string | null
+          quarantined: number | null
+          received: number | null
+          released: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devices_org_id_project_id_fkey"
+            columns: ["org_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }

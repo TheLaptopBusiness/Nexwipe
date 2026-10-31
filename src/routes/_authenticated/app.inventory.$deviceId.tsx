@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,12 +127,12 @@ function DeviceDetail() {
   );
 }
 
-type DeviceRow = NonNullable<Awaited<ReturnType<typeof loadDeviceType>>>;
-// Helper only used for typing.
-async function loadDeviceType() {
-  const { data } = await supabase.from("devices").select("*, sites(name), clients(name), projects(id, name), batches(name)").maybeSingle();
-  return data;
-}
+type DeviceRow = Tables<"devices"> & {
+  sites: { name: string } | null;
+  clients: { name: string } | null;
+  projects: { id: string; name: string } | null;
+  batches: { name: string } | null;
+};
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
