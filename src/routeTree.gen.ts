@@ -24,8 +24,12 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated/app.audit'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
+import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticated/app.sites'
+import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
@@ -105,14 +109,36 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppClientsRoute = AuthenticatedAppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppHardwareRoute =
+  AuthenticatedAppHardwareRouteImport.update({
+    id: '/hardware',
+    path: '/hardware',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppSitesRoute = AuthenticatedAppSitesRouteImport.update({
   id: '/sites',
   path: '/sites',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppInventoryIndexRoute =
@@ -154,8 +180,12 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
+  '/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
@@ -175,8 +205,12 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
+  '/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
@@ -199,8 +233,12 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
+  '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/sites': typeof AuthenticatedAppSitesRoute
+  '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
@@ -223,8 +261,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/invite/$token'
+    | '/app/audit'
     | '/app/clients'
+    | '/app/hardware'
+    | '/app/settings'
     | '/app/sites'
+    | '/app/team'
     | '/app/'
     | '/app/inventory/$deviceId'
     | '/app/projects/$projectId'
@@ -244,8 +286,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/invite/$token'
+    | '/app/audit'
     | '/app/clients'
+    | '/app/hardware'
+    | '/app/settings'
     | '/app/sites'
+    | '/app/team'
     | '/app'
     | '/app/inventory/$deviceId'
     | '/app/projects/$projectId'
@@ -267,8 +313,12 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/auth_/callback'
     | '/invite/$token'
+    | '/_authenticated/app/audit'
     | '/_authenticated/app/clients'
+    | '/_authenticated/app/hardware'
+    | '/_authenticated/app/settings'
     | '/_authenticated/app/sites'
+    | '/_authenticated/app/team'
     | '/_authenticated/app/'
     | '/_authenticated/app/inventory/$deviceId'
     | '/_authenticated/app/projects/$projectId'
@@ -398,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/audit': {
+      id: '/_authenticated/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AuthenticatedAppAuditRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/clients': {
       id: '/_authenticated/app/clients'
       path: '/clients'
@@ -405,11 +462,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppClientsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/hardware': {
+      id: '/_authenticated/app/hardware'
+      path: '/hardware'
+      fullPath: '/app/hardware'
+      preLoaderRoute: typeof AuthenticatedAppHardwareRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/sites': {
       id: '/_authenticated/app/sites'
       path: '/sites'
       fullPath: '/app/sites'
       preLoaderRoute: typeof AuthenticatedAppSitesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/team': {
+      id: '/_authenticated/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/inventory/': {
@@ -444,8 +522,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
+  AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppSitesRoute: typeof AuthenticatedAppSitesRoute
+  AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
   AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
@@ -454,8 +536,12 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
+  AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppSitesRoute: AuthenticatedAppSitesRoute,
+  AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppInventoryDeviceIdRoute:
     AuthenticatedAppInventoryDeviceIdRoute,
