@@ -38,6 +38,14 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [unverifiedHint, setUnverifiedHint] = useState(false);
+
+  async function resendVerification() {
+    // Same response whether or not the address has an account, so this reveals nothing.
+    const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    if (error) { toast.error(errorMessage(error)); return; }
+    setMode("check-email");
+  }
   const target = safeRedirect(search.redirect);
 
   function done() {
@@ -200,6 +208,16 @@ function AuthPage() {
                   )}
                 </Button>
               </form>
+
+              {mode === "signin" && unverifiedHint && (
+                <div className="mt-4 rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+                  Just created your account? Open the verification link we emailed to{" "}
+                  <span className="font-medium text-foreground">{email}</span> before signing in.{" "}
+                  <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => void resendVerification()}>
+                    Resend verification email
+                  </button>
+                </div>
+              )}
 
               {mode === "signin" && (
                 <>
