@@ -46,8 +46,9 @@ REQUIRED_KCONFIG = {
     "CONFIG_VFAT_FS": None,
 }
 # Paths that must exist inside the built-in initramfs (initramfs-tools + live-boot).
-REQUIRED_INITRAMFS = ["init", "scripts/live", "bin/live-boot", "conf/initramfs.conf"]
-REQUIRED_INITRAMFS_ANY = [r"^(usr/)?lib/live/boot/9990-main\.sh$"]
+REQUIRED_INITRAMFS = ["init", "scripts/live", "conf/initramfs.conf", "conf/conf.d/zz-nexwipe.conf"]
+REQUIRED_INITRAMFS_ANY = [r"^(usr/)?bin/live-boot$", r"^(usr/)?lib/live/boot/9990-main\.sh$",
+                          r"^(usr/)?lib/live/boot/0020-read-only$", r"^(usr/)?s?bin/blockdev$"]
 
 REQUIRED_ROOTFS = [
     "opt/nextdrive/nd_chromebook/__main__.py",
@@ -59,6 +60,11 @@ REQUIRED_ROOTFS = [
     "etc/systemd/system/var-lib-nextdrive.mount",
     "etc/systemd/system/var-lib-nextdrive.mount.d/chromebook.conf",
     "etc/nextdrive/station.json",
+    "etc/systemd/system/nd-internal-ro.service",
+    "etc/systemd/system/sysinit.target.wants/nd-internal-ro.service",
+    "etc/udev/rules.d/60-nexwipe-readonly.rules",
+    "etc/initramfs-tools/conf.d/zz-nexwipe.conf",
+    "usr/local/sbin/nd-internal-ro",
     "etc/nextdrive/image-release",
     "usr/lib/systemd/systemd",
 ]
@@ -98,8 +104,9 @@ def _xz_streams(data: bytes, limit: int = 64):
         yield i, out
 
 
-def parse_cpio_names(blob: bytes) -> list:
-    names, off = [], 0
+def parse_cpio(blob: bytes) -> dict:
+    """name -> file bytes (empty for directories/links)."""
+    files, off = {}, 0
     while off + 110 <= len(blob):
         if blob[off:off + 6] not in (b"070701", b"070702"):
             # concatenated archives may be padded with zeros
@@ -113,11 +120,16 @@ def parse_cpio_names(blob: bytes) -> list:
         nsize = int(hdr[94:102], 16)
         name = blob[off + 110:off + 110 + nsize - 1].decode("utf-8", "replace")
         off = (off + 110 + nsize + 3) & ~3
+        body = blob[off:off + fsize]
         off = (off + fsize + 3) & ~3
         if name == "TRAILER!!!":
             continue
-        names.append(name.lstrip("./"))
-    return names
+        files[re.sub(r"^\./", "", name)] = body
+    return files
+
+
+def parse_cpio_names(blob: bytes) -> list:
+    return list(parse_cpio(blob))
 
 
 def check_kernel(path: str) -> dict:
@@ -165,9 +177,9 @@ def check_kernel(path: str) -> dict:
     initramfs = None
     for off, out in _xz_streams(vmlinux):
         if out[:6] in (b"070701", b"070702"):
-            names = parse_cpio_names(out)
-            if "init" in names:
-                initramfs = names
+            files = parse_cpio(out)
+            if "init" in files:
+                initramfs = list(files)
                 break
     if initramfs is None:
         raise Fail("kernel: built-in initramfs not found or contains no /init")
@@ -176,6 +188,9 @@ def check_kernel(path: str) -> dict:
     lacks += [r for r in REQUIRED_INITRAMFS_ANY if not any(re.match(r, n) for n in initramfs)]
     if lacks:
         raise Fail("kernel: built-in initramfs lacks startup components: " + ", ".join(lacks))
+    conf = files["conf/conf.d/zz-nexwipe.conf"].decode("utf-8", "replace")
+    if not re.search(r"^RESUME=none$", conf, re.M):
+        raise Fail("kernel: initramfs does not disable hibernation resume (RESUME=none)")
     mod_dirs = set()
     for n in initramfs:
         m = re.match(r"^(?:usr/)?lib/modules/([^/]+)/", n)
