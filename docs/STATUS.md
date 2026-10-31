@@ -16,8 +16,9 @@ _Last updated: Phase 2c (first physical read-only laptop test preparation)._
 | Station credential revocation, nonce replay prevention, stale timestamps, duplicate submissions (events + evidence), idempotency-key misuse | `phase2b_security.sql` + `scripts/agent-contract-check.ts` (18/18 HTTP checks; transcript `docs/agent-api/transcript.md`) |
 | Read-only discovery intake: station reports → "Hardware reported by stations" → Add to inventory → station re-reports → laptop and drives marked station-verified; station boot USB never recorded | `phase2b_security.sql`, browser, and the read-only reference client run against the app with test hardware data |
 | Agent simulator (9 scenarios) | browser run, all PASS |
-| Unit tests (roles, CSV, jobs, discovery display) | `bunx vitest run` (28 PASS) |
-| Reference client refuses destructive commands | `agent-handoff/reference/test_readonly.py` |
+| Unit tests (roles, CSV, jobs, discovery display, recovery rules) | `bunx vitest run` (40 PASS) |
+| Station program refuses destructive commands | `agent-handoff/station/tests` (14 PASS), `verify-image.sh` |
+| **Recovery from outdated app code (blank-screen fix)** — in-app and start-up failures. Reloads once per tab per 5 minutes; the guard is stored before reloading so it survives the reload; never auto-reloads with unsaved form input (asks instead); ordinary errors show a fallback with Try again and redacted support details; the framework's own silent reload is switched off so one rule applies | Controlled browser test `tests/browser/stale_code_recovery.py` (dev server, code files blocked or replaced in the browser): reload once → recovers; persistent failure → exactly 1 reload then fallback, manual reload recovers; unsaved form → 0 reloads, warning shown; ordinary error → 0 reloads, fallback, Try again recovers; tokens/emails redacted in shown, stored and app-logged details; start-up failure → 1 reload, or a visible fallback instead of a blank page. `src/lib/app-recovery.test.ts` (10 PASS) |
 
 | **Read-only test stations** — every physical station enrolls read-only: the database refuses to authorize it for jobs or accept job events/evidence from it | `tests/db/phase2c_readonly_stations.sql` (18/18 PASS) |
 | Station credential **expiry (90 days) and rotation** with 10-minute grace; revocation kills rotated credentials | `phase2c_readonly_stations.sql`, contract check (23/23 HTTP checks) |
@@ -33,6 +34,7 @@ _Last updated: Phase 2c (first physical read-only laptop test preparation)._
 - Email links redirect to the app's main address, not to the invitation page (the sign-in service only allows registered addresses); the in-app pending-invitation banner covers this.
 - Invitation links on a **custom domain** require `APP_ALLOWED_ORIGINS` to list it.
 - Agent API behaviour on the published site (all HTTP checks ran against the preview server).
+- **Outdated-code recovery on the published site after a real update**: only tested on the development server by blocking/replacing code files in a test browser; a real deploy's file names differ. Not tested in Safari or Firefox (their error wording is covered only by unit tests). In development mode the framework itself still prints the raw error to the local browser console; our stored, shown and reported details are redacted.
 - The reference client's hardware discovery on a real laptop (only tested with replayed test hardware data in this environment, which has no laptop hardware).
 
 ## 3. Simulated
@@ -43,7 +45,7 @@ _Last updated: Phase 2c (first physical read-only laptop test preparation)._
 
 - Phase 3: realtime updates (polling now), binary evidence storage, PDF records, QR verification, signing.
 - Phase 4: billing, credit ledger, platform admin.
-- Signed station requests / mTLS, credential rotation endpoint, station image attestation (see `docs/agent-api/station-auth.md`).
+- Signed station requests / mTLS, station image attestation (see `docs/agent-api/station-auth.md`).
 - Branded invitation emails from your own domain (currently the default sign-in email sender and wording).
 - Logo upload, retention enforcement, legal holds, account deletion.
 

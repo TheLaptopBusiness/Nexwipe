@@ -1,6 +1,7 @@
 # Read-only station test checklist — one Dell, one HP, one Lenovo laptop
 
 Record one copy per laptop. Use only lab-owned laptops; the station never writes to them, but treat any customer drive as off-limits anyway.
+Server address for step 2: the **published** NextDrive address (`https://…`). The private preview address is not reachable by a station. Plain `http://` is refused by the production image.
 Image: `nextdrive-station-readonly-0.2.0-readonly-production.img` (check its SHA-256 against `usb-image/CHECKSUMS.txt` before writing).
 
 | Field | Value |

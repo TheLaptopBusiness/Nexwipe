@@ -8,10 +8,23 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { BOOT_RECOVERY_SCRIPT } from "../lib/boot-recovery-script";
+import {
+  buildDiagnostics,
+  decideRecovery,
+  formatDiagnostics,
+  hasUnsavedWork,
+  installUnsavedWorkTracker,
+  recordManualReload,
+  safeSessionStorage,
+  saveDiagnostics,
+  type Diagnostics,
+  type RecoveryDecision,
+} from "../lib/app-recovery";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -37,56 +50,98 @@ function NotFoundComponent() {
   );
 }
 
-// After an app update the browser may still reference code files that no longer exist.
-// Reload once to fetch the current version instead of showing a blank/error screen.
-const STALE_CHUNK_RE = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module/i;
-const RELOAD_KEY = "nd.staleChunkReloadAt";
-
-function reloadOnceForStaleCode(): boolean {
-  try {
-    const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
-    if (Date.now() - last < 30_000) return false; // avoid reload loops
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-  } catch {
-    /* storage unavailable: still try once */
-  }
-  window.location.reload();
-  return true;
-}
+const BTN_PRIMARY =
+  "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90";
+const BTN_SECONDARY =
+  "inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent";
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
   const router = useRouter();
-  const stale = STALE_CHUNK_RE.test(String((error as Error)?.message ?? error));
+  const [decision, setDecision] = useState<RecoveryDecision | null>(null);
+  const [diag, setDiag] = useState<Diagnostics | null>(null);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
-    if (stale && reloadOnceForStaleCode()) return;
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error, stale]);
+    const d = buildDiagnostics(error, window.location, new Date(), navigator.userAgent);
+    const result = decideRecovery(error, { storage: safeSessionStorage(), now: Date.now(), hasUnsavedWork: hasUnsavedWork() });
+    setDiag(d);
+    setDecision(result);
+    if (result.action === "reload") {
+      window.location.reload();
+      return;
+    }
+    saveDiagnostics(d, safeSessionStorage());
+    // Only redacted details leave the page; the raw error object is never logged or reported.
+    const safe = new Error(d.message);
+    safe.name = d.name;
+    safe.stack = d.stack;
+    console.error(`[NextDrive] ${d.kind} ${d.id}: ${d.name}: ${d.message}`);
+    reportLovableError(safe, { boundary: "tanstack_root_error_component", diagnostic_id: d.id, kind: d.kind, recovery: result.action });
+  }, [error]);
+
+  if (!decision || decision.action === "reload") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4" role="status">
+        <p className="text-sm text-muted-foreground">Loading the latest version…</p>
+      </div>
+    );
+  }
+
+  const outdated = decision.reason !== "not_outdated_code";
+  const reloadNow = () => {
+    recordManualReload(safeSessionStorage(), Date.now());
+    window.location.reload();
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
+      <div className="max-w-lg text-center" role="alert">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          {decision.action === "ask" ? "A newer version of NextDrive is available" : "This page didn't load"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {decision.action === "ask"
+            ? "This page needs to reload to continue. You have typed information that hasn't been saved — reloading will clear it. Copy anything you need first, then reload."
+            : outdated
+              ? "The app was updated while this page was open and the new version could not be loaded automatically. Check your connection, then reload the page."
+              : "Something went wrong while showing this page. Try again; if it keeps happening, copy the details below and send them to your administrator."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
+          {outdated ? (
+            <button onClick={reloadNow} className={BTN_PRIMARY}>
+              Reload page
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                router.invalidate();
+                reset();
+              }}
+              className={BTN_PRIMARY}
+            >
+              Try again
+            </button>
+          )}
+          <a href="/" className={BTN_SECONDARY}>
             Go home
           </a>
         </div>
+        {diag && (
+          <details className="mt-6 rounded-md border border-border bg-card p-3 text-left">
+            <summary className="cursor-pointer text-sm font-medium text-foreground">Details for support · reference {diag.id}</summary>
+            <pre data-testid="error-diagnostics" className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-all font-mono text-xs text-muted-foreground">
+              {formatDiagnostics(diag)}
+            </pre>
+            <button
+              className={`${BTN_SECONDARY} mt-2`}
+              onClick={() => {
+                void navigator.clipboard?.writeText(formatDiagnostics(diag)).then(() => setCopied(true));
+              }}
+            >
+              {copied ? "Copied" : "Copy details"}
+            </button>
+          </details>
+        )}
       </div>
     </div>
   );
@@ -123,7 +178,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
     ],
-    scripts: [{ children: themeScript }],
+    // Boot recovery must run before any app code so a failed start-up load never leaves a blank page.
+    scripts: [{ children: BOOT_RECOVERY_SCRIPT }, { children: themeScript }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -159,8 +215,21 @@ function RootComponent() {
   }, [router, queryClient]);
 
   useEffect(() => {
+    (window as Window & { __ndAppMounted?: boolean }).__ndAppMounted = true;
+    document.getElementById("nd-boot-fallback")?.remove();
+    return installUnsavedWorkTracker(document);
+  }, []);
+
+  useEffect(() => {
+    // Production builds report failed code preloads here; same rules as the error screen.
     const onPreloadError = (e: Event) => {
-      if (reloadOnceForStaleCode()) e.preventDefault();
+      const err = (e as Event & { payload?: unknown }).payload ?? new Error("Failed to fetch dynamically imported module");
+      const d = decideRecovery(err, { storage: safeSessionStorage(), now: Date.now(), hasUnsavedWork: hasUnsavedWork() });
+      if (d.action === "reload") {
+        e.preventDefault();
+        window.location.reload();
+      }
+      // Otherwise let the error reach the route error screen, which explains it.
     };
     window.addEventListener("vite:preloadError", onPreloadError);
     return () => window.removeEventListener("vite:preloadError", onPreloadError);
