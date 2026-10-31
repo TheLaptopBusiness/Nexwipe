@@ -15,7 +15,7 @@
 | 7 | `GET /jobs` returns `[]`; `POST /reconcile` returns `[]` | logged |
 | 8 | Revoke the station in the app | next request returns 401; console shows revoked |
 
-Reference implementation of steps 2–8: `reference/nd_agent_readonly.py`.
+Implementation: `station/` + `usb-image/`. Step-by-step test sheet: `PHYSICAL_TEST_CHECKLIST.md` (all 8 steps passed in a VM; physical laptops pending).
 
 Exit criteria: all 8 steps on 3 laptop families, 2 of each interface where available (SATA SSD, NVMe; SATA HDD if any in stock), results recorded in a test report.
 
