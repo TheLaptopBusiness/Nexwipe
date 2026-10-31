@@ -25,6 +25,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAccountRouteImport } from './routes/_authenticated/app.account'
+import { Route as AuthenticatedAppAgentsRouteImport } from './routes/_authenticated/app.agents'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated/app.audit'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
+import { Route as AuthenticatedAppJobsIndexRouteImport } from './routes/_authenticated/app.jobs.index'
 import { Route as AuthenticatedAppPoliciesIndexRouteImport } from './routes/_authenticated/app.policies.index'
 import { Route as AuthenticatedAppPoliciesPolicyIdRouteImport } from './routes/_authenticated/app.policies.$policyId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
@@ -118,6 +120,11 @@ const AuthenticatedAppAccountRoute = AuthenticatedAppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAgentsRoute = AuthenticatedAppAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -160,6 +167,12 @@ const AuthenticatedAppInventoryDeviceIdRoute =
   AuthenticatedAppInventoryDeviceIdRouteImport.update({
     id: '/inventory/$deviceId',
     path: '/inventory/$deviceId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppJobsIndexRoute =
+  AuthenticatedAppJobsIndexRouteImport.update({
+    id: '/jobs/',
+    path: '/jobs/',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppPoliciesIndexRoute =
@@ -207,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/account': typeof AuthenticatedAppAccountRoute
+  '/app/agents': typeof AuthenticatedAppAgentsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -218,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/jobs/': typeof AuthenticatedAppJobsIndexRoute
   '/app/policies/': typeof AuthenticatedAppPoliciesIndexRoute
   '/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
@@ -236,6 +251,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/account': typeof AuthenticatedAppAccountRoute
+  '/app/agents': typeof AuthenticatedAppAgentsRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -247,6 +263,7 @@ export interface FileRoutesByTo {
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/jobs': typeof AuthenticatedAppJobsIndexRoute
   '/app/policies': typeof AuthenticatedAppPoliciesIndexRoute
   '/app/projects': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
@@ -268,6 +285,7 @@ export interface FileRoutesById {
   '/auth_/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/account': typeof AuthenticatedAppAccountRoute
+  '/_authenticated/app/agents': typeof AuthenticatedAppAgentsRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -279,6 +297,7 @@ export interface FileRoutesById {
   '/_authenticated/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/_authenticated/app/jobs/': typeof AuthenticatedAppJobsIndexRoute
   '/_authenticated/app/policies/': typeof AuthenticatedAppPoliciesIndexRoute
   '/_authenticated/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
   '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
@@ -300,6 +319,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app/account'
+    | '/app/agents'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
@@ -311,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory/'
+    | '/app/jobs/'
     | '/app/policies/'
     | '/app/projects/'
     | '/api/public/agent/v1/$'
@@ -329,6 +350,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app/account'
+    | '/app/agents'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
@@ -340,6 +362,7 @@ export interface FileRouteTypes {
     | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory'
+    | '/app/jobs'
     | '/app/policies'
     | '/app/projects'
     | '/api/public/agent/v1/$'
@@ -360,6 +383,7 @@ export interface FileRouteTypes {
     | '/auth_/callback'
     | '/invite/$token'
     | '/_authenticated/app/account'
+    | '/_authenticated/app/agents'
     | '/_authenticated/app/audit'
     | '/_authenticated/app/clients'
     | '/_authenticated/app/hardware'
@@ -371,6 +395,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/policies/$policyId'
     | '/_authenticated/app/projects/$projectId'
     | '/_authenticated/app/inventory/'
+    | '/_authenticated/app/jobs/'
     | '/_authenticated/app/policies/'
     | '/_authenticated/app/projects/'
     | '/api/public/agent/v1/$'
@@ -506,6 +531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAccountRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/agents': {
+      id: '/_authenticated/app/agents'
+      path: '/agents'
+      fullPath: '/app/agents'
+      preLoaderRoute: typeof AuthenticatedAppAgentsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audit': {
       id: '/_authenticated/app/audit'
       path: '/audit'
@@ -562,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInventoryDeviceIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/jobs/': {
+      id: '/_authenticated/app/jobs/'
+      path: '/jobs'
+      fullPath: '/app/jobs/'
+      preLoaderRoute: typeof AuthenticatedAppJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/policies/': {
       id: '/_authenticated/app/policies/'
       path: '/policies'
@@ -602,6 +641,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAccountRoute: typeof AuthenticatedAppAccountRoute
+  AuthenticatedAppAgentsRoute: typeof AuthenticatedAppAgentsRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
@@ -613,12 +653,14 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPoliciesPolicyIdRoute: typeof AuthenticatedAppPoliciesPolicyIdRoute
   AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
   AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
+  AuthenticatedAppJobsIndexRoute: typeof AuthenticatedAppJobsIndexRoute
   AuthenticatedAppPoliciesIndexRoute: typeof AuthenticatedAppPoliciesIndexRoute
   AuthenticatedAppProjectsIndexRoute: typeof AuthenticatedAppProjectsIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAccountRoute: AuthenticatedAppAccountRoute,
+  AuthenticatedAppAgentsRoute: AuthenticatedAppAgentsRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
@@ -632,6 +674,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppProjectsProjectIdRoute:
     AuthenticatedAppProjectsProjectIdRoute,
   AuthenticatedAppInventoryIndexRoute: AuthenticatedAppInventoryIndexRoute,
+  AuthenticatedAppJobsIndexRoute: AuthenticatedAppJobsIndexRoute,
   AuthenticatedAppPoliciesIndexRoute: AuthenticatedAppPoliciesIndexRoute,
   AuthenticatedAppProjectsIndexRoute: AuthenticatedAppProjectsIndexRoute,
 }
