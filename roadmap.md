@@ -33,7 +33,8 @@
 - [ ] G6–G8 storage procedure review, method review, enable for one board — after G1–G5; erasure stays disabled
 
 ## Public signup (2026-10-31)
-- [ ] Public signup (name/email/password) with email verification; "Start Now" CTAs; "Book a Demo" secondary; remove pilot/early-access wording
-- [ ] Post-verification onboarding: create organization → first site → first-device setup checklist; invitations keep working
-- [ ] Signup abuse protection (leaked-password check, rate limits, bot honeypot); no platform-admin grants; no free credits/paid plans until built
-- [ ] Verify signup → email verification → login → onboarding end-to-end
+- [x] Public signup (name/email/password) with email verification; "Start Now" CTAs; "Book a Demo" secondary; remove pilot/early-access wording
+- [x] Post-verification onboarding: create organization → first site → first-device setup checklist; invitations keep working
+- [x] Signup abuse protection (leaked-password check, rate limits, bot honeypot); no platform-admin grants; no free credits/paid plans until built
+- [x] Verify signup → email verification → login → onboarding end-to-end
+- [ ] Publish so the live site gets public signup (verification links land on the live address)
