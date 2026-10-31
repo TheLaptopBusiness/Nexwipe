@@ -57,6 +57,7 @@ function Profile() {
 
 function Password() {
   const [busy, setBusy] = useState(false);
+  const [noPassword, setNoPassword] = useState(false);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -64,7 +65,9 @@ function Password() {
     const password = String(f.get("password") ?? "");
     if (password !== String(f.get("confirm") ?? "")) { toast.error("Passwords do not match"); return; }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password, current_password: String(f.get("current") ?? "") } as never);
+    const { error } = await supabase.auth.updateUser(
+      (noPassword ? { password } : { password, current_password: String(f.get("current") ?? "") }) as never,
+    );
     setBusy(false);
     if (error) { toast.error(errorMessage(error)); return; }
     form.reset();
@@ -73,7 +76,11 @@ function Password() {
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-card">
       <h2 className="font-semibold text-foreground">Change password</h2>
-      <div className="space-y-1.5"><Label htmlFor="current">Current password</Label><Input id="current" name="current" type="password" required autoComplete="current-password" /></div>
+      {!noPassword && <div className="space-y-1.5"><Label htmlFor="current">Current password</Label><Input id="current" name="current" type="password" required autoComplete="current-password" /></div>}
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input type="checkbox" checked={noPassword} onChange={(e) => setNoPassword(e.target.checked)} />
+        I joined from an invitation email and have no password yet
+      </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5"><Label htmlFor="pw">New password</Label><Input id="pw" name="password" type="password" minLength={10} required autoComplete="new-password" /></div>
         <div className="space-y-1.5"><Label htmlFor="pw2">Confirm</Label><Input id="pw2" name="confirm" type="password" minLength={10} required autoComplete="new-password" /></div>

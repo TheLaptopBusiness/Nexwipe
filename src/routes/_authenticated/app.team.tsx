@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Copy, MailPlus, UserMinus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { createAndEmailInvitation, type InvitationEmailStatus } from "@/lib/invitations.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,17 +202,24 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
   const options = assignableRoles(role);
   const [inviteRole, setInviteRole] = useState<OrgRole>("technician");
   const [link, setLink] = useState<string | null>(null);
+  const [sent, setSent] = useState<InvitationEmailStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const invite = useServerFn(createAndEmailInvitation);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     setBusy(true);
-    const { data, error } = await supabase.rpc("create_invitation", { _org: orgId, _email: email, _role: inviteRole });
-    setBusy(false);
-    if (error) { toast.error(errorMessage(error)); return; }
-    setLink(`${window.location.origin}/invite/${data}`);
-    qc.invalidateQueries({ queryKey: ["invitations", orgId] });
+    try {
+      const r = await invite({ data: { orgId, email, role: inviteRole } });
+      setLink(r.link);
+      setSent(r.status);
+      qc.invalidateQueries({ queryKey: ["invitations", orgId] });
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -222,12 +231,21 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         {link ? (
           <div className="space-y-3">
-            <p className="text-sm text-foreground">Send this link to the invitee. It is shown only once.</p>
+            {sent === "not_sent" ? (
+              <p className="text-sm text-danger">The invitation was created but the email could not be sent. Send this link yourself.</p>
+            ) : (
+              <p className="text-sm text-foreground">
+                {sent === "sent_new_account"
+                  ? "An invitation email was sent. It lets them create their account and join."
+                  : "They already have an account; a sign-in link that opens this invitation was emailed."}{" "}
+                You can also copy the link below. It is shown only once.
+              </p>
+            )}
             <div className="flex gap-2">
               <Input readOnly value={link} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
               <Button variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }}><Copy /> Copy</Button>
             </div>
-            <p className="text-xs text-muted-foreground">Invitation emails are not sent automatically yet — an email sender domain still needs to be configured.</p>
+            <p className="text-xs text-muted-foreground">Emails come from the default NextDrive sign-in sender until a company email domain is set up.</p>
           </div>
         ) : (
           <form id="invite-form" onSubmit={onSubmit} className="space-y-4">
@@ -246,7 +264,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           {link ? <Button onClick={onClose}>Done</Button> : (
             <>
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit" form="invite-form" disabled={busy}>Create invitation</Button>
+              <Button type="submit" form="invite-form" disabled={busy}>Send invitation</Button>
             </>
           )}
         </DialogFooter>
