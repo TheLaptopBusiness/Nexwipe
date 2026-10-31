@@ -60,25 +60,35 @@ Output: `build/nextdrive-station-readonly-0.2.0-readonly-production.img` (1.5 GB
 
 The lab-only VM build used for testing: `ND_VARIANT=vm-test ND_SERVER=http://10.0.2.2:8080 ND_ALLOW_HTTP_HOSTS=10.0.2.2 ./build.sh`. Never use a vm-test image with a production server — it allows plain HTTP to that one address.
 
-## Write the USB stick
+## Write the USB stick — this ERASES the stick
 
-Use a **dedicated** 4 GB+ stick; everything on it is overwritten.
+Writing the image **overwrites everything on the USB stick**. Use a **dedicated** 4 GB+ stick and make sure you select the stick, not a drive of your own computer.
+(This is the only step anywhere in this package that erases anything. Booting a laptop from the finished stick is read-only towards the laptop's internal drives.)
 
-- Linux: `lsblk` to find the stick (e.g. `/dev/sdX`), then `sudo dd if=nextdrive-…-production.img of=/dev/sdX bs=4M conv=fsync status=progress`
-- Windows/macOS: balenaEtcher or Rufus ("DD image" mode).
-- Verify: re-insert the stick, check that it shows a `NEXTDRIVE` partition. Label the stick physically ("NextDrive station #…").
+1. Check the download: `sha256sum nextdrive-station-readonly-0.2.0-readonly-production.img.xz` must print the value in `CHECKSUMS.txt` / the `.sha256` file.
+2. Unpack: `xz -dk nextdrive-…-production.img.xz` (balenaEtcher can also write the `.img.xz` directly).
+3. Write:
+   - Linux: `lsblk` to find the stick (e.g. `/dev/sdX`), then `sudo dd if=nextdrive-…-production.img of=/dev/sdX bs=4M conv=fsync status=progress`
+   - Windows/macOS: balenaEtcher, or Rufus in "DD image" mode.
+4. Re-insert the stick and check it shows a `NEXTDRIVE` partition. Label it physically ("NextDrive station #…").
 
-Run the writing step on your own computer, never on a laptop under test.
+Do the writing on your own computer, never on a laptop under test.
 
-## Booting a laptop
+## Booting a laptop (read-only towards its internal drives)
 
-| Brand | Boot menu key | BIOS settings to check |
+Start with the laptop's **existing** firmware settings — record them, change nothing. Follow `../PHYSICAL_TEST_CHECKLIST.md`.
+
+| Brand | One-time boot menu | Firmware setup |
 |---|---|---|
-| Dell Latitude | F12 | UEFI mode; SATA operation **AHCI** (not RAID On); Secure Boot can stay on |
-| HP EliteBook / ProBook | F9 | UEFI mode; Secure Boot can stay on |
-| Lenovo ThinkPad | F12 (or Enter → F12) | UEFI only; Intel VMD / RAID **off** if present |
+| Dell Latitude | F12 | F2 |
+| HP EliteBook / ProBook | F9 | F10 |
+| Lenovo ThinkPad | F12 (or Enter → F12) | F1 (or Enter → F1) |
+
+UEFI boot is required; Secure Boot can normally stay on. Storage-controller mode (AHCI / RAID On / RST / VMD) is **not** changed by default. Only if a drive is invisible or the stick won't boot, follow the checklist's section on firmware changes (why, risks, and how to restore the original setting).
 
 The station screen appears on its own (about 30–60 s). It shows the laptop's identity, every drive (internal drives as INTERNAL, the boot stick as EXCLUDED), connection status and the last successful upload. Keys: **E** enroll, **S** server address, **R** re-scan & upload, **W** Wi-Fi, **L** log, **P** power off. There is no login shell.
+
+The production image has **no server address built in**: press **S** and type the published NextDrive `https://` address. Plain `http://` addresses are refused.
 
 ## What was tested here (and what was not)
 
