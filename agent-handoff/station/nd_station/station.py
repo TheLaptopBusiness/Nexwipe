@@ -145,6 +145,7 @@ class Station:
             self.v.credential_storage = how
             self.v.error = ""
         self._want_inventory = True
+        self.wake()
         self.note(f"Enrolled as '{res.get('name', name)}'. Credential stored {how}.")
 
     def _revoked(self, e: ApiError) -> None:
@@ -209,9 +210,12 @@ class Station:
                 self.note(f"Reconciled with server: {len(rec.get('jobs', []))} job(s) bound to this station.")
             except (ApiError, NetworkError) as e:
                 self.note(f"Reconcile deferred: {e}", error=True)
-        while not self._stop.is_set():
+        while True:
             self.cycle()
-            self._stop.wait(HEARTBEAT_S if self.v.net and self.v.net.ok else 10)
+            ev = self._stop
+            ev.wait(HEARTBEAT_S if self.v.net and self.v.net.ok else 10)
+            if getattr(self, "_shutdown", False):
+                return
 
     def start(self) -> threading.Thread:
         t = threading.Thread(target=self.run_forever, daemon=True)
@@ -219,9 +223,14 @@ class Station:
         return t
 
     def stop(self) -> None:
+        self._shutdown = True
         self._stop.set()
+
+    def wake(self) -> None:
+        """Run the next cycle now instead of waiting for the heartbeat interval."""
+        old, self._stop = self._stop, threading.Event()
+        old.set()
 
     def request_inventory(self) -> None:
         self.rescan()
-        self._stop.set()
-        self._stop = threading.Event()
+        self.wake()

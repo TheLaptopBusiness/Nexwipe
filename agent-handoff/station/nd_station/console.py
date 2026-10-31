@@ -24,7 +24,8 @@ def _ago(t) -> str:
 
 
 def _prompt(scr, y: int, label: str, secret_tail: bool = False) -> str:
-    curses.echo(not secret_tail)
+    scr.timeout(-1)  # block while the operator types (the main loop uses a 1 s refresh timeout)
+    curses.noecho()
     curses.curs_set(1)
     scr.move(y, 0)
     scr.clrtoeol()
@@ -42,13 +43,13 @@ def _prompt(scr, y: int, label: str, secret_tail: bool = False) -> str:
             buf = buf[:-1]
         elif isinstance(ch, str) and ch.isprintable():
             buf += ch
-        if secret_tail:
-            shown = ("•" * max(0, len(buf) - 4)) + buf[-4:]
-            scr.move(y, len(label))
-            scr.clrtoeol()
-            scr.addstr(y, len(label), shown[: curses.COLS - len(label) - 1])
-    curses.noecho()
+        shown = (("*" * max(0, len(buf) - 4)) + buf[-4:]) if secret_tail else buf
+        scr.move(y, len(label))
+        scr.clrtoeol()
+        scr.addnstr(y, len(label), shown[-(curses.COLS - len(label) - 2):], curses.COLS - len(label) - 1)
+        scr.refresh()
     curses.curs_set(0)
+    scr.timeout(1000)
     return buf.strip()
 
 
@@ -136,7 +137,8 @@ def main(scr, st: Station) -> None:
                 scr.refresh()
             elif ch == "l":
                 scr.erase()
-                for i, line in enumerate(st.snapshot().log[-(h - 2):]):
+                lines = st.snapshot().log[-(h - 2):] or ["No events yet."]
+                for i, line in enumerate(lines):
                     scr.addnstr(i, 0, line, scr.getmaxyx()[1] - 1)
                 scr.addstr(h - 1, 0, "Press any key to return", curses.A_REVERSE)
                 scr.timeout(-1); scr.getkey(); scr.timeout(1000)
@@ -145,6 +147,8 @@ def main(scr, st: Station) -> None:
                     subprocess.run(["systemctl", "poweroff"], check=False)
         except ValueError as e:
             st.note(str(e), error=True)
+        except curses.error:
+            pass
         time.sleep(0.05)
 
 
