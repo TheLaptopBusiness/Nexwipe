@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ExternalLink, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ function useRun(recordId: string) {
       qc.invalidateQueries({ queryKey: ["chromebook", orgId, recordId] }),
       qc.invalidateQueries({ queryKey: ["chromebook-events", orgId, recordId] }),
       qc.invalidateQueries({ queryKey: ["chromebooks", orgId] }),
+      qc.invalidateQueries({ queryKey: ["chromebook-resale-check", orgId, recordId] }),
     ]);
     return true;
   }
@@ -231,13 +232,14 @@ const MGMT_ACTIONS: { status: ManagementStatus; label: string; needsNote: boolea
   { status: "management_observed", label: "Management observed", needsNote: false, hint: "e.g. “This device is managed by …” on the sign-in screen" },
   { status: "deprovision_requested", label: "Deprovisioning requested", needsNote: true, hint: "Who you asked, how and when" },
   { status: "admin_reported_deprovisioned", label: "Administrator reports deprovisioned", needsNote: true, hint: "Who reported it and how (email, ticket)" },
+  { status: "owner_reported_never_managed", label: "Owner reports never managed", needsNote: true, hint: "Who stated it was never enrolled, how and when. Not allowed once management was observed." },
   { status: "blocked", label: "Blocked by enrollment or management", needsNote: true, hint: "What blocks processing" },
 ];
 
 function Management({ r, canEdit }: { r: Rec; canEdit: boolean }) {
   const { run, busy } = useRun(r.id);
   const [note, setNote] = useState("");
-  const done = ["admin_reported_deprovisioned", "deprovision_confirmed_integration", "online_setup_checked"].includes(r.management_status);
+  const done = ["admin_reported_deprovisioned", "deprovision_confirmed_integration", "owner_reported_never_managed", "online_setup_checked"].includes(r.management_status);
   return (
     <Step n={3} title="Management status" done={done}>
       <p className="mb-3 text-sm">Current: <ToneBadge tone={MANAGEMENT_LABEL[r.management_status as ManagementStatus]?.tone ?? "neutral"}>{MANAGEMENT_LABEL[r.management_status as ManagementStatus]?.label}</ToneBadge></p>
@@ -395,7 +397,7 @@ function Diagnostics({ r, canEdit }: { r: Rec; canEdit: boolean }) {
       <div className="grid gap-2 sm:grid-cols-2">
         {DIAGNOSTIC_CHECKS.map((c) => (
           <div key={c.key} className="flex items-center justify-between gap-2">
-            <span className="text-sm">{c.label}</span>
+            <span className="text-sm">{c.label} <span className="text-xs text-muted-foreground">{c.need === "required" ? "· required" : c.need === "when_fitted" ? "· required if fitted" : "· optional"}</span></span>
             <Select value={vals[c.key] ?? "not_tested"} onValueChange={(v) => setVals((s) => ({ ...s, [c.key]: v as DiagnosticResult }))} disabled={!canEdit}>
               <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
               <SelectContent>{(Object.keys(DIAG_LABEL) as DiagnosticResult[]).map((k) => <SelectItem key={k} value={k}>{DIAG_LABEL[k]}</SelectItem>)}</SelectContent>
@@ -413,7 +415,20 @@ function Diagnostics({ r, canEdit }: { r: Rec; canEdit: boolean }) {
 function Review({ r, canReview }: { r: Rec; canReview: boolean }) {
   const { run, busy } = useRun(r.id);
   const [note, setNote] = useState("");
-  const blockers = resaleBlockers(r);
+  const { orgId } = useOrg();
+  // The server decides; this list comes from the same rule the database enforces on approval.
+  const server = useQuery({
+    queryKey: ["chromebook-resale-check", orgId, r.id, r.updated_at],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("chromebook_resale_check", { _record: r.id });
+      if (error) throw error;
+      return (data ?? []) as string[];
+    },
+    enabled: r.release_decision === "pending",
+  });
+  const blockers = (server.data ?? resaleBlockers(r, note)).filter(
+    (b) => b !== "Explain the optional diagnostic exceptions in the review notes" || !note.trim(),
+  );
   return (
     <Step n={7} title="Review and release" done={r.release_decision !== "pending"}>
       {r.release_decision !== "pending" ? (
@@ -424,7 +439,7 @@ function Review({ r, canReview }: { r: Rec; canReview: boolean }) {
       ) : (
         <>
           {blockers.length > 0 && (
-            <div className="mb-3 text-sm"><p className="font-medium">Resale-ready approval is blocked:</p><ul className="list-disc pl-5 text-warning">{blockers.map((b) => <li key={b}>{b}</li>)}</ul></div>
+            <div className="mb-3 text-sm"><p className="font-medium">Resale-ready approval is blocked{server.data ? " (checked by the server)" : ""}:</p><ul className="list-disc pl-5 text-warning">{blockers.map((b) => <li key={b}>{b}</li>)}</ul></div>
           )}
           {canReview ? (
             <>
@@ -489,6 +504,7 @@ function ProcessingRecord({ r }: { r: Rec }) {
       <section><h3 className="mb-1 font-medium">Management / deprovisioning evidence</h3><dl>
         <Row k="Ownership authorization" v={r.ownership_status === "recorded" ? <>{r.ownership_authorized_by} · ref {r.ownership_reference} · {formatDateTime(r.ownership_recorded_at)}</> : <span className="text-warning">Not recorded</span>} />
         <Row k="Management status" v={MANAGEMENT_LABEL[r.management_status as ManagementStatus]?.label} />
+        <Row k="Management basis" v={r.management_basis ? MANAGEMENT_LABEL[r.management_basis as ManagementStatus]?.label : "Unresolved"} />
         {mgmtEvents.map((e) => <Row key={e.id} k={formatDateTime(e.created_at)} v={<>{e.step === "ownership_recorded" ? "Ownership authorization recorded" : MANAGEMENT_LABEL[e.to_value as ManagementStatus]?.label ?? e.step} · {EVIDENCE_KIND_LABEL[e.evidence_kind]} by {who(e.actor_id)}{e.notes && <> — {e.notes}</>}</>} />)}
       </dl></section>
       <section><h3 className="mb-1 font-medium">Reset method and evidence</h3><dl>

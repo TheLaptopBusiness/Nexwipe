@@ -402,6 +402,7 @@ export type Database = {
           diagnostics_status: string
           id: string
           is_synthetic: boolean
+          management_basis: string | null
           management_status: string
           online_setup_checked_at: string | null
           online_setup_result: string
@@ -445,6 +446,7 @@ export type Database = {
           diagnostics_status?: string
           id?: string
           is_synthetic?: boolean
+          management_basis?: string | null
           management_status?: string
           online_setup_checked_at?: string | null
           online_setup_result?: string
@@ -488,6 +490,7 @@ export type Database = {
           diagnostics_status?: string
           id?: string
           is_synthetic?: boolean
+          management_basis?: string | null
           management_status?: string
           online_setup_checked_at?: string | null
           online_setup_result?: string
@@ -1967,6 +1970,7 @@ export type Database = {
           diagnostics_status: string
           id: string
           is_synthetic: boolean
+          management_basis: string | null
           management_status: string
           online_setup_checked_at: string | null
           online_setup_result: string
@@ -1999,6 +2003,13 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      _cb_resale_blockers: {
+        Args: {
+          _notes: string
+          r: Database["public"]["Tables"]["chromebook_records"]["Row"]
+        }
+        Returns: string[]
       }
       _classify_hardware: {
         Args: { _payload: Json; _platform: string }
@@ -2146,6 +2157,10 @@ export type Database = {
           _serial: string
         }
         Returns: string
+      }
+      chromebook_resale_check: {
+        Args: { _notes?: string; _record: string }
+        Returns: string[]
       }
       chromebook_reset_step: {
         Args: {
