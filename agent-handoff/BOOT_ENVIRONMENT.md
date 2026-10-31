@@ -12,7 +12,7 @@
 
 - UEFI only for the first release; Secure Boot **on**, using a shim signed chain (or documented instructions to enrol the NextDrive key) — record `boot_mode` and `secure_boot` in inventory.
 - Legacy BIOS: out of scope for v1; report `boot_mode: legacy` and refuse destructive jobs.
-- Target laptops: Dell Latitude (F12 boot menu), HP EliteBook/ProBook (F9), Lenovo ThinkPad (F12). Document per-family BIOS settings needed: SATA mode **AHCI** (not RAID/RST; if RAID/VMD is detected, report drives as `unsupported_other` and do not proceed), BIOS supervisor password state, "frozen" state handling (see capabilities).
+- Target laptops: Dell Latitude (F12 boot menu), HP EliteBook/ProBook (F9), Lenovo ThinkPad (F12). Record each laptop's existing firmware settings first and boot with them unchanged; storage-controller mode is changed only when a recorded failure requires it, and the original value is restored afterwards (see PHYSICAL_TEST_CHECKLIST.md). For future erasure work: if RAID/VMD is detected, report drives as `unsupported_other` and do not proceed, BIOS supervisor password state, "frozen" state handling (see capabilities).
 
 ## Boot path 2 — network (later)
 

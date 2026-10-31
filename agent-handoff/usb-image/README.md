@@ -92,6 +92,6 @@ The production image has **no server address built in**: press **S** and type th
 
 ## What was tested here (and what was not)
 
-Tested in QEMU 10.1 with OVMF (UEFI), emulated Dell SMBIOS, one NVMe drive, one SATA (AHCI) drive and the image attached as a USB stick, network through QEMU user networking to the NextDrive preview server. See `vm-test-evidence/` and `../PHYSICAL_TEST_CHECKLIST.md` (VM column). **Not tested:** any physical laptop, Secure Boot enabled, Wi-Fi, real Dell/HP/Lenovo firmware, real SATA/NVMe drive identity strings, USB boot on real hardware.
+Tested in QEMU 10.1 with OVMF (UEFI), emulated Dell SMBIOS, one NVMe drive, one SATA (AHCI) drive and the image attached as a USB stick, network through QEMU user networking to the NextDrive preview server. See `vm-test-evidence/` and `vm-test-evidence/`. **Not tested:** any physical laptop, Secure Boot enabled, Wi-Fi, real Dell/HP/Lenovo firmware, real SATA/NVMe drive identity strings, USB boot on real hardware.
 
 Note for reproducing this environment: this build was produced inside a restricted container where `mount` is not permitted, so the bootstrap stage ran with a manual workaround (device nodes created with `mknod`, debootstrap second stage run via `chroot`). `build.sh` itself does the normal thing on a regular Linux host.
