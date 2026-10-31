@@ -117,7 +117,7 @@ export function StationDiscoveries() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add reported laptop to inventory</DialogTitle>
-            <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop and its reported drives are recorded; they are marked station-verified only when the station reports them again.</DialogDescription>
+            <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop and its reported drives are recorded; they are marked station-reported when the station reports them again. Synthetic test hardware stays marked synthetic.</DialogDescription>
           </DialogHeader>
           <form id="disc-add" onSubmit={onAdd} className="space-y-1.5">
             <Label htmlFor="asset_tag">Asset tag *</Label>

@@ -104,7 +104,7 @@ function Inventory() {
     <div className="space-y-5">
       <PageHeader
         title="Device inventory"
-        description="Laptops received for processing. Hardware identity is verified only when reported by the agent."
+        description="Laptops received for processing. A station report shows which station sent an identity, not that the hardware physically exists."
         actions={
           <>
             <Button variant="outline" onClick={exportCsv}>
