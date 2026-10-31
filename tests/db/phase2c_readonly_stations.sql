@@ -65,7 +65,6 @@ BEGIN
   disc := (res->>'discovery_id')::uuid;
   PERFORM public.agent_report_inventory(ag, '{"system":{"manufacturer":"Dell Inc.","model":"Latitude","serial":"NEW-C9"},"drives":[{"serial":"NV-C9","interface":"nvme_ssd"}]}');
   PERFORM public.agent_report_inventory(ag, '{"system":{"manufacturer":"Dell Inc.","model":"Latitude","serial":"NEW-C9"},"drives":[{"serial":"NV-C9","interface":"nvme_ssd"}]}');
-  SELECT count(*), max(report_count) INTO n, cid FROM (SELECT report_count, NULL::uuid FROM public.agent_discoveries WHERE agent_id = ag AND system_serial = 'NEW-C9') x(report_count, cid);
   SELECT count(*) INTO n FROM public.agent_discoveries WHERE agent_id = ag AND system_serial = 'NEW-C9';
   SELECT report_count = 3 INTO ok FROM public.agent_discoveries WHERE id = disc;
   r := r || ' [restart_reports_do_not_duplicate ' || CASE WHEN n = 1 AND ok THEN 'PASS' ELSE 'FAIL' END || ']';
