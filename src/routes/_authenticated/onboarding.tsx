@@ -56,7 +56,7 @@ function Onboarding() {
     rememberOrg(data as string);
     await qc.invalidateQueries({ queryKey: membershipsQueryKey });
     toast.success("Organization created");
-    navigate({ to: "/app", replace: true });
+    navigate({ to: "/app/setup", replace: true });
   }
 
   return (
@@ -68,13 +68,14 @@ function Onboarding() {
         </div>
         <div className="rounded-xl border border-border bg-card p-8 shadow-card">
           <Building2 className="size-7 text-success" aria-hidden />
-          <h1 className="mt-4 text-2xl font-semibold text-foreground">Create your organization</h1>
+          <p className="mt-4 font-mono text-xs uppercase tracking-wider text-muted-foreground">Step 1 of 3 · Organization</p>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground">Create your organization</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Your organization holds your sites, team, clients, devices and records. You’ll be its owner.
           </p>
           {verified && <PendingInvitations />}
           {!verified ? (
-            <p className="mt-6 rounded-md bg-warning-soft p-3 text-sm text-warning">Verify your email address first.</p>
+            <p className="mt-6 rounded-md bg-warning-soft p-3 text-sm text-warning">Verify your email address first: open the link we emailed you, then come back here.</p>
           ) : (
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <div className="space-y-1.5">
@@ -115,7 +116,7 @@ function Onboarding() {
           <div className="mt-6 flex items-start gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
             <MailOpen className="mt-0.5 size-4 shrink-0" aria-hidden />
             <span>
-              Joining an existing team? Open the invitation link your administrator sent you.{" "}
+              Joining an existing team? Don’t create a new organization — open the invitation link your administrator sent you.{" "}
               <Link to="/" className="underline underline-offset-4">Back to site</Link>
             </span>
           </div>
