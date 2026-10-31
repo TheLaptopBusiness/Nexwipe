@@ -74,7 +74,6 @@ export function installUnsavedWorkTracker(doc: Document = document): () => void 
     if (form && !form.hasAttribute("data-no-unsaved-tracking") && !dirtyForms.has(form)) {
       dirtyForms.add(form);
       dirtyCount++;
-      console.warn('ND-DEBUG dirty ' + dirtyCount);
     }
   };
   const onDone = (e: Event) => {
@@ -84,7 +83,6 @@ export function installUnsavedWorkTracker(doc: Document = document): () => void 
       dirtyCount = Math.max(0, dirtyCount - 1);
     }
   };
-  console.warn('ND-DEBUG tracker installed');
   doc.addEventListener("input", onInput, true);
   doc.addEventListener("change", onInput, true);
   doc.addEventListener("submit", onDone, true);
