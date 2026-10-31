@@ -92,3 +92,34 @@ export function StatusBadge({ map, value }: { map: Record<string, Meta>; value: 
     </ToneBadge>
   );
 }
+
+export const JOB_STATUS: Record<string, Meta> = {
+  draft: { label: "Draft", tone: "neutral", icon: CircleDashed },
+  awaiting_authorization: { label: "Awaiting authorization", tone: "warning", icon: PauseCircle },
+  queued: { label: "Queued", tone: "info", icon: Inbox },
+  running: { label: "Running", tone: "info", icon: Loader },
+  verifying: { label: "Verifying", tone: "info", icon: Loader },
+  awaiting_validation: { label: "Awaiting validation", tone: "warning", icon: HelpCircle },
+  approved: { label: "Approved", tone: "success", icon: CheckCircle2 },
+  failed: { label: "Failed", tone: "danger", icon: XCircle },
+  interrupted: { label: "Interrupted", tone: "danger", icon: PauseCircle },
+  unsupported: { label: "Unsupported", tone: "warning", icon: Ban },
+  quarantined: { label: "Quarantined", tone: "danger", icon: ShieldAlert },
+  cancelled: { label: "Cancelled", tone: "neutral", icon: XCircle },
+};
+
+export const OUTCOME: Record<string, Meta> = {
+  pending: { label: "Pending", tone: "neutral", icon: CircleDashed },
+  succeeded: { label: "Succeeded", tone: "success", icon: CheckCircle2 },
+  passed: { label: "Passed", tone: "success", icon: CheckCircle2 },
+  failed: { label: "Failed", tone: "danger", icon: XCircle },
+  not_run: { label: "Not run", tone: "neutral", icon: Ban },
+};
+
+export function SimulatedBadge({ className }: { className?: string }) {
+  return (
+    <ToneBadge tone="warning" className={cn("font-mono uppercase tracking-wide", className)}>
+      Simulated
+    </ToneBadge>
+  );
+}

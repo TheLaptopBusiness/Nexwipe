@@ -31,7 +31,13 @@ export type Capability =
   | "inventory.view"
   | "inventory.write"
   | "inventory.delete"
-  | "audit.view";
+  | "audit.view"
+  | "policies.manage"
+  | "jobs.view"
+  | "jobs.operate"
+  | "agents.view"
+  | "agents.manage"
+  | "simulator.run";
 
 const MATRIX: Record<Capability, OrgRole[]> = {
   "org.settings": ["owner", "admin"],
@@ -45,6 +51,12 @@ const MATRIX: Record<Capability, OrgRole[]> = {
   "inventory.write": ["owner", "admin", "technician"],
   "inventory.delete": ["owner", "admin"],
   "audit.view": ["owner", "admin", "auditor"],
+  "policies.manage": ["owner", "admin"],
+  "jobs.view": ["owner", "admin", "technician", "auditor"],
+  "jobs.operate": ["owner", "admin", "technician"],
+  "agents.view": ["owner", "admin", "technician", "auditor"],
+  "agents.manage": ["owner", "admin"],
+  "simulator.run": ["owner", "admin", "technician"],
 };
 
 export function can(role: OrgRole | null | undefined, capability: Capability): boolean {
