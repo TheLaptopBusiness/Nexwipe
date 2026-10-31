@@ -50,7 +50,7 @@ function Onboarding() {
     const { data, error } = await supabase.rpc("create_organization", { _name: name, _slug: slug });
     setBusy(false);
     if (error) {
-      return toast.error(error.code === "23505" ? "That URL name is taken. Try another." : errorMessage(error));
+      { toast.error(error.code === "23505" ? "That URL name is taken. Try another." : errorMessage(error)); return; }
     }
     rememberOrg(data as string);
     await qc.invalidateQueries({ queryKey: membershipsQueryKey });

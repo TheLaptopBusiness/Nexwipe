@@ -46,7 +46,7 @@ function OrgSettings() {
       })
       .eq("id", orgId);
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Settings saved");
     qc.invalidateQueries({ queryKey: ["org", orgId] });
     qc.invalidateQueries({ queryKey: membershipsQueryKey });

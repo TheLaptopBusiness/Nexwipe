@@ -41,7 +41,7 @@ function Profile() {
     e.preventDefault();
     const full_name = String(new FormData(e.currentTarget).get("full_name") ?? "").trim() || null;
     const { error } = await supabase.from("profiles").update({ full_name }).eq("id", profile!.id);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Profile saved");
     qc.invalidateQueries();
   }
@@ -62,11 +62,11 @@ function Password() {
     const form = e.currentTarget;
     const f = new FormData(form);
     const password = String(f.get("password") ?? "");
-    if (password !== String(f.get("confirm") ?? "")) return toast.error("Passwords do not match");
+    if (password !== String(f.get("confirm") ?? "")) { toast.error("Passwords do not match"); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password, current_password: String(f.get("current") ?? "") } as never);
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     form.reset();
     toast.success("Password changed");
   }
@@ -94,13 +94,13 @@ function Mfa() {
     // Clean up any abandoned, unverified factors first.
     for (const f of factors.data?.all ?? []) if (f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `NextDrive ${Date.now()}` });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setEnroll({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
   }
   async function verify() {
     if (!enroll) return;
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: enroll.id, code: code.replace(/\s/g, "") });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Two-step verification enabled");
     setEnroll(null);
     setCode("");
@@ -108,7 +108,7 @@ function Mfa() {
   }
   async function remove(id: string) {
     const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
-    if (error) return toast.error(errorMessage(error) + " — sign in again with your code, then retry.");
+    if (error) { toast.error(errorMessage(error) + " — sign in again with your code, then retry."); return; }
     toast.success("Authenticator removed");
     qc.invalidateQueries({ queryKey: ["mfa-factors"] });
   }

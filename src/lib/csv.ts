@@ -89,7 +89,7 @@ export function validateDeviceCsv(text: string): ImportResult {
   const table = parseCsv(text);
   const issues: ImportIssue[] = [];
   if (table.length === 0) return { rows: [], issues: [{ line: 1, message: "File is empty" }] };
-  const header = table[0].map((h) => h.trim().toLowerCase());
+  const header = table[0]!.map((h) => h.trim().toLowerCase());
   const idx = (name: string) => header.indexOf(name);
   if (idx("asset_tag") === -1) {
     return { rows: [], issues: [{ line: 1, message: "Missing required column: asset_tag" }] };
@@ -111,18 +111,18 @@ export function validateDeviceCsv(text: string): ImportResult {
   body.forEach((r, n) => {
     const line = n + 2;
     const tag = get(r, "asset_tag");
-    if (!tag) return issues.push({ line, message: "asset_tag is required" });
-    if (tag.length > 64) return issues.push({ line, message: "asset_tag longer than 64 characters" });
+    if (!tag) { issues.push({ line, message: "asset_tag is required" }); return; }
+    if (tag.length > 64) { issues.push({ line, message: "asset_tag longer than 64 characters" }); return; }
     const key = tag.toLowerCase();
-    if (seen.has(key)) return issues.push({ line, message: `Duplicate asset_tag "${tag}" in file` });
+    if (seen.has(key)) { issues.push({ line, message: `Duplicate asset_tag "${tag}" in file` }); return; }
     seen.add(key);
     const condRaw = (get(r, "intake_condition") ?? "unknown").toLowerCase().replace(/\s+/g, "_");
     if (!(CONDITIONS as readonly string[]).includes(condRaw)) {
-      return issues.push({ line, message: `Unknown intake_condition "${condRaw}"` });
+      { issues.push({ line, message: `Unknown intake_condition "${condRaw}"` }); return; }
     }
     const received = get(r, "received_at");
     if (received && Number.isNaN(Date.parse(received))) {
-      return issues.push({ line, message: `Invalid received_at date "${received}"` });
+      { issues.push({ line, message: `Invalid received_at date "${received}"` }); return; }
     }
     rows.push({
       asset_tag: tag,

@@ -45,7 +45,7 @@ function InvitePage() {
     setBusy(true);
     const { data, error } = await supabase.rpc("accept_invitation", { _token: token });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     rememberOrg(data as string);
     await qc.invalidateQueries({ queryKey: membershipsQueryKey });
     toast.success("You’ve joined the organization");

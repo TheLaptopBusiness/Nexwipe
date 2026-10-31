@@ -64,7 +64,7 @@ export function OrgProvider({
   }, []);
 
   const current = useMemo(
-    () => memberships.find((m) => m.org.id === selected) ?? memberships[0],
+    () => (memberships.find((m) => m.org.id === selected) ?? memberships[0])!,
     [memberships, selected],
   );
 

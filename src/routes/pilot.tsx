@@ -43,7 +43,7 @@ function PilotPage() {
       message: str("message"),
     });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setSent(true);
   }
 

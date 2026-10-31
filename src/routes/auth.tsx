@@ -14,10 +14,12 @@ import { safeRedirect } from "@/lib/session";
 type Mode = "signin" | "signup" | "forgot" | "check-email" | "mfa";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
-    mode: s.mode === "signup" ? ("signup" as const) : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string; mode?: "signup" } => {
+    const out: { redirect?: string; mode?: "signup" } = {};
+    if (typeof s["redirect"] === "string") out.redirect = s["redirect"];
+    if (s["mode"] === "signup") out.mode = "signup";
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Sign in — NextDrive" },
@@ -106,7 +108,7 @@ function AuthPage() {
   async function google() {
     if (search.redirect) sessionStorage.setItem("nd.postAuth", target);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth/callback" });
-    if (result.error) return toast.error(errorMessage(result.error));
+    if (result.error) { toast.error(errorMessage(result.error)); return; }
     if (result.redirected) return;
     await afterPassword();
   }

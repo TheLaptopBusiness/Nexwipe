@@ -50,7 +50,7 @@ function Team() {
 
   async function changeRole(membershipId: string, newRole: OrgRole) {
     const { error } = await supabase.rpc("update_member_role", { _membership: membershipId, _role: newRole });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Role updated");
     qc.invalidateQueries({ queryKey: ["members", orgId] });
     qc.invalidateQueries({ queryKey: membershipsQueryKey });
@@ -59,13 +59,13 @@ function Team() {
     if (!revoking) return;
     const { error } = await supabase.rpc("revoke_member", { _membership: revoking.id });
     setRevoking(null);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Access removed");
     qc.invalidateQueries({ queryKey: ["members", orgId] });
   }
   async function revokeInvite(id: string) {
     const { error } = await supabase.rpc("revoke_invitation", { _invitation: id });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["invitations", orgId] });
   }
 
@@ -208,7 +208,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
     setBusy(true);
     const { data, error } = await supabase.rpc("create_invitation", { _org: orgId, _email: email, _role: inviteRole });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setLink(`${window.location.origin}/invite/${data}`);
     qc.invalidateQueries({ queryKey: ["invitations", orgId] });
   }

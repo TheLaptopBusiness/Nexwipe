@@ -24,6 +24,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAccountRouteImport } from './routes/_authenticated/app.account'
 import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated/app.audit'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
@@ -109,6 +110,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAccountRoute = AuthenticatedAppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/app/account': typeof AuthenticatedAppAccountRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/app/account': typeof AuthenticatedAppAccountRoute
   '/app/audit': typeof AuthenticatedAppAuditRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/_authenticated/app/account': typeof AuthenticatedAppAccountRoute
   '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/invite/$token'
+    | '/app/account'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/callback'
     | '/invite/$token'
+    | '/app/account'
     | '/app/audit'
     | '/app/clients'
     | '/app/hardware'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/auth_/callback'
     | '/invite/$token'
+    | '/_authenticated/app/account'
     | '/_authenticated/app/audit'
     | '/_authenticated/app/clients'
     | '/_authenticated/app/hardware'
@@ -448,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/account': {
+      id: '/_authenticated/app/account'
+      path: '/account'
+      fullPath: '/app/account'
+      preLoaderRoute: typeof AuthenticatedAppAccountRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audit': {
       id: '/_authenticated/app/audit'
       path: '/audit'
@@ -522,6 +541,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAccountRoute: typeof AuthenticatedAppAccountRoute
   AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
@@ -536,6 +556,7 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAccountRoute: AuthenticatedAppAccountRoute,
   AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
