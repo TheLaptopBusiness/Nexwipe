@@ -19,7 +19,7 @@ import preflight  # noqa: E402
 KREL = "6.12.0-nexwipe-cb"
 GOOD_CFG = "\n".join(f"{k}={v or 'y'}" for k, v in preflight.REQUIRED_KCONFIG.items()) + '\nCONFIG_INITRAMFS_SOURCE="/build/initramfs"\n'
 GOOD_INITRAMFS = {
-    "init": b"#!/bin/sh\n", "scripts/live": b"", "conf/initramfs.conf": b"", "conf/conf.d/zz-nexwipe.conf": b"RESUME=none\nMODULES=list\n",
+    "init": b"#!/bin/sh\n", "dev/console": b"", "scripts/live": b"", "conf/initramfs.conf": b"", "conf/conf.d/zz-nexwipe.conf": b"RESUME=none\nMODULES=list\n",
     "usr/bin/live-boot": b"", "usr/lib/live/boot/9990-main.sh": b"", "usr/lib/live/boot/0020-read-only": b"",
     "usr/sbin/blockdev": b"", f"usr/lib/modules/{KREL}/modules.dep": b"",
 }

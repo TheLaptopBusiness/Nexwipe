@@ -46,7 +46,7 @@ REQUIRED_KCONFIG = {
     "CONFIG_VFAT_FS": None,
 }
 # Paths that must exist inside the built-in initramfs (initramfs-tools + live-boot).
-REQUIRED_INITRAMFS = ["init", "scripts/live", "conf/initramfs.conf", "conf/conf.d/zz-nexwipe.conf"]
+REQUIRED_INITRAMFS = ["init", "dev/console", "scripts/live", "conf/initramfs.conf", "conf/conf.d/zz-nexwipe.conf"]
 REQUIRED_INITRAMFS_ANY = [r"^(usr/)?bin/live-boot$", r"^(usr/)?lib/live/boot/9990-main\.sh$",
                           r"^(usr/)?lib/live/boot/0020-read-only$", r"^(usr/)?s?bin/blockdev$"]
 
