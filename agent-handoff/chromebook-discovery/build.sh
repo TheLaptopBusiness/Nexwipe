@@ -136,25 +136,23 @@ print(f"kernel config (pass {sys.argv[3]}): all required options present")
 PY
 }
 
-if [[ "${KERNEL_TREE_READY:-0}" == 1 && -f "$BUILDER/build/linux/vmlinux" && -d "$BUILDER/build/modroot" ]]; then
-  log "Reusing the pass-1 kernel tree from a previous run (KERNEL_TREE_READY=1)"
-  cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
-  check_kconfig 1
-  KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
+if [[ "${KERNEL_TREE_READY:-0}" == 1 && -f "$BUILDER/build/linux/Makefile" ]]; then
+  log "Reusing the kernel source tree from a previous run (KERNEL_TREE_READY=1; make rebuilds only what changed)"
 else
-  log "Kernel source and config"
+  log "Kernel source"
   rm -rf "$BUILDER/build"; mkdir -p "$BUILDER/build/linux"
   tar -xaf "$BUILDER"/usr/src/linux-source-"${KSERIES}".tar.* -C "$BUILDER/build/linux" --strip-components=1
-  cp "$ROOT/boot/config-$DEB_KVER" "$BUILDER/build/linux/.config"
-  cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
-  in_builder sh -c 'cd /build/linux && scripts/kconfig/merge_config.sh -m .config /build/nexwipe-cb.config >/dev/null && make olddefconfig >/dev/null'
-  check_kconfig 1
-  KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
-  log "Pass 1: kernel ${KREL} + modules (log: logs/kernel-pass1-$TS.log)"
-  in_builder sh -c "cd /build/linux && make -j$JOBS bzImage modules" > "$OUT/logs/kernel-pass1-$TS.log" 2>&1 \
-    || { tail -40 "$OUT/logs/kernel-pass1-$TS.log"; die "kernel pass 1 failed"; }
-  in_builder sh -c "cd /build/linux && rm -rf /build/modroot && make -s INSTALL_MOD_PATH=/build/modroot INSTALL_MOD_STRIP=1 modules_install" >> "$OUT/logs/kernel-pass1-$TS.log" 2>&1
 fi
+log "Kernel config: Debian ${DEB_KVER} + kernel/nexwipe-cb.config"
+cp "$ROOT/boot/config-$DEB_KVER" "$BUILDER/build/linux/.config"
+cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
+in_builder sh -c 'cd /build/linux && scripts/kconfig/merge_config.sh -m .config /build/nexwipe-cb.config >/dev/null && make olddefconfig >/dev/null'
+check_kconfig 1
+KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
+log "Pass 1: kernel ${KREL} + modules (log: logs/kernel-pass1-$TS.log)"
+in_builder sh -c "cd /build/linux && make -j$JOBS bzImage modules" > "$OUT/logs/kernel-pass1-$TS.log" 2>&1 \
+  || { tail -40 "$OUT/logs/kernel-pass1-$TS.log"; die "kernel pass 1 failed"; }
+in_builder sh -c "cd /build/linux && rm -rf /build/modroot && make -s INSTALL_MOD_PATH=/build/modroot INSTALL_MOD_STRIP=1 modules_install" >> "$OUT/logs/kernel-pass1-$TS.log" 2>&1
 
 STAGE="B-initramfs"
 log "Installing modules for ${KREL}; removing the Debian kernel ${DEB_KVER} from the root filesystem"

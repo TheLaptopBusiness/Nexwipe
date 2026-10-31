@@ -42,9 +42,12 @@ REQUIRED_KCONFIG = {
     "CONFIG_USB_STORAGE": "y",
     "CONFIG_BLK_DEV_SD": "y",
     "CONFIG_DEBUG_FS": "y",
-    "CONFIG_SQUASHFS": None,     # y or m (live-boot loads it from the initramfs)
-    "CONFIG_OVERLAY_FS": None,
-    "CONFIG_VFAT_FS": None,
+    "CONFIG_SQUASHFS": "y",
+    "CONFIG_OVERLAY_FS": "y",
+    "CONFIG_BLK_DEV_LOOP": "y",
+    "CONFIG_VFAT_FS": "y",
+    "CONFIG_NLS_CODEPAGE_437": "y",   # FAT default codepage; without it the live medium does not mount
+    "CONFIG_NLS_ASCII": "y",
 }
 # Only meaningful once INITRAMFS_SOURCE is set (kernel pass 2).
 PASS2_ONLY = {"CONFIG_INITRAMFS_COMPRESSION_XZ"}
