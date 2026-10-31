@@ -63,7 +63,7 @@ BEGIN
 
   -- New policy version does not change existing job's version
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role','authenticated')::text, true);
-  PERFORM public.create_policy_version(pol, '{"allowed_manufacturers":["Dell"],"allowed_interfaces":["nvme_ssd"],"allowed_methods":["nvme_sanitize_block"]}', 'v2');
+  PERFORM public.create_policy_version(pol, '{"allowed_manufacturers":["Dell","Lenovo"],"allowed_interfaces":["nvme_ssd","sata_ssd"],"allowed_methods":["nvme_sanitize_block","ata_sanitize_crypto"]}', 'v2');
   SELECT policy_version_id = pv1 INTO ok FROM public.jobs WHERE id = j1;
   r := r || ' [job_keeps_policy_version ' || CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || ']';
 
