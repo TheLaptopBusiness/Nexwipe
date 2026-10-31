@@ -89,7 +89,8 @@ class Station:
                 self.v.error = msg
             else:
                 self.v.message = msg
-        print(f"[nd-station] {msg}", flush=True)
+        if not os.environ.get("ND_CONSOLE"):  # the console shows messages itself; printing would corrupt the screen
+            print(f"[nd-station] {msg}", flush=True)
 
     def snapshot(self) -> View:
         with self.lock:
