@@ -57,6 +57,13 @@
       "when": 1793423395725,
       "tag": "0007_phase2b_mfa_enforcement_and_discovery_intake",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793423842369,
+      "tag": "0008_discovery_skip_boot_medium",
+      "breakpoints": true
     }
   ]
 }
