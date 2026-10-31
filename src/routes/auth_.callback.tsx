@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingBlock } from "@/components/nd/page";
 import { safeRedirect } from "@/lib/session";
 
-export const Route = createFileRoute("/auth/callback")({
+export const Route = createFileRoute("/auth_/callback")({
   head: () => ({
     meta: [
       { title: "Signing in — NextDrive" },
