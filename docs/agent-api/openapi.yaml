@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: NextDrive Agent API
-  version: "1.1.0"
+  version: "1.2.0"
   description: |
     Contract between a NextDrive erasure station (the bootable agent, a separate deliverable)
     and NextDrive Cloud. The labelled simulator in this repository uses exactly this contract.
@@ -89,7 +89,7 @@ paths:
       requestBody:
         content: { application/json: { schema: { type: object, properties: { state: { type: string, enum: [idle, busy, reconciling] }, agent_version: { type: string } } } } }
       responses:
-        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report).", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean } } } } } }
+        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report).", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean }, mode: { type: string, enum: [read_only, standard, simulated] }, credential_expires_at: { type: [string, "null"], format: date-time }, rotate_recommended: { type: boolean } } } } } }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
   /inventory:
@@ -105,9 +105,12 @@ paths:
               type: object
               required: [system, drives]
               properties:
+                review_flags:
+                  type: array
+                  maxItems: 50
+                  items: { type: object, required: [code], properties: { code: { type: string, pattern: "^[a-z0-9_]{3,60}$" }, target: { type: string }, detail: { type: string } } }
                 system:
                   type: object
-                  required: [serial]
                   properties:
                     manufacturer: { type: string, description: "SMBIOS type 1 manufacturer" }
                     model: { type: string, description: "SMBIOS type 1 product name" }
@@ -124,14 +127,15 @@ paths:
                     agent_version: { type: string }
                     boot_medium_serial: { type: string, description: "Serial of the USB medium the station booted from" }
                     kernel: { type: string }
+                    mode: { type: string, enum: [read_only] }
+                    image_version: { type: string }
                 drives:
                   type: array
                   maxItems: 16
                   items:
                     type: object
-                    required: [serial]
                     properties:
-                      serial: { type: string }
+                      serial: { type: string, description: "Omit if the drive reports none (flagged for review)" }
                       model: { type: string }
                       interface: { type: string, enum: [sata_hdd, sata_ssd, nvme_ssd, unsupported_other] }
                       capacity_bytes: { type: integer }
@@ -145,7 +149,7 @@ paths:
                       nvme_nguid: { type: string }
                       capabilities: { type: object, additionalProperties: true, description: "Detected sanitize/secure-erase/crypto capabilities (see agent handoff)" }
       responses:
-        "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { discovery_id: { type: string, format: uuid }, device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
+        "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { discovery_id: { type: string, format: uuid }, report_count: { type: integer }, review_flags: { type: array, items: { type: object } }, device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
   /jobs:
     get:
       summary: Jobs bound to this agent (queued, running, verifying, interrupted)
@@ -273,6 +277,14 @@ paths:
         "200": { description: Accepted, content: { application/json: { schema: { $ref: "#/components/schemas/EventResult" } } } }
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /credentials/rotate:
+    post:
+      summary: Issue a new 90-day credential; the current one stays valid for 10 minutes
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      responses:
+        "200": { description: Rotated, content: { application/json: { schema: { type: object, properties: { credential: { type: string }, expires_at: { type: string, format: date-time }, previous_valid_until: { type: string, format: date-time } } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { description: This credential was already rotated }
   /reconcile:
     post:
       summary: After reconnecting, compare local and server state per job
