@@ -24,6 +24,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -99,6 +100,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppInventoryIndexRoute =
+  AuthenticatedAppInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -148,6 +157,7 @@ export interface FileRoutesById {
   '/auth_/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app/'
+    | '/app/inventory/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/invite/$token'
     | '/app'
+    | '/app/inventory'
   id:
     | '__root__'
     | '/'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
     | '/auth_/callback'
     | '/invite/$token'
     | '/_authenticated/app/'
+    | '/_authenticated/app/inventory/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -322,15 +335,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/inventory/': {
+      id: '/_authenticated/app/inventory/'
+      path: '/inventory'
+      fullPath: '/app/inventory/'
+      preLoaderRoute: typeof AuthenticatedAppInventoryIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppInventoryIndexRoute: AuthenticatedAppInventoryIndexRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
