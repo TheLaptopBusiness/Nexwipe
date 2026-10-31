@@ -166,3 +166,56 @@ export function useAgents(opts: { refetchMs?: number } = {}) {
 
 export const JOB_LIST_COLUMNS =
   "id, job_number, status, is_simulated, device_id, drive_id, association_id, target_asset_tag, target_drive_serial, target_drive_interface, execution_outcome, verification_outcome, current_phase, progress_pct, progress_measured, exception_code, created_at, updated_at, last_event_at, agent_id, policy_version_id, policy_versions(version, policies(name))";
+
+// ----- Chromebook processing -----
+
+export function useChromebooks() {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["chromebooks", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chromebook_records")
+        .select("*, devices(asset_tag, manufacturer, model, system_serial, hardware_origin, project_id, batch_id)")
+        .eq("org_id", orgId)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useChromebook(recordId: string) {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["chromebook", orgId, recordId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chromebook_records")
+        .select("*, devices(id, asset_tag, manufacturer, model, system_serial, hardware_origin, received_at, projects(name), batches(name))")
+        .eq("org_id", orgId)
+        .eq("id", recordId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useChromebookEvents(recordId: string) {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["chromebook-events", orgId, recordId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chromebook_events")
+        .select("*")
+        .eq("org_id", orgId)
+        .eq("record_id", recordId)
+        .order("id", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}

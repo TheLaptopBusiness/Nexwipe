@@ -37,7 +37,10 @@ export type Capability =
   | "jobs.operate"
   | "agents.view"
   | "agents.manage"
-  | "simulator.run";
+  | "simulator.run"
+  | "chromebooks.view"
+  | "chromebooks.operate"
+  | "chromebooks.authorize";
 
 const MATRIX: Record<Capability, OrgRole[]> = {
   "org.settings": ["owner", "admin"],
@@ -57,6 +60,10 @@ const MATRIX: Record<Capability, OrgRole[]> = {
   "agents.view": ["owner", "admin", "technician", "auditor"],
   "agents.manage": ["owner", "admin"],
   "simulator.run": ["owner", "admin", "technician"],
+  // Mirrors chromebook_* RPCs: technicians run the workflow; reset authorization and release need owner/admin.
+  "chromebooks.view": ["owner", "admin", "technician", "auditor"],
+  "chromebooks.operate": ["owner", "admin", "technician"],
+  "chromebooks.authorize": ["owner", "admin"],
 };
 
 export function can(role: OrgRole | null | undefined, capability: Capability): boolean {

@@ -25,6 +25,7 @@ import {
   Users,
   HardDrive,
   MapPin,
+  Laptop,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,6 +98,13 @@ const NAV: { heading: string; items: NavItem[] }[] = [
       { to: "/app/inventory", label: "Inventory", icon: Boxes, cap: "inventory.view" },
       { to: "/app/projects", label: "Projects & batches", icon: FolderKanban },
       { to: "/app/clients", label: "Clients", icon: Building, cap: "inventory.view" },
+    ],
+  },
+  {
+    heading: "Chromebooks",
+    items: [
+      { to: "/app/chromebooks", label: "Chromebook processing", icon: Laptop, cap: "chromebooks.view" },
+      { to: "/app/chromebooks/research", label: "Compatibility research", icon: FileText, cap: "chromebooks.view" },
     ],
   },
   {
