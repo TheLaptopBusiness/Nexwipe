@@ -59,7 +59,7 @@ def draw(scr, st: Station) -> None:
     h, w = scr.getmaxyx()
     put = lambda y, x, s, a=0: (scr.addnstr(y, x, s, max(0, w - x - 1), a) if 0 <= y < h - 1 else None)  # noqa: E731
     G, R, Y, B = curses.color_pair(1), curses.color_pair(2), curses.color_pair(3), curses.A_BOLD
-    put(0, 0, f" NextDrive station · READ-ONLY TEST BUILD · no erasure capability · v{VERSION} ".ljust(w - 1), curses.A_REVERSE)
+    put(0, 0, f" NexWipe station · READ-ONLY TEST BUILD · no erasure capability · v{VERSION} ".ljust(w - 1), curses.A_REVERSE)
     y = 2
     put(y, 0, "Station   ", B); put(y, 10, (v.station_name or "NOT ENROLLED") + (f"   mode {v.mode}" if v.enrolled else ""), G if v.enrolled else Y); y += 1
     put(y, 0, "Server    ", B); put(y, 10, v.server or "not set (press S)"); y += 1

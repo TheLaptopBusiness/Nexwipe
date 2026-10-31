@@ -42,7 +42,7 @@ def validate_server(url: str, allow_http_hosts: list) -> str:
         return f"https://{u.netloc}"
     if u.scheme == "http" and u.hostname in (allow_http_hosts or []):
         return f"http://{u.netloc}"  # test labs only (e.g. a VM talking to a dev server)
-    raise ValueError("Server address must start with https:// (for example https://nextdrive.example.com)")
+    raise ValueError("Server address must start with https:// (for example https://nexwipe.example.com)")
 
 
 @dataclass

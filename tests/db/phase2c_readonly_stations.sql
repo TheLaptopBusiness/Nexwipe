@@ -1,4 +1,4 @@
--- NextDrive Phase 2c checks: read-only test stations, credential expiry/rotation, duplicate-free
+-- NexWipe Phase 2c checks: read-only test stations, credential expiry/rotation, duplicate-free
 -- discovery, review flags, record separation. Single DO block; always rolls back.
 DO $$
 DECLARE

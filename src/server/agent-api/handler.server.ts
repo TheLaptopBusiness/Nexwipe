@@ -1,4 +1,4 @@
-// NextDrive Agent API v1 HTTP handler.
+// NexWipe Agent API v1 HTTP handler.
 // Every authenticated request carries a per-agent credential, a timestamp and a single-use nonce.
 // All business rules (state machine, authorization binding, idempotency, sequencing) are enforced
 // by SECURITY DEFINER database functions that only the service role may execute; this layer only

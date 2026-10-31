@@ -102,8 +102,8 @@ def check(base_url: str, sysroot: str = "/") -> NetStatus:
             now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             return NetStatus(False, f"Secure connection check failed for {host}. The laptop clock may be wrong (it says {now}), or the network intercepts HTTPS.", d, ifs)
         if isinstance(e, urllib.error.HTTPError):
-            return NetStatus(False, f"NextDrive server answered with an error ({e.code}). Check the server address.", d, ifs)
-        return NetStatus(False, f"Could not reach the NextDrive service: {reason}", d, ifs)
+            return NetStatus(False, f"NexWipe server answered with an error ({e.code}). Check the server address.", d, ifs)
+        return NetStatus(False, f"Could not reach the NexWipe service: {reason}", d, ifs)
     except (ValueError, OSError) as e:
         return NetStatus(False, f"Unexpected reply from the server ({e}). Check the server address.", d, ifs)
     offset = None

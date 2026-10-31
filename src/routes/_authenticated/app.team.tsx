@@ -245,7 +245,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               <Input readOnly value={link} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
               <Button variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }}><Copy /> Copy</Button>
             </div>
-            <p className="text-xs text-muted-foreground">Emails come from the default NextDrive sign-in sender until a company email domain is set up.</p>
+            <p className="text-xs text-muted-foreground">Emails come from the default NexWipe sign-in sender until a company email domain is set up.</p>
           </div>
         ) : (
           <form id="invite-form" onSubmit={onSubmit} className="space-y-4">

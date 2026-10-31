@@ -17,7 +17,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 border-b border-sidebar-border bg-navy">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
-          <Link to="/" aria-label="NextDrive home">
+          <Link to="/" aria-label="NexWipe home">
             <Wordmark inverted />
           </Link>
           <nav className="hidden flex-1 items-center gap-1 md:flex">
@@ -73,7 +73,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="space-y-2 text-muted-foreground">
             <p className="font-medium text-foreground">Status of claims</p>
             <p className="text-xs leading-relaxed">
-              NextDrive is in development. It holds no certifications and has not been independently assessed. The
+              NexWipe is in development. It holds no certifications and has not been independently assessed. The
               erasure agent is not yet available for production use.
             </p>
           </div>

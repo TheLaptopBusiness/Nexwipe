@@ -1,5 +1,5 @@
 """
-Read-only hardware discovery for the NextDrive station.
+Read-only hardware discovery for the NexWipe station.
 
 Sources: sysfs (/sys), the udev database (/run/udev/data), /proc and, optionally, two read-only
 tools (dmidecode for installed memory, smartctl -i for full drive identity strings).

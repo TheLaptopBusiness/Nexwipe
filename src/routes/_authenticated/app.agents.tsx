@@ -17,7 +17,7 @@ import { heartbeatState, relativeTime } from "@/lib/jobs";
 import { StationDiscoveries } from "@/components/nd/station-discoveries";
 
 export const Route = createFileRoute("/_authenticated/app/agents")({
-  head: () => ({ meta: [{ title: "Agents & stations · NextDrive" }] }),
+  head: () => ({ meta: [{ title: "Agents & stations · NexWipe" }] }),
   component: AgentsPage,
 });
 

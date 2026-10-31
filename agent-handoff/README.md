@@ -1,6 +1,6 @@
-# NextDrive bootable agent — engineering handoff
+# NexWipe bootable agent — engineering handoff
 
-This package is for the team building the **NextDrive Agent**: the bootable x86-64 Linux environment that runs on a laptop, identifies its drives, and — later, after qualification — performs sanitization and collects evidence. It is a **separate deliverable** from NextDrive Cloud (this web application). Nothing in the web application can erase a drive.
+This package is for the team building the **NexWipe Agent**: the bootable x86-64 Linux environment that runs on a laptop, identifies its drives, and — later, after qualification — performs sanitization and collects evidence. It is a **separate deliverable** from NexWipe Cloud (this web application). Nothing in the web application can erase a drive.
 
 **Current state:** the erasure agent is not built. What exists is the **Milestone 1 read-only station**: a station program (`station/`) and a bootable USB build package (`usb-image/`). Both were built and booted in a virtual machine only; neither has been booted on a physical laptop. They contain no erasure commands and must not be extended with them inside this repository.
 
@@ -22,10 +22,10 @@ API contract: `../docs/agent-api/CONTRACT.md` (+ `openapi.yaml`, `transcript.md`
 ## Architecture rule: keep the privileged engine separate
 
 ```text
-+----------------------------- Laptop under test (booted from NextDrive USB) -----------------------------+
++----------------------------- Laptop under test (booted from NexWipe USB) -----------------------------+
 |                                                                                                       |
 |  nd-console (UI, unprivileged)  <--local socket-->  nd-agent (network, state, unprivileged user)      |
-|        shows target, operator confirms                    talks to NextDrive Cloud over HTTPS          |
+|        shows target, operator confirms                    talks to NexWipe Cloud over HTTPS          |
 |                                                                 |                                     |
 |                                                     narrow IPC, signed job spec only                  |
 |                                                                 v                                     |

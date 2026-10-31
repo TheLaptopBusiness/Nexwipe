@@ -92,6 +92,13 @@
       "when": 1793439110331,
       "tag": "0012_hardware_origin_synthetic_labels",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793440711607,
+      "tag": "0013_rebrand_nexwipe_simulator_text",
+      "breakpoints": true
     }
   ]
 }

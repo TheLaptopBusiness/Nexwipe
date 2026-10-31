@@ -1,4 +1,4 @@
-# NextDrive roadmap
+# NexWipe roadmap
 
 - [x] Architecture + schema (docs/ARCHITECTURE.md)
 - [x] Phase 1: auth, org isolation, roles, inventory, clients, projects, navigation, public site

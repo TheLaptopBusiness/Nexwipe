@@ -1,11 +1,11 @@
-# NextDrive architecture
+# NexWipe architecture
 
 ## Boundary
 
 | Component | Responsibility | Status |
 |---|---|---|
-| **NextDrive Cloud** (this repo) | Accounts, organizations, roles, sites, clients, projects, batches, inventory, custody, audit, jobs, policies, evidence, reports, billing | Phases 1–2 built |
-| **NextDrive Agent** (separate repo) | Boots on the laptop; identifies drives; detects capabilities; executes sanitization; collects evidence | Not built. Never simulated as real. |
+| **NexWipe Cloud** (this repo) | Accounts, organizations, roles, sites, clients, projects, batches, inventory, custody, audit, jobs, policies, evidence, reports, billing | Phases 1–2 built |
+| **NexWipe Agent** (separate repo) | Boots on the laptop; identifies drives; detects capabilities; executes sanitization; collects evidence | Not built. Never simulated as real. |
 
 A browser cannot erase a remote laptop's drive. No dashboard action performs a wipe.
 
@@ -19,7 +19,7 @@ A browser cannot erase a remote laptop's drive. No dashboard action performs a w
 
 ## Tenancy model
 
-- `organizations` = NextDrive customer accounts. `clients` = that customer's downstream clients (schools, companies). They are separate concepts.
+- `organizations` = NexWipe customer accounts. `clients` = that customer's downstream clients (schools, companies). They are separate concepts.
 - Every tenant table carries `org_id` and a `UNIQUE (org_id, id)` key. Child tables reference parents with **composite FKs `(org_id, parent_id)`**, so a row can never point at another org's data even if `org_id` is forged.
 - RLS checks membership through `has_org_role(org, roles[])`, `is_org_staff(org)`, `has_project_grant(project)`. The `org_id` sent by the browser is only a filter.
 - **MFA:** `has_org_role` only counts an owner/admin membership when the session JWT has `aal = aal2`. `is_org_member` (used only to read the organization row) does not, so the UI can show the two-step verification gate. Technicians, auditors and viewers are not affected.

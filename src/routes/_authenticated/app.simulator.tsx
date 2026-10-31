@@ -13,7 +13,7 @@ import { runSimulatorScenario } from "@/lib/simulator.functions";
 import { SCENARIOS, type ScenarioId, type ScenarioResult } from "@/simulator/scenarios";
 
 export const Route = createFileRoute("/_authenticated/app/simulator")({
-  head: () => ({ meta: [{ title: "Agent simulator · NextDrive" }] }),
+  head: () => ({ meta: [{ title: "Agent simulator · NexWipe" }] }),
   component: SimulatorPage,
 });
 

@@ -11,10 +11,10 @@ export const Route = createFileRoute("/welcome")({
   validateSearch: z.object({ next: z.string().optional() }),
   head: () => ({
     meta: [
-      { title: "Finish setting up your account — NextDrive" },
-      { name: "description", content: "Choose a password for the NextDrive account created by your invitation." },
-      { property: "og:title", content: "Finish setting up your account — NextDrive" },
-      { property: "og:description", content: "Choose a password for the NextDrive account created by your invitation." },
+      { title: "Finish setting up your account — NexWipe" },
+      { name: "description", content: "Choose a password for the NexWipe account created by your invitation." },
+      { property: "og:title", content: "Finish setting up your account — NexWipe" },
+      { property: "og:description", content: "Choose a password for the NexWipe account created by your invitation." },
       { name: "robots", content: "noindex" },
     ],
   }),

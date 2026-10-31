@@ -34,7 +34,7 @@ function Clients() {
     <div className="space-y-5">
       <PageHeader
         title="Clients"
-        description="The schools, companies and organizations whose equipment you process. Clients are not NextDrive accounts."
+        description="The schools, companies and organizations whose equipment you process. Clients are not NexWipe accounts."
         actions={canManage && <Button onClick={() => setEditing("new")}><Plus /> New client</Button>}
       />
       {clients.isLoading ? (

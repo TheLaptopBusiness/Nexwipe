@@ -10,7 +10,7 @@
 
 ## Boot path 1 — USB (first)
 
-- UEFI only for the first release; Secure Boot **on**, using a shim signed chain (or documented instructions to enrol the NextDrive key) — record `boot_mode` and `secure_boot` in inventory.
+- UEFI only for the first release; Secure Boot **on**, using a shim signed chain (or documented instructions to enrol the NexWipe key) — record `boot_mode` and `secure_boot` in inventory.
 - Legacy BIOS: out of scope for v1; report `boot_mode: legacy` and refuse destructive jobs.
 - Target laptops: Dell Latitude (F12 boot menu), HP EliteBook/ProBook (F9), Lenovo ThinkPad (F12). Record each laptop's existing firmware settings first and boot with them unchanged; storage-controller mode is changed only when a recorded failure requires it, and the original value is restored afterwards (see PHYSICAL_TEST_CHECKLIST.md). For future erasure work: if RAID/VMD is detected, report drives as `unsupported_other` and do not proceed, BIOS supervisor password state, "frozen" state handling (see capabilities).
 
@@ -23,6 +23,6 @@
 The station must never select its own boot device as a target and must keep it unmodified.
 
 1. At startup, resolve the boot device from the kernel (`/proc/cmdline` root=UUID/LABEL, `findmnt /run/live/medium` or equivalent) → its block device → serial (`udevadm info`). Record it as `station.boot_medium_serial` and flag that drive `is_boot_medium: true` in every inventory report.
-2. The engine keeps a deny-list of: the boot device, any `removable=1` device, any USB-transport device, any device with a NextDrive image partition label. Jobs targeting these are refused locally even if the server sent them.
+2. The engine keeps a deny-list of: the boot device, any `removable=1` device, any USB-transport device, any device with a NexWipe image partition label. Jobs targeting these are refused locally even if the server sent them.
 3. Mount the medium read-only; keep the writable state partition (credential, local event log) separate, small, and encrypted (see credentials doc).
 4. Verify the image hash at boot (dm-verity on the squashfs) and refuse to run destructive jobs if verification fails; still allow read-only inventory and report `image_verified: false` in `capabilities` of the station (future field).

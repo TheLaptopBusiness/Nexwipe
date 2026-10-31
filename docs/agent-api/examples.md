@@ -1,4 +1,4 @@
-# NextDrive Agent API — example requests
+# NexWipe Agent API — example requests
 
 Base URL: `https://<your-app>/api/public/agent/v1`. Authoritative contract: [`CONTRACT.md`](./CONTRACT.md). Spec: [`openapi.yaml`](./openapi.yaml). Exact captured requests/responses: [`transcript.md`](./transcript.md).
 

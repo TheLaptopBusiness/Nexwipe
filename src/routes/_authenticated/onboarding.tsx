@@ -16,10 +16,10 @@ import { PendingInvitations } from "@/components/nd/pending-invitations";
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
-      { title: "Create your organization — NextDrive" },
-      { name: "description", content: "Set up your NextDrive organization." },
-      { property: "og:title", content: "Create your organization — NextDrive" },
-      { property: "og:description", content: "Set up your NextDrive organization." },
+      { title: "Create your organization — NexWipe" },
+      { name: "description", content: "Set up your NexWipe organization." },
+      { property: "og:title", content: "Create your organization — NexWipe" },
+      { property: "og:description", content: "Set up your NexWipe organization." },
     ],
   }),
   component: Onboarding,

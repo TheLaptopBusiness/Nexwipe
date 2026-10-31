@@ -90,7 +90,7 @@ export function DeviceJobs({ deviceId, isSimulated }: { deviceId: string; isSimu
       </div>
 
       {(jobs.data ?? []).length === 0 ? (
-        <EmptyState icon={Activity} title="No erasure jobs" description="Create one job per attached drive. No erasure has been performed on this device by NextDrive." />
+        <EmptyState icon={Activity} title="No erasure jobs" description="Create one job per attached drive. No erasure has been performed on this device by NexWipe." />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-card">
           <table className="w-full text-sm">

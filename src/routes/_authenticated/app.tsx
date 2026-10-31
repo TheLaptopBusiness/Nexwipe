@@ -50,10 +50,10 @@ import { PendingInvitations } from "@/components/nd/pending-invitations";
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
     meta: [
-      { title: "NextDrive Cloud" },
-      { name: "description", content: "NextDrive operations workspace." },
-      { property: "og:title", content: "NextDrive Cloud" },
-      { property: "og:description", content: "NextDrive operations workspace." },
+      { title: "NexWipe Cloud" },
+      { name: "description", content: "NexWipe operations workspace." },
+      { property: "og:title", content: "NexWipe Cloud" },
+      { property: "og:description", content: "NexWipe operations workspace." },
     ],
   }),
   component: AppLayout,

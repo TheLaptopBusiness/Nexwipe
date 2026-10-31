@@ -1,4 +1,4 @@
-// NextDrive Agent API v1 — request schemas shared by the HTTP handler, the simulator and tests.
+// NexWipe Agent API v1 — request schemas shared by the HTTP handler, the simulator and tests.
 // The contract is documented in docs/agent-api/openapi.yaml. Keep both in sync.
 import { z } from "zod";
 

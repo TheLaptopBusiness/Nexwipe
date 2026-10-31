@@ -1,5 +1,5 @@
 [Unit]
-Description=NextDrive read-only station console (tty1)
+Description=NexWipe read-only station console (tty1)
 After=systemd-user-sessions.service NetworkManager.service var-lib-nextdrive.mount
 Wants=NetworkManager.service
 Conflicts=getty@tty1.service

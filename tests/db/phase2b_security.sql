@@ -1,4 +1,4 @@
--- NextDrive Phase 2b security checks: server-side MFA, tenant isolation on agent endpoints/jobs/evidence,
+-- NexWipe Phase 2b security checks: server-side MFA, tenant isolation on agent endpoints/jobs/evidence,
 -- revocation, discovery intake. Single DO block; always ends with RAISE so everything rolls back.
 DO $$
 DECLARE

@@ -1,4 +1,4 @@
-# nd_station — NextDrive read-only station (Milestone 1)
+# nd_station — NexWipe read-only station (Milestone 1)
 
 Runs on the bootable USB image (`../usb-image/`). Discovers the laptop and its drives, enrolls with a short-lived token, uploads the hardware report, heartbeats, rotates its credential and shows everything on the laptop screen. **It contains no erasure capability.**
 

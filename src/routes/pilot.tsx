@@ -13,10 +13,10 @@ import { errorMessage } from "@/components/nd/page";
 export const Route = createFileRoute("/pilot")({
   head: () => ({
     meta: [
-      { title: "Pilot program — NextDrive" },
-      { name: "description", content: "Request access to the NextDrive pilot for refurbishers, recyclers, ITAD providers and IT teams." },
-      { property: "og:title", content: "Pilot program — NextDrive" },
-      { property: "og:description", content: "Request access to the NextDrive pilot program." },
+      { title: "Pilot program — NexWipe" },
+      { name: "description", content: "Request access to the NexWipe pilot for refurbishers, recyclers, ITAD providers and IT teams." },
+      { property: "og:title", content: "Pilot program — NexWipe" },
+      { property: "og:description", content: "Request access to the NexWipe pilot program." },
     ],
   }),
   component: PilotPage,
@@ -53,7 +53,7 @@ function PilotPage() {
         <div>
           <h1 className="text-4xl font-semibold text-foreground">Pilot program</h1>
           <p className="mt-4 text-muted-foreground">
-            We’re onboarding a small number of operators to use NextDrive Cloud for inventory and custody now, and to
+            We’re onboarding a small number of operators to use NexWipe Cloud for inventory and custody now, and to
             help qualify the erasure agent as it develops.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-muted-foreground">

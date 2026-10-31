@@ -1,4 +1,4 @@
-"""NextDrive Agent API v1 client (read-only subset). Contract: docs/agent-api/CONTRACT.md."""
+"""NexWipe Agent API v1 client (read-only subset). Contract: docs/agent-api/CONTRACT.md."""
 from __future__ import annotations
 
 import datetime as dt

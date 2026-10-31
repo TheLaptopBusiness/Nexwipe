@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// NextDrive Agent API contract check over real HTTP (read-only milestone + security behaviour).
+// NexWipe Agent API contract check over real HTTP (read-only milestone + security behaviour).
 // It never requests or performs an erasure. It enrolls a temporary REAL (not simulated) test station,
 // reports clearly fake "CONTRACT-TEST" hardware, exercises replay/duplicate/revocation behaviour, then revokes it.
 //

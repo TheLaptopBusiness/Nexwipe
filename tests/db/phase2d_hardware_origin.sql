@@ -1,4 +1,4 @@
--- NextDrive hardware-origin checks: a real station reporting synthetic/virtual hardware keeps it marked
+-- NexWipe hardware-origin checks: a real station reporting synthetic/virtual hardware keeps it marked
 -- synthetic; station sign-in never upgrades it; app users cannot claim station-reported identity.
 -- Single DO block; always rolls back. Run: psql -f tests/db/phase2d_hardware_origin.sql
 DO $$

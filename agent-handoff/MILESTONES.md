@@ -2,7 +2,7 @@
 
 ## Milestone 1 — read-only station (first real integration)
 
-**Goal:** a physical laptop boots the NextDrive image, enrolls, reports its real hardware, heartbeats, and appears in the dashboard. **No erasure command exists in this build.** The image must not contain `nvme sanitize`, `nvme format`, `hdparm --security-erase*`, `hdparm --sanitize-*`, `sg_sanitize`, `blkdiscard`, or any write path to block devices; CI greps the image for these binaries/flags and fails the build if found (remove `hdparm`'s erase use by shipping only read helpers, or build with read-only wrappers).
+**Goal:** a physical laptop boots the NexWipe image, enrolls, reports its real hardware, heartbeats, and appears in the dashboard. **No erasure command exists in this build.** The image must not contain `nvme sanitize`, `nvme format`, `hdparm --security-erase*`, `hdparm --sanitize-*`, `sg_sanitize`, `blkdiscard`, or any write path to block devices; CI greps the image for these binaries/flags and fails the build if found (remove `hdparm`'s erase use by shipping only read helpers, or build with read-only wrappers).
 
 | # | Step | Acceptance evidence |
 |---|---|---|
@@ -35,7 +35,7 @@ Per run: pre-fill the drive with a known pattern + random markers, record hashes
 For each (drive model, firmware, interface, laptop model) combination:
 
 1. ≥ 3 successful runs on ≥ 2 physical units of that drive model.
-2. Independent read-back on a separate machine (not the NextDrive engine) shows no recoverable pre-fill markers across 100% of user-addressable LBAs (or, for crypto erase, sampled sectors differ from pre-hashes and no marker is found in a full read).
+2. Independent read-back on a separate machine (not the NexWipe engine) shows no recoverable pre-fill markers across 100% of user-addressable LBAs (or, for crypto erase, sampled sectors differ from pre-hashes and no marker is found in a full read).
 3. Host-protected area (HPA) / DCO checked and documented; over-provisioned/remapped areas handled per the method's specification.
 4. Behaviour documented for: power loss mid-operation (≥ 1 run), frozen-state handling, timeout, failure reporting (one deliberately failed run, e.g. pulled drive).
 5. Server records match reality: job states, evidence hashes, reviewer approval, and no report/certificate for simulated or test-only jobs.

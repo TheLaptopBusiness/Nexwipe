@@ -5,9 +5,9 @@ import { HardwareScope } from "@/components/nd/hardware-scope";
 export const Route = createFileRoute("/hardware")({
   head: () => ({
     meta: [
-      { title: "Supported hardware — NextDrive" },
-      { name: "description", content: "NextDrive's initial hardware scope: x86-64 Dell, HP and Lenovo laptops with direct SATA and NVMe drives." },
-      { property: "og:title", content: "Supported hardware — NextDrive" },
+      { title: "Supported hardware — NexWipe" },
+      { name: "description", content: "NexWipe's initial hardware scope: x86-64 Dell, HP and Lenovo laptops with direct SATA and NVMe drives." },
+      { property: "og:title", content: "Supported hardware — NexWipe" },
       { property: "og:description", content: "Initial scope: x86-64 Dell, HP and Lenovo laptops with direct SATA and NVMe drives." },
     ],
   }),

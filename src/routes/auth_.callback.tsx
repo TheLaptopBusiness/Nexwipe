@@ -7,10 +7,10 @@ import { safeRedirect } from "@/lib/session";
 export const Route = createFileRoute("/auth_/callback")({
   head: () => ({
     meta: [
-      { title: "Signing in — NextDrive" },
-      { name: "description", content: "Completing sign-in to NextDrive." },
-      { property: "og:title", content: "Signing in — NextDrive" },
-      { property: "og:description", content: "Completing sign-in to NextDrive." },
+      { title: "Signing in — NexWipe" },
+      { name: "description", content: "Completing sign-in to NexWipe." },
+      { property: "og:title", content: "Signing in — NexWipe" },
+      { property: "og:description", content: "Completing sign-in to NexWipe." },
     ],
   }),
   component: Callback,
