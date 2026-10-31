@@ -102,9 +102,11 @@ function Setup() {
           </ul>
           <p className="mt-4 flex items-start gap-2 rounded-md bg-muted p-3 text-xs text-muted-foreground">
             <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden />
-            Drive erasure isn’t available yet. To see how jobs will work, try the{" "}
-            <Link to="/app/simulator" className="underline underline-offset-4">agent simulator</Link> — its results are
-            labeled simulated and never count as real devices, wipes or certificates.
+            <span>
+              Drive erasure isn’t available yet. To see how jobs will work, try the{" "}
+              <Link to="/app/simulator" className="underline underline-offset-4">agent simulator</Link> — its results are
+              labeled simulated and never count as real devices, wipes or certificates.
+            </span>
           </p>
         </Step>
       </ol>
