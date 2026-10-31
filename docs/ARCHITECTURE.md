@@ -4,7 +4,7 @@
 
 | Component | Responsibility | Status |
 |---|---|---|
-| **NextDrive Cloud** (this repo) | Accounts, organizations, roles, sites, clients, projects, batches, inventory, custody, audit, jobs, policies, evidence, reports, billing | Phase 1 built |
+| **NextDrive Cloud** (this repo) | Accounts, organizations, roles, sites, clients, projects, batches, inventory, custody, audit, jobs, policies, evidence, reports, billing | Phases 1–2 built |
 | **NextDrive Agent** (separate repo) | Boots on the laptop; identifies drives; detects capabilities; executes sanitization; collects evidence | Not built. Never simulated as real. |
 
 A browser cannot erase a remote laptop's drive. No dashboard action performs a wipe.
@@ -14,7 +14,8 @@ A browser cannot erase a remote laptop's drive. No dashboard action performs a w
 - TanStack Start (React 19, TypeScript, Tailwind v4), deployed to an edge worker.
 - Lovable Cloud (managed Postgres, auth, storage, realtime).
 - Browser reads/writes go straight to the database **under row-level security**. Privileged mutations (org creation, invitations, role changes, member removal) go through `SECURITY DEFINER` RPCs that re-check the caller's role.
-- Agent API (Phase 2) will be TanStack server routes under `/api/public/agent/v1/*` with per-agent credentials; agents never hold service keys.
+- Agent API v1 is one TanStack server route `src/routes/api/public/agent/v1/$.ts` → `src/server/agent-api/handler.server.ts`, which validates input (Zod, `src/lib/agent-api/schemas.ts`) and calls service-role-only `agent_*` SQL functions. Agents hold per-agent hashed credentials, never service keys. Spec: `docs/agent-api/openapi.yaml`.
+- The simulator (`src/simulator/*`, `src/lib/simulator.functions.ts`) drives the same handler in-process (no self-fetch) and uses the caller's session for technician steps.
 
 ## Tenancy model
 
@@ -43,17 +44,16 @@ Integrity rules enforced in the database:
 - An organization always keeps at least one active owner; nobody can change their own role.
 - Audit and custody rows cannot be updated or deleted by app users. This is append-only at the application level, not a tamper-proof ledger.
 
-## Planned schema (Phases 2–4)
+## Phase 2 schema (built)
+
+`policies`, `policy_versions` (immutable), `agents`, `agent_credentials`, `enrollment_tokens`, `agent_nonces`, `jobs` (one per drive; snapshot of target + policy version; generated `billable_unit`, `certificate_eligible`), `job_authorizations`, `job_events` (monotonic `seq`, unique idempotency key, append-only), `evidence_objects` (text content + sha256). State transitions are enforced in SQL; the browser has read-only table access and changes jobs only through RPCs (`create_job`, `submit_job`, `authorize_job`, `cancel_job`, `review_job`). Simulated rows are flagged `is_simulated` by server code only and isolated from real agents/policies.
+
+## Planned schema (Phases 3–4)
 
 | Table | Purpose |
 |---|---|
-| `agents`, `agent_credentials`, `enrollment_tokens` | Station enrollment, per-agent hashed credentials, revocation |
 | `agent_releases` | Release metadata (platform admin) |
-| `policies`, `policy_versions` | Immutable versioned processing policies |
-| `jobs` | One row per **drive** erasure job; FK to policy_version, device, drive, association snapshot, agent |
-| `job_authorizations` | Bound to agent + device + drive + policy version + expiry; single use |
-| `job_events` | Monotonic `seq` per job, idempotency key unique, server-validated transitions |
-| `evidence_objects` | Private storage object refs + sha256 |
+| binary evidence | Private storage objects for evidence beyond text |
 | `verification_results`, `validation_decisions` | Separate outcomes from execution |
 | `reports`, `report_supersessions`, `verification_tokens` | Issued records, corrections, opaque QR tokens |
 | `plans`, `subscriptions`, `credit_ledger`, `credit_reservations`, `stripe_events` | Billing with idempotent, atomic ledger |
@@ -62,4 +62,4 @@ Job state machine: `draft → awaiting_authorization → queued → running → 
 
 ## Migrations
 
-Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`.
+Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`.

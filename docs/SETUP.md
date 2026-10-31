@@ -23,6 +23,12 @@ Future (not yet required): Stripe test keys (Phase 4), report-signing key refere
 - Email/password and Google sign-in are enabled. Email confirmation is required.
 - Make a user a NextDrive platform admin: insert their user id into `public.platform_admins` (server-side only).
 
+## Agent API
+
+- Base path `/api/public/agent/v1`; see `docs/agent-api/openapi.yaml` and `docs/agent-api/examples.md`.
+- Stations enroll with a single-use token from **Agents & stations**; credentials are shown once.
+- Acceptance checks for Phase 2: `tests/db/phase2_acceptance.sql` (same procedure as Phase 1).
+
 ## Local checks
 
 - `bunx vitest run`

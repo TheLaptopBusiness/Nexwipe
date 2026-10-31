@@ -20,3 +20,6 @@
 - Never present simulated or unbuilt functionality as real; unbuilt areas are shown as "Planned" with their phase.
 - Database acceptance checks live in `tests/db/*.sql` (self-rolling-back DO blocks); re-run after any RLS/RPC change.
 - Signed-in app lives under `src/routes/_authenticated/app.*`; data reads use react-query hooks in `src/lib/queries.ts` keyed by org id.
+- Job state changes happen only in SQL (`agent_*` service-role RPCs and technician RPCs); browser roles have read-only access to Phase 2 tables — keeps the state machine un-bypassable.
+- Agent API code lives in `src/server/agent-api/` behind `src/routes/api/public/agent/v1/$.ts`; the simulator must call that same handler, never a separate fake path, so simulated runs exercise the real contract.
+- Anything simulated carries `is_simulated` set by trusted code only and must be visibly labelled in the UI; simulated jobs can never be billable or certificate-eligible.
