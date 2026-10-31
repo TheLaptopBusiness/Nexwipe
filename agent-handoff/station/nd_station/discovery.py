@@ -341,6 +341,33 @@ def raid_or_vmd(s: Sys) -> list:
     return out
 
 
+# ---------------------------------------------------------------- hardware source
+VIRTUAL_RE = re.compile(r"qemu|kvm|vmware|virtualbox|vbox|innotek|xen|bochs|parallels|hyper-v|virtual machine|seabios|cloud hypervisor|firecracker", re.I)
+
+
+def hardware_source(s: Sys, fixture: bool) -> tuple:
+    """What the station is reading: 'synthetic' (a test sysfs tree), 'virtual' (a VM/sandbox) or 'physical'.
+
+    'physical' only means no virtualisation was detected. The server treats it as a claim: station
+    sign-in proves which station sent the report, not that the hardware physically exists.
+    """
+    if fixture:
+        return "synthetic", "discovery read a test sysfs tree, not a real machine"
+    cpu = s.read("/proc/cpuinfo") or ""
+    if re.search(r"^flags\s*:.*\bhypervisor\b", cpu, re.M):
+        return "virtual", "CPU reports a hypervisor"
+    if (s.read("/sys/hypervisor/type") or "").strip():
+        return "virtual", "kernel reports a hypervisor"
+    for k in ("sys_vendor", "product_name", "board_vendor", "bios_vendor", "chassis_vendor"):
+        v = s.read("/sys/class/dmi/id", k) or ""
+        if VIRTUAL_RE.search(v):
+            return "virtual", f"SMBIOS {k} is {v.strip()[:40]!r}"
+    kernel = (s.read("/proc/sys/kernel/osrelease") or "").lower()
+    if "gvisor" in kernel or "microsoft-standard" in kernel:
+        return "virtual", "sandbox kernel"
+    return "physical", "no virtualisation detected (physical presence not proven)"
+
+
 def discover(root: str = "/", run: Runner = run_read_only, station: Optional[dict] = None) -> dict:
     s = Sys(root, run)
     system, f1 = discover_system(s)
@@ -348,6 +375,7 @@ def discover(root: str = "/", run: Runner = run_read_only, station: Optional[dic
     drives, f2 = discover_drives(s, boot)
     st = dict(station or {})
     st["mode"] = "read_only"
+    st["hardware_source"], st["hardware_source_reason"] = hardware_source(s, os.path.realpath(root) != "/")
     boot_serial = next((d.get("serial") for d in drives if d.get("is_boot_medium") and d.get("serial")), None)
     if boot_serial:
         st["boot_medium_serial"] = boot_serial
