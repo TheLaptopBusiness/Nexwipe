@@ -27,6 +27,7 @@
 - [ ] Google Admin integration (read-only first) — design only; needs a school's consent and a Google Cloud project/OAuth client
 - [x] Erasure plan revision 2: Developer Mode = destructive, pre-transition identity/authorization/baseline, ChromeOS vs NexWipe operations separated, SETZER candidate only, storage-specific reviewed procedure, no Purge from command + read-back
 - [x] Chromebook discovery build kit (read-only, 0.1.0-cb-discovery): program + 9 synthetic tests, packaging + checker (packaging-tested only)
-- [ ] G0 build the final discovery image (kernel with built-in initramfs) — needs an external Debian build host
+- [x] G0 discovery image built (sandbox, with deviations) + fail-closed checks + VM boot/read-only test
+- [ ] Clean reproduction of the build on a Debian 13 VM (`sudo ./build.sh`) — needs a Debian 13 VM
 - [ ] G1–G5 on one authorized lab unit: identify, boot, storage identification, boot-USB exclusion, evidence upload, restore to stock — needs the unit (agent-handoff/chromebook-discovery/LAB_UNIT_CHECKLIST.md)
 - [ ] G6–G8 storage procedure review, method review, enable for one board — after G1–G5; erasure stays disabled

@@ -30,7 +30,10 @@ def ext_csd(sanitize=True, rev=8):
     return b.hex()
 
 
-def chromebook_tree(root, ext=True, hwid="SETZER E2A-B3C-D4E", sd_card=False):
+CONFINED = "Name:\tpython3\nCapEff:\t0000000000000000\nCapBnd:\t0000000000000000\nNoNewPrivs:\t1\nSeccomp:\t2\n"
+
+
+def chromebook_tree(root, ext=True, hwid="SETZER E2A-B3C-D4E", sd_card=False, ro="1", status=CONFINED):
     w(root, "/sys/class/dmi/id/bios_vendor", "coreboot\n")
     w(root, "/sys/class/dmi/id/bios_version", "Google_Setzer.7287.999.0\n")
     w(root, "/sys/class/dmi/id/product_name", "Setzer\n")
@@ -48,6 +51,13 @@ def chromebook_tree(root, ext=True, hwid="SETZER E2A-B3C-D4E", sd_card=False):
     disk(root, card, "mmcblk0", "179:0", 30777344, device_files={
         "type": "MMC", "name": "SYNTHE", "manfid": "0x000015", "serial": "0x0badcafe", "fwrev": "0x1", "rev": "0x8",
         "cid": "15010053594e5448450badcafe1234"})
+    if ro is not None:
+        w(root, f"{card}/block/mmcblk0/ro", ro)
+    w(root, "/proc/self/status", status)
+    w(root, "/proc/swaps", "Filename\tType\tSize\tUsed\tPriority\n")
+    w(root, "/proc/self/mountinfo", "22 1 0:20 / / ro,relatime - overlay overlay ro\n"
+      "30 22 8:1 / /run/live/medium ro,noatime - vfat /dev/sda1 ro\n"
+      "31 22 8:3 / /var/lib/nextdrive rw,noatime - ext4 /dev/sda3 rw\n")
     for i, (name, label) in enumerate([("mmcblk0p1", "STATE"), ("mmcblk0p2", "KERN-A"), ("mmcblk0p3", "ROOT-A")]):
         w(root, f"{card}/block/mmcblk0/{name}/uevent", f"MAJOR=179\nMINOR={i + 1}\nPARTNAME={label}\n")
         w(root, f"{card}/block/mmcblk0/{name}/size", "2048")
@@ -131,6 +141,35 @@ class ChromebookDiscovery(unittest.TestCase):
     def test_synthetic_tree_reports_synthetic_source(self):
         chromebook_tree(self.root)
         self.assertEqual(self.run_discover()["station"]["hardware_source"], "synthetic")
+
+    def test_confined_clean_run_has_no_safety_flags(self):
+        chromebook_tree(self.root)
+        r = self.run_discover()
+        codes = {f["code"] for f in r.get("review_flags", [])}
+        self.assertFalse(codes & {"process_confinement_missing", "swap_active", "internal_storage_mounted",
+                                  "internal_storage_not_read_only"})
+        c = r["chromebook"]["confinement"]
+        self.assertEqual(c["internal_mounts"], [])  # the boot USB's own mounts are not internal
+        self.assertTrue(r["chromebook"]["storage"][0]["kernel_read_only"])
+
+    def test_unconfined_process_is_flagged(self):
+        chromebook_tree(self.root, status="CapEff:\t000001ffffffffff\nNoNewPrivs:\t0\nSeccomp:\t0\n")
+        self.assertIn("process_confinement_missing", {f["code"] for f in self.run_discover()["review_flags"]})
+
+    def test_internal_mount_and_swap_are_flagged(self):
+        chromebook_tree(self.root)
+        with open(os.path.join(self.root, "proc/self/mountinfo"), "a") as f:
+            f.write("40 22 179:1 / /mnt rw,relatime - ext4 /dev/mmcblk0p1 rw\n")
+        with open(os.path.join(self.root, "proc/swaps"), "a") as f:
+            f.write("/dev/mmcblk0p5 partition 1000 0 -2\n")
+        r = self.run_discover()
+        codes = {f["code"] for f in r["review_flags"]}
+        self.assertTrue({"internal_storage_mounted", "swap_active"} <= codes)
+        self.assertTrue(r["chromebook"]["confinement"]["internal_mounts"][0]["read_write"])
+
+    def test_internal_storage_not_read_only_is_flagged(self):
+        chromebook_tree(self.root, ro="0")
+        self.assertIn("internal_storage_not_read_only", {f["code"] for f in self.run_discover()["review_flags"]})
 
     def test_ext_csd_rejects_short_input(self):
         self.assertIsNone(chromeos.parse_ext_csd("00ff"))

@@ -1,0 +1,2 @@
+# Late-probed or hot-plugged block devices are set read-only too (except the boot USB).
+ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="loop*|ram*|zram*|dm-*|sr*", RUN+="/usr/local/sbin/nd-internal-ro --device %k"

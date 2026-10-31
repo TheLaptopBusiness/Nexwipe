@@ -116,7 +116,7 @@ quarantined. Restoration must be demonstrated (G5) before any destructive test.
 
 | # | Gate | Where | Exit evidence |
 |---|---|---|---|
-| G0 | Discovery image built from the kit with its final kernel; checker passes | External build host | Image file, checksums, build log |
+| G0 | Discovery image built from the kit with its final kernel; checker passes | External build host | Image file, checksums, build log — **done 2026-10-31 in the sandbox with deviations; VM-booted only** (`agent-handoff/chromebook-discovery/BUILD_RESULT_2026-10-31.md`); clean Debian 13 VM reproduction pending |
 | G1 | One authorized lab unit identified **physically** (section 3) | Hardware + tracker | Board, CPU and storage kind confirmed; candidate stays candidate if any differ |
 | G2 | Discovery image boots on that unit | Hardware | Photos of boot; agent version on screen |
 | G3 | Internal storage identified; reported vs actual identifiers compared; boot USB excluded | Hardware + app | Filled checklist; report in the app |

@@ -1,0 +1,15 @@
+[Unit]
+Description=NexWipe: set every block device except the boot USB read-only (kernel level)
+DefaultDependencies=no
+After=systemd-udev-trigger.service
+Before=local-fs-pre.target var-lib-nextdrive.mount nd-console.service
+Wants=local-fs-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/nd-internal-ro
+StandardOutput=journal+console
+
+[Install]
+WantedBy=sysinit.target

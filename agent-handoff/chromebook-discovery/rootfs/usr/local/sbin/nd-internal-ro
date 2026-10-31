@@ -1,0 +1,49 @@
+#!/bin/sh
+# NexWipe Chromebook discovery: mark block devices read-only at kernel level (BLKROSET).
+# Never reads or writes data. Only `blockdev --setro` is used; it makes later writes, swap
+# activation and read-write mounts on that device fail in the kernel.
+#
+#   nd-internal-ro              all devices except the disk holding the live medium
+#   nd-internal-ro --device X   one device (udev hot-plug / late probe), unless it is the boot disk
+#
+# If the boot disk cannot be identified, EVERY disk is set read-only (the station then cannot save
+# its credential, which is the safe failure).
+set -u
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+# Test hooks (unset on the station): ND_SYSROOT prefixes /sys and /proc; ND_BLOCKDEV replaces blockdev.
+R="${ND_SYSROOT:-}"
+BLOCKDEV="${ND_BLOCKDEV:-blockdev}"
+
+boot_disk() {
+  src=$(awk '$5=="/run/live/medium" {print $(NF-1)}' $R/proc/self/mountinfo 2>/dev/null | head -1)
+  [ -n "$src" ] || return 0
+  part=$(basename "$(readlink -f "$R$src")")
+  parent=$(basename "$(dirname "$(readlink -f "$R/sys/class/block/$part")")")
+  if [ "$parent" = "block" ]; then echo "$part"; else echo "$parent"; fi
+}
+
+skip() { case "$1" in loop*|ram*|zram*|dm-*|sr*|md*|nbd*) return 0;; esac; return 1; }
+
+setro() {
+  dev="/dev/$1"
+  [ -n "$R" ] || [ -b "$dev" ] || return 0
+  if $BLOCKDEV --setro "$dev" 2>/dev/null; then echo "nexwipe: $1 read-only"; else echo "nexwipe: FAILED to set $1 read-only" >&2; fi
+}
+
+BOOT=$(boot_disk)
+if [ "${1:-}" = "--device" ]; then
+  d="${2:?device}"; skip "$d" && exit 0
+  disk=$(basename "$(dirname "$(readlink -f "$R/sys/class/block/$d")")"); [ "$disk" = "block" ] && disk="$d"
+  [ -n "$BOOT" ] && [ "$disk" = "$BOOT" ] && exit 0
+  setro "$d"; exit 0
+fi
+
+[ -n "$BOOT" ] && echo "nexwipe: boot disk is $BOOT (left writable for its ND-STATE partition)" || echo "nexwipe: boot disk NOT identified - setting every disk read-only" >&2
+for sys in "$R"/sys/block/*; do
+  d=$(basename "$sys"); skip "$d" && continue
+  [ -n "$BOOT" ] && [ "$d" = "$BOOT" ] && continue
+  setro "$d"
+  for p in "$sys"/"$d"*; do [ -d "$p" ] && setro "$(basename "$p")"; done
+  for hw in "$d"boot0 "$d"boot1; do [ -e "$R/sys/block/$hw" ] && setro "$hw"; done
+done
+exit 0

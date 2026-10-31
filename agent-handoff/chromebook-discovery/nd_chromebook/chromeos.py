@@ -256,12 +256,49 @@ def storage(s: Sys) -> tuple[list, list]:
             info = {"kind": "other"}
         parts = _partitions(s, disk)
         labels = {p.get("label") for p in parts}
+        ro = s.read("/sys/block", disk, "ro")
+        if ro != "1":
+            flags.append(flag("internal_storage_not_read_only", target=disk,
+                              detail="Kernel read-only flag not set; the image's read-only lock did not apply"))
         out.append({**{k: v for k, v in base.items() if v is not None}, **info, "partitions": parts,
+                    "kernel_read_only": ro == "1" if ro is not None else None,
                     "chromeos_layout_present": bool(CHROMEOS_PARTS & labels) if parts else None})
     if not out:
         flags.append(flag("no_internal_storage_found"))
     elif len(out) > 1:
         flags.append(flag("multiple_internal_storage_devices", detail=", ".join(x["disk"] for x in out)))
+    return out, flags
+
+
+def confinement(s: Sys, internal_disks: list) -> tuple[dict, list]:
+    """What the running program can do, read from the kernel at report time (evidence, not a promise)."""
+    flags: list = []
+    status = s.read("/proc/self/status") or ""
+    f = dict(re.findall(r"^(CapEff|CapBnd|NoNewPrivs|Seccomp):\s*(\S+)", status, re.M))
+    out = {"cap_eff": f.get("CapEff"), "cap_bnd": f.get("CapBnd"), "no_new_privs": f.get("NoNewPrivs"),
+           "seccomp_mode": f.get("Seccomp")}
+    if f.get("CapEff") is None or int(f.get("CapEff"), 16) != 0 or f.get("NoNewPrivs") != "1" or f.get("Seccomp") != "2":
+        flags.append(flag("process_confinement_missing",
+                          detail=f"CapEff={f.get('CapEff')} NoNewPrivs={f.get('NoNewPrivs')} Seccomp={f.get('Seccomp')}"))
+    swaps = [l.split()[0] for l in (s.read("/proc/swaps") or "").splitlines()[1:] if l.strip()]
+    out["active_swap"] = swaps
+    if swaps:
+        flags.append(flag("swap_active", detail=", ".join(swaps)[:200]))
+    mounted = []
+    for line in (s.read("/proc/self/mountinfo") or "").splitlines():
+        parts = line.split(" - ")
+        if len(parts) != 2:
+            continue
+        rest = parts[1].split()
+        if len(rest) < 3:
+            continue
+        src, opts = rest[1], parts[0].split()[5] if len(parts[0].split()) > 5 else ""
+        name = os.path.basename(src)
+        if any(re.fullmatch(rf"{re.escape(d)}(p?\d+|boot\d+|rpmb)?", name) for d in internal_disks):
+            mounted.append({"source": src, "mountpoint": parts[0].split()[4], "read_write": opts.split(",")[0] == "rw"})
+    out["internal_mounts"] = mounted
+    if mounted:
+        flags.append(flag("internal_storage_mounted", detail=", ".join(m["source"] for m in mounted)[:200]))
     return out, flags
 
 
@@ -273,16 +310,18 @@ def discover_chromebook(s: Sys, report: dict) -> tuple[dict, list]:
     ident, f1 = identity(s, fw)
     stor, f2 = storage(s)
     boot = report.get("_boot_detection") or {}
+    conf, f3 = confinement(s, [x["disk"] for x in stor])
     block = {
         "profile": "chromebook-discovery",
         "build": VERSION,
         "firmware": fw,
         "identity": ident,
         "storage": stor,
+        "confinement": conf,
         "boot_medium": {"disk": boot.get("disk"), "excluded": True, "identified": bool(boot.get("disk"))},
         "nexwipe_operations": [],
         "nexwipe_operations_note": NOTE_NEXWIPE_OPS,
         "chromeos_operations": NOTE_CHROMEOS_OPS,
         "compatibility": "unverified",
     }
-    return block, flags + f1 + f2
+    return block, flags + f1 + f2 + f3

@@ -12,8 +12,11 @@ export const RETRY_WINDOW_MS = 5 * 60_000;
 export const RETRY_KEY = "nd.staleCodeReloadAt";
 export const DIAGNOSTICS_KEY = "nd.lastErrorDiagnostics";
 
+// The last two cover a lazily loaded page whose module came back empty (an old code file after an
+// update): Safari "undefined is not an object (evaluating 'e[t??`default`]')", Chrome
+// "Cannot read properties of undefined (reading 'default')".
 const STALE_RE =
-  /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS|ChunkLoadError|Loading chunk [\w-]+ failed/i;
+  /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS|ChunkLoadError|Loading chunk [\w-]+ failed|undefined is not an object \(evaluating '[^']*default[^']*'\)|Cannot read properties of undefined \(reading 'default'\)/i;
 
 export function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
