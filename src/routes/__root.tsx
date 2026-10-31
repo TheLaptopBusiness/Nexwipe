@@ -66,6 +66,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     const result = decideRecovery(error, { storage: safeSessionStorage(), now: Date.now(), hasUnsavedWork: hasUnsavedWork() });
     setDiag(d);
     setDecision(result);
+    console.warn('ND-DEBUG decision ' + result.action + ' unsaved=' + hasUnsavedWork());
     if (result.action === "reload") {
       window.location.reload();
       return;
