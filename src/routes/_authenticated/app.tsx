@@ -12,6 +12,7 @@ import {
   FileText,
   FolderKanban,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Menu,
   Moon,
@@ -94,6 +95,7 @@ const NAV: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Operations",
     items: [
+      { to: "/app/setup", label: "Get started", icon: ListChecks, cap: "sites.manage" },
       { to: "/app", label: "Dashboard", icon: LayoutDashboard },
       { to: "/app/inventory", label: "Inventory", icon: Boxes, cap: "inventory.view" },
       { to: "/app/projects", label: "Projects & batches", icon: FolderKanban },

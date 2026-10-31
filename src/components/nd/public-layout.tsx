@@ -43,7 +43,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   <Link to="/auth">Sign in</Link>
                 </Button>
                 <Button asChild variant="signal" size="sm" className="hidden sm:inline-flex">
-                  <Link to="/pilot">Join the pilot</Link>
+                  <Link to="/signup">Start Now</Link>
                 </Button>
               </>
             )}
@@ -68,7 +68,8 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="space-y-2">
             <p className="font-medium text-foreground">Company</p>
             <Link to="/support" className="block text-muted-foreground hover:text-foreground">Support</Link>
-            <Link to="/pilot" className="block text-muted-foreground hover:text-foreground">Pilot program</Link>
+            <Link to="/demo" className="block text-muted-foreground hover:text-foreground">Book a Demo</Link>
+            <Link to="/signup" className="block text-muted-foreground hover:text-foreground">Start Now</Link>
           </div>
           <div className="space-y-2 text-muted-foreground">
             <p className="font-medium text-foreground">Status of claims</p>

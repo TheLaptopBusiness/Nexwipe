@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as HardwareRouteImport } from './routes/hardware'
 import { Route as PilotRouteImport } from './routes/pilot'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ProductRouteImport } from './routes/product'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WorkflowRouteImport } from './routes/workflow'
@@ -31,6 +33,7 @@ import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSetupRouteImport } from './routes/_authenticated/app.setup'
 import { Route as AuthenticatedAppSimulatorRouteImport } from './routes/_authenticated/app.simulator'
 import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticated/app.sites'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
@@ -61,6 +64,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HardwareRoute = HardwareRouteImport.update({
   id: '/hardware',
   path: '/hardware',
@@ -84,6 +92,11 @@ const ProductRoute = ProductRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -158,6 +171,11 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSetupRoute = AuthenticatedAppSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppSimulatorRoute =
   AuthenticatedAppSimulatorRouteImport.update({
     id: '/simulator',
@@ -249,11 +267,13 @@ const ApiPublicAgentV1SplatRoute = ApiPublicAgentV1SplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/hardware': typeof HardwareRoute
   '/pilot': typeof PilotRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -267,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/setup': typeof AuthenticatedAppSetupRoute
   '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
@@ -287,11 +308,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/hardware': typeof HardwareRoute
   '/pilot': typeof PilotRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -304,6 +327,7 @@ export interface FileRoutesByTo {
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/setup': typeof AuthenticatedAppSetupRoute
   '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
@@ -326,11 +350,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/hardware': typeof HardwareRoute
   '/pilot': typeof PilotRoute
   '/pricing': typeof PricingRoute
   '/product': typeof ProductRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/workflow': typeof WorkflowRoute
@@ -344,6 +370,7 @@ export interface FileRoutesById {
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/setup': typeof AuthenticatedAppSetupRoute
   '/_authenticated/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/_authenticated/app/sites': typeof AuthenticatedAppSitesRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
@@ -366,11 +393,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/demo'
     | '/hardware'
     | '/pilot'
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -384,6 +413,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/setup'
     | '/app/simulator'
     | '/app/sites'
     | '/app/team'
@@ -404,11 +434,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/demo'
     | '/hardware'
     | '/pilot'
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -421,6 +453,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/setup'
     | '/app/simulator'
     | '/app/sites'
     | '/app/team'
@@ -442,11 +475,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/demo'
     | '/hardware'
     | '/pilot'
     | '/pricing'
     | '/product'
     | '/reset-password'
+    | '/signup'
     | '/support'
     | '/welcome'
     | '/workflow'
@@ -460,6 +495,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/clients'
     | '/_authenticated/app/hardware'
     | '/_authenticated/app/settings'
+    | '/_authenticated/app/setup'
     | '/_authenticated/app/simulator'
     | '/_authenticated/app/sites'
     | '/_authenticated/app/team'
@@ -482,11 +518,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  DemoRoute: typeof DemoRoute
   HardwareRoute: typeof HardwareRoute
   PilotRoute: typeof PilotRoute
   PricingRoute: typeof PricingRoute
   ProductRoute: typeof ProductRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   WelcomeRoute: typeof WelcomeRoute
   WorkflowRoute: typeof WorkflowRoute
@@ -516,6 +554,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hardware': {
@@ -551,6 +596,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -649,6 +701,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/setup': {
+      id: '/_authenticated/app/setup'
+      path: '/setup'
+      fullPath: '/app/setup'
+      preLoaderRoute: typeof AuthenticatedAppSetupRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/simulator': {
@@ -766,6 +825,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSetupRoute: typeof AuthenticatedAppSetupRoute
   AuthenticatedAppSimulatorRoute: typeof AuthenticatedAppSimulatorRoute
   AuthenticatedAppSitesRoute: typeof AuthenticatedAppSitesRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
@@ -790,6 +850,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSetupRoute: AuthenticatedAppSetupRoute,
   AuthenticatedAppSimulatorRoute: AuthenticatedAppSimulatorRoute,
   AuthenticatedAppSitesRoute: AuthenticatedAppSitesRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
@@ -831,11 +892,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  DemoRoute: DemoRoute,
   HardwareRoute: HardwareRoute,
   PilotRoute: PilotRoute,
   PricingRoute: PricingRoute,
   ProductRoute: ProductRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   WelcomeRoute: WelcomeRoute,
   WorkflowRoute: WorkflowRoute,

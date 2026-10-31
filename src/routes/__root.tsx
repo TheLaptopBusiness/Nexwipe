@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+import { LANDING_HASH, landingAction } from "@/lib/landing-hash";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -215,8 +217,22 @@ function RootComponent() {
       router.navigate({ to: "/welcome", search: { next: path + window.location.search }, replace: true });
     };
     void checkFirstPassword();
+    // A verification link that landed outside the sign-up flow (e.g. on the home page) continues to setup.
+    const landing = landingAction(LANDING_HASH);
+    if (landing.kind === "link_error") {
+      toast.error(landing.message);
+      if (window.location.pathname === "/") router.navigate({ to: "/auth", replace: true });
+    }
+    const continueSignup = async () => {
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session || needsFirstPassword(s.session.user)) return;
+      const path = window.location.pathname;
+      if (path === "/" || path === "/auth" || path === "/signup") router.navigate({ to: "/app", replace: true });
+    };
+    if (landing.kind === "continue_signup") void continueSignup();
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") setTimeout(() => void checkFirstPassword(), 0);
+      if (event === "SIGNED_IN" && landing.kind === "continue_signup") setTimeout(() => void continueSignup(), 0);
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
