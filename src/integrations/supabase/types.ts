@@ -324,6 +324,213 @@ export type Database = {
           },
         ]
       }
+      chromebook_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          evidence_kind: string
+          from_value: string | null
+          id: number
+          is_synthetic: boolean
+          notes: string | null
+          org_id: string
+          payload: Json
+          record_id: string
+          step: string
+          to_value: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          evidence_kind: string
+          from_value?: string | null
+          id?: never
+          is_synthetic?: boolean
+          notes?: string | null
+          org_id: string
+          payload?: Json
+          record_id: string
+          step: string
+          to_value?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          evidence_kind?: string
+          from_value?: string | null
+          id?: never
+          is_synthetic?: boolean
+          notes?: string | null
+          org_id?: string
+          payload?: Json
+          record_id?: string
+          step?: string
+          to_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chromebook_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chromebook_events_org_id_record_id_fkey"
+            columns: ["org_id", "record_id"]
+            isOneToOne: false
+            referencedRelation: "chromebook_records"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      chromebook_records: {
+        Row: {
+          aue_date: string | null
+          aue_retrieved_on: string | null
+          aue_source: string | null
+          board: string | null
+          board_source: string | null
+          chromeos_version: string | null
+          chromeos_version_source: string | null
+          cpu_arch: string
+          cpu_arch_source: string | null
+          created_at: string
+          created_by: string | null
+          device_id: string
+          diagnostics: Json
+          diagnostics_status: string
+          id: string
+          is_synthetic: boolean
+          management_status: string
+          online_setup_checked_at: string | null
+          online_setup_result: string
+          org_id: string
+          ownership_authorized_by: string | null
+          ownership_recorded_at: string | null
+          ownership_recorded_by: string | null
+          ownership_reference: string | null
+          ownership_status: string
+          release_decision: string
+          reset_authorized_at: string | null
+          reset_authorized_by: string | null
+          reset_completed_at: string | null
+          reset_method: string | null
+          reset_started_at: string | null
+          reset_started_by: string | null
+          reset_status: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          storage_capacity_gb: number | null
+          storage_capacity_source: string | null
+          storage_type: string
+          storage_type_source: string | null
+          updated_at: string
+        }
+        Insert: {
+          aue_date?: string | null
+          aue_retrieved_on?: string | null
+          aue_source?: string | null
+          board?: string | null
+          board_source?: string | null
+          chromeos_version?: string | null
+          chromeos_version_source?: string | null
+          cpu_arch?: string
+          cpu_arch_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_id: string
+          diagnostics?: Json
+          diagnostics_status?: string
+          id?: string
+          is_synthetic?: boolean
+          management_status?: string
+          online_setup_checked_at?: string | null
+          online_setup_result?: string
+          org_id: string
+          ownership_authorized_by?: string | null
+          ownership_recorded_at?: string | null
+          ownership_recorded_by?: string | null
+          ownership_reference?: string | null
+          ownership_status?: string
+          release_decision?: string
+          reset_authorized_at?: string | null
+          reset_authorized_by?: string | null
+          reset_completed_at?: string | null
+          reset_method?: string | null
+          reset_started_at?: string | null
+          reset_started_by?: string | null
+          reset_status?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          storage_capacity_gb?: number | null
+          storage_capacity_source?: string | null
+          storage_type?: string
+          storage_type_source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aue_date?: string | null
+          aue_retrieved_on?: string | null
+          aue_source?: string | null
+          board?: string | null
+          board_source?: string | null
+          chromeos_version?: string | null
+          chromeos_version_source?: string | null
+          cpu_arch?: string
+          cpu_arch_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_id?: string
+          diagnostics?: Json
+          diagnostics_status?: string
+          id?: string
+          is_synthetic?: boolean
+          management_status?: string
+          online_setup_checked_at?: string | null
+          online_setup_result?: string
+          org_id?: string
+          ownership_authorized_by?: string | null
+          ownership_recorded_at?: string | null
+          ownership_recorded_by?: string | null
+          ownership_reference?: string | null
+          ownership_status?: string
+          release_decision?: string
+          reset_authorized_at?: string | null
+          reset_authorized_by?: string | null
+          reset_completed_at?: string | null
+          reset_method?: string | null
+          reset_started_at?: string | null
+          reset_started_by?: string | null
+          reset_status?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          storage_capacity_gb?: number | null
+          storage_capacity_source?: string | null
+          storage_type?: string
+          storage_type_source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chromebook_records_org_id_device_id_fkey"
+            columns: ["org_id", "device_id"]
+            isOneToOne: true
+            referencedRelation: "devices"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "chromebook_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_access_grants: {
         Row: {
           created_at: string
@@ -537,6 +744,7 @@ export type Database = {
           cpu: string | null
           created_at: string
           created_by: string | null
+          device_class: string
           diagnostic_notes: string | null
           hardware_origin: string
           hardware_verified: boolean
@@ -567,6 +775,7 @@ export type Database = {
           cpu?: string | null
           created_at?: string
           created_by?: string | null
+          device_class?: string
           diagnostic_notes?: string | null
           hardware_origin?: string
           hardware_verified?: boolean
@@ -597,6 +806,7 @@ export type Database = {
           cpu?: string | null
           created_at?: string
           created_by?: string | null
+          device_class?: string
           diagnostic_notes?: string | null
           hardware_origin?: string
           hardware_verified?: boolean
@@ -1719,6 +1929,77 @@ export type Database = {
       }
     }
     Functions: {
+      _cb_event: {
+        Args: {
+          _from: string
+          _kind: string
+          _notes: string
+          _payload: Json
+          _r: Database["public"]["Tables"]["chromebook_records"]["Row"]
+          _step: string
+          _to: string
+        }
+        Returns: undefined
+      }
+      _cb_has_api_source: {
+        Args: { r: Database["public"]["Tables"]["chromebook_records"]["Row"] }
+        Returns: boolean
+      }
+      _cb_load: {
+        Args: {
+          _record: string
+          _roles: Database["public"]["Enums"]["org_role"][]
+        }
+        Returns: {
+          aue_date: string | null
+          aue_retrieved_on: string | null
+          aue_source: string | null
+          board: string | null
+          board_source: string | null
+          chromeos_version: string | null
+          chromeos_version_source: string | null
+          cpu_arch: string
+          cpu_arch_source: string | null
+          created_at: string
+          created_by: string | null
+          device_id: string
+          diagnostics: Json
+          diagnostics_status: string
+          id: string
+          is_synthetic: boolean
+          management_status: string
+          online_setup_checked_at: string | null
+          online_setup_result: string
+          org_id: string
+          ownership_authorized_by: string | null
+          ownership_recorded_at: string | null
+          ownership_recorded_by: string | null
+          ownership_reference: string | null
+          ownership_status: string
+          release_decision: string
+          reset_authorized_at: string | null
+          reset_authorized_by: string | null
+          reset_completed_at: string | null
+          reset_method: string | null
+          reset_started_at: string | null
+          reset_started_by: string | null
+          reset_status: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          storage_capacity_gb: number | null
+          storage_capacity_source: string | null
+          storage_type: string
+          storage_type_source: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chromebook_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       _classify_hardware: {
         Args: { _payload: Json; _platform: string }
         Returns: {
@@ -1835,6 +2116,61 @@ export type Database = {
       }
       cancel_job: {
         Args: { _job: string; _reason: string }
+        Returns: undefined
+      }
+      chromebook_online_setup_check: {
+        Args: {
+          _enrollment_prompt: boolean
+          _notes: string
+          _online: boolean
+          _record: string
+        }
+        Returns: undefined
+      }
+      chromebook_record_diagnostics: {
+        Args: { _notes?: string; _record: string; _results: Json }
+        Returns: undefined
+      }
+      chromebook_record_ownership: {
+        Args: { _authorized_by: string; _record: string; _reference: string }
+        Returns: undefined
+      }
+      chromebook_register: {
+        Args: {
+          _asset_tag: string
+          _batch?: string
+          _manufacturer: string
+          _model: string
+          _org: string
+          _project?: string
+          _serial: string
+        }
+        Returns: string
+      }
+      chromebook_reset_step: {
+        Args: {
+          _action: string
+          _confirm_serial?: string
+          _method?: string
+          _notes?: string
+          _record: string
+        }
+        Returns: undefined
+      }
+      chromebook_review: {
+        Args: { _decision: string; _notes: string; _record: string }
+        Returns: undefined
+      }
+      chromebook_set_management: {
+        Args: { _notes: string; _record: string; _status: string }
+        Returns: undefined
+      }
+      chromebook_start_for_device: {
+        Args: { _device: string }
+        Returns: string
+      }
+      chromebook_update_identity: {
+        Args: { _fields: Json; _record: string }
         Returns: undefined
       }
       create_device_from_discovery: {
