@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AlertTriangle, Cpu, HardDrive, Plus, ScanSearch } from "lucide-react";
+import { AlertTriangle, Cpu, FlaskConical, HardDrive, Plus, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, LoadingBlock, Mono, errorMessage } from "@/components/nd/page";
 import { SimulatedBadge, ToneBadge } from "@/components/nd/status-badge";
+import { HardwareOriginBadge } from "@/components/nd/hardware-origin-badge";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatBytes, formatDateTime } from "@/lib/queries";
@@ -26,7 +27,7 @@ export function StationDiscoveries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agent_discoveries")
-        .select("id, agent_id, device_id, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, agents(name), devices(asset_tag, hardware_verified)")
+        .select("id, agent_id, device_id, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name), devices(asset_tag, hardware_verified, hardware_origin, source)")
         .eq("org_id", orgId)
         .order("last_reported_at", { ascending: false })
         .limit(25);
@@ -43,7 +44,7 @@ export function StationDiscoveries() {
     const { error } = await supabase.rpc("create_device_from_discovery", { _discovery: target.id, _asset_tag: tag });
     setBusy(false);
     if (error) { toast.error(errorMessage(error)); return; }
-    toast.success("Added to inventory. It becomes station-verified when the station reports again.");
+    toast.success("Added to inventory. It is marked station-reported when the station reports again (synthetic test hardware stays marked synthetic).");
     setTarget(null);
     qc.invalidateQueries({ queryKey: ["discoveries", orgId] });
     qc.invalidateQueries({ queryKey: ["devices", orgId] });
@@ -53,7 +54,7 @@ export function StationDiscoveries() {
     <section className="space-y-3" aria-labelledby="disc-h">
       <div>
         <h2 id="disc-h" className="font-display text-lg font-semibold text-foreground">Hardware reported by stations</h2>
-        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure.</p>
+        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure. A station’s sign-in proves which station sent a report, not that the hardware physically exists.</p>
       </div>
       {q.isLoading ? <LoadingBlock /> : (q.data ?? []).length === 0 ? (
         <EmptyState icon={ScanSearch} title="No reports yet" description="When an enrolled station boots a laptop, the laptop and its drives appear here." />
@@ -70,6 +71,7 @@ export function StationDiscoveries() {
                   {d.system_serial && <Mono className="text-xs text-muted-foreground">S/N {d.system_serial}</Mono>}
                   {d.is_simulated && <SimulatedBadge />}
                   {d.is_read_only_test && <ToneBadge tone="info">Read-only test station</ToneBadge>}
+                  {!d.is_simulated && d.hardware_origin === "synthetic" && <span title={d.hardware_origin_reason ?? undefined}><ToneBadge tone="warning" icon={FlaskConical}>Synthetic test hardware</ToneBadge></span>}
                   {flags.length > 0 && <ToneBadge tone="warning" icon={AlertTriangle}>Needs review</ToneBadge>}
                   <span className="text-xs text-muted-foreground">
                     from {d.agents?.name ?? "station"} · last {formatDateTime(d.last_reported_at)}
@@ -79,7 +81,7 @@ export function StationDiscoveries() {
                     {d.device_id ? (
                       <span className="inline-flex items-center gap-2">
                         <Link to="/app/inventory/$deviceId" params={{ deviceId: d.device_id }} className="font-mono text-sm hover:underline">{d.devices?.asset_tag}</Link>
-                        {d.is_simulated ? <ToneBadge tone="warning">Simulated record</ToneBadge> : d.devices?.hardware_verified ? <ToneBadge tone="success">Station-verified</ToneBadge> : <ToneBadge tone="neutral">Awaiting re-report</ToneBadge>}
+                        {d.is_simulated ? <ToneBadge tone="warning">Simulated record</ToneBadge> : d.devices ? <HardwareOriginBadge record={d.devices} /> : null}
                       </span>
                     ) : !d.is_simulated && can(role, "inventory.write") && d.system_serial ? (
                       <Button size="sm" variant="outline" onClick={() => setTarget({ id: d.id, serial: d.system_serial! })}><Plus /> Add to inventory</Button>
@@ -115,7 +117,7 @@ export function StationDiscoveries() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add reported laptop to inventory</DialogTitle>
-            <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop and its reported drives are recorded; they are marked station-verified only when the station reports them again.</DialogDescription>
+            <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop and its reported drives are recorded; they are marked station-reported when the station reports them again. Synthetic test hardware stays marked synthetic.</DialogDescription>
           </DialogHeader>
           <form id="disc-add" onSubmit={onAdd} className="space-y-1.5">
             <Label htmlFor="asset_tag">Asset tag *</Label>

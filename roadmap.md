@@ -7,7 +7,10 @@
 - [x] Phase 2c: read-only stations, credential expiry/rotation, review flags, duplicate-free reports, bootable USB build + station program (VM-tested)
 - [x] Read-only pilot published (closed sign-up, published checks, recovery test on published build)
 - [ ] Agent Milestone 1 (read-only) on real Dell/HP/Lenovo laptops — needs physical hardware (agent-handoff/PHYSICAL_TEST_CHECKLIST.md)
-- [ ] New-invitee invitation email → first password → MFA test (blocked on email delivery)
+- [x] New-invitee invitation email → set password → accept → password sign-in (preview build; technician role)
+- [x] Hardware origin: synthetic test hardware stays synthetic; "verified" labels replaced by "station-reported"; PUBCHECK records corrected; station 0.2.1 declares hardware source
+- [ ] Publish the invitee password step and re-test on the published address — needs the owner to publish
+- [ ] Existing account Google sign-in on the published address — needs the Google account owner
 - [ ] Agent Stage 2 destructive testing on disposable drives — external team, after Milestone 1
 - [ ] Phase 3: realtime live jobs, binary evidence storage, demo-watermarked PDF records, QR verification
 - [ ] Phase 4: Stripe test billing, credit ledger, onboarding polish, platform admin

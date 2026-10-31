@@ -66,6 +66,8 @@ export type Database = {
         Row: {
           agent_id: string
           device_id: string | null
+          hardware_origin: string
+          hardware_origin_reason: string | null
           id: string
           is_read_only_test: boolean
           is_simulated: boolean
@@ -81,6 +83,8 @@ export type Database = {
         Insert: {
           agent_id: string
           device_id?: string | null
+          hardware_origin?: string
+          hardware_origin_reason?: string | null
           id?: string
           is_read_only_test?: boolean
           is_simulated?: boolean
@@ -96,6 +100,8 @@ export type Database = {
         Update: {
           agent_id?: string
           device_id?: string | null
+          hardware_origin?: string
+          hardware_origin_reason?: string | null
           id?: string
           is_read_only_test?: boolean
           is_simulated?: boolean
@@ -532,6 +538,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           diagnostic_notes: string | null
+          hardware_origin: string
           hardware_verified: boolean
           id: string
           intake_condition: Database["public"]["Enums"]["intake_condition"]
@@ -561,6 +568,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnostic_notes?: string | null
+          hardware_origin?: string
           hardware_verified?: boolean
           id?: string
           intake_condition?: Database["public"]["Enums"]["intake_condition"]
@@ -590,6 +598,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnostic_notes?: string | null
+          hardware_origin?: string
           hardware_verified?: boolean
           id?: string
           intake_condition?: Database["public"]["Enums"]["intake_condition"]
@@ -658,6 +667,7 @@ export type Database = {
           capacity_bytes: number | null
           created_at: string
           firmware_version: string | null
+          hardware_origin: string
           hardware_verified: boolean
           id: string
           interface: Database["public"]["Enums"]["drive_interface"]
@@ -674,6 +684,7 @@ export type Database = {
           capacity_bytes?: number | null
           created_at?: string
           firmware_version?: string | null
+          hardware_origin?: string
           hardware_verified?: boolean
           id?: string
           interface: Database["public"]["Enums"]["drive_interface"]
@@ -690,6 +701,7 @@ export type Database = {
           capacity_bytes?: number | null
           created_at?: string
           firmware_version?: string | null
+          hardware_origin?: string
           hardware_verified?: boolean
           id?: string
           interface?: Database["public"]["Enums"]["drive_interface"]
@@ -1707,6 +1719,13 @@ export type Database = {
       }
     }
     Functions: {
+      _classify_hardware: {
+        Args: { _payload: Json; _platform: string }
+        Returns: {
+          origin: string
+          reason: string
+        }[]
+      }
       _insert_policy_version: {
         Args: {
           _note: string
@@ -1746,6 +1765,7 @@ export type Database = {
       }
       _sweep_jobs: { Args: { _org: string }; Returns: number }
       _sync_device_after_job: { Args: { _job: string }; Returns: undefined }
+      _synthetic_pattern: { Args: never; Returns: string }
       accept_invitation: { Args: { _token: string }; Returns: string }
       accept_invitation_by_id: {
         Args: { _invitation: string }

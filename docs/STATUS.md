@@ -1,6 +1,6 @@
 # NextDrive — status
 
-_Last updated: read-only pilot publish (2026-10-31). Published address: https://pixel-perfect-screenshot-maker-52.lovable.app_
+_Last updated: invitee first-password + hardware-origin correction (2026-10-31, after the read-only pilot publish; changes below are in the preview and not yet published). Published address: https://pixel-perfect-screenshot-maker-52.lovable.app_
 
 **NextDrive cannot erase a real drive today.** No production agent exists, and no erasure method has been implemented or tested on hardware. Everything below that touches jobs or evidence has only been exercised with the labelled simulator.
 
@@ -14,10 +14,10 @@ _Last updated: read-only pilot publish (2026-10-31). Published address: https://
 | Versioned policies, per-drive job state machine, authorizations, reviewer approval, laptop clearance (Phase 2) | `tests/db/phase2_acceptance.sql` (37/37 PASS under the MFA rule), simulator |
 | Tenant isolation across station endpoints, jobs, evidence, discoveries, enrollment tokens and credentials | `tests/db/phase2b_security.sql` (33/33 PASS) |
 | Station credential revocation, nonce replay prevention, stale timestamps, duplicate submissions (events + evidence), idempotency-key misuse | `phase2b_security.sql` + `scripts/agent-contract-check.ts` (18/18 HTTP checks; transcript `docs/agent-api/transcript.md`) |
-| Read-only discovery intake: station reports → "Hardware reported by stations" → Add to inventory → station re-reports → laptop and drives marked station-verified; station boot USB never recorded | `phase2b_security.sql`, browser, and the read-only reference client run against the app with test hardware data |
+| Read-only discovery intake: station reports → "Hardware reported by stations" → Add to inventory → station re-reports → laptop and drives marked **"Station-reported identity"** (never "verified": station sign-in proves which station sent a report, not that the hardware exists); station boot USB never recorded | `phase2b_security.sql`, browser, and the read-only reference client run against the app with test hardware data |
 | Agent simulator (9 scenarios) | browser run, all PASS |
-| Unit tests (roles, CSV, jobs, discovery display, recovery rules) | `bunx vitest run` (40 PASS) |
-| Station program refuses destructive commands | `agent-handoff/station/tests` (14 PASS), `verify-image.sh` |
+| Unit tests (roles, CSV, jobs, discovery display, recovery rules) | `bunx vitest run` (48 PASS, incl. hardware-origin and first-password rules) |
+| Station program refuses destructive commands | `agent-handoff/station/tests` (17 PASS), `verify-image.sh` |
 | **Recovery from outdated app code (blank-screen fix)** — in-app and start-up failures. Reloads once per tab per 5 minutes; the guard is stored before reloading so it survives the reload; never auto-reloads with unsaved form input (asks instead); ordinary errors show a fallback with Try again and redacted support details; the framework's own silent reload is switched off so one rule applies | Controlled browser test `tests/browser/stale_code_recovery.py` (dev server, code files blocked or replaced in the browser): reload once → recovers; persistent failure → exactly 1 reload then fallback, manual reload recovers; unsaved form → 0 reloads, warning shown; ordinary error → 0 reloads, fallback, Try again recovers; tokens/emails redacted in shown, stored and app-logged details; start-up failure → 1 reload, or a visible fallback instead of a blank page. `src/lib/app-recovery.test.ts` (10 PASS) |
 
 | **Read-only test stations** — every physical station enrolls read-only: the database refuses to authorize it for jobs or accept job events/evidence from it | `tests/db/phase2c_readonly_stations.sql` (18/18 PASS) |
@@ -28,15 +28,22 @@ _Last updated: read-only pilot publish (2026-10-31). Published address: https://
 | **Bootable USB build** (Debian 13, signed shim/GRUB/kernel, read-only squashfs, encrypted state partition) and **read-only station program** (real sysfs/SMBIOS discovery, boot USB excluded by device ancestry, console, enrollment, network errors) | Image built here; booted in a **virtual machine** (QEMU/OVMF UEFI) and all 8 checklist steps passed there; 14 station unit tests; build-time destructive-tool scan |
 
 | **Closed pilot sign-up** — public sign-up is switched off in the auth service (sign-up requests are refused with "signups not allowed"); the sign-in and invitation pages no longer offer "Create account" | API probe after the change; published sign-in page checked |
-| **Published read-only pilot** (2026-10-31) — on the published address: password sign-in, required two-step code (wrong code rejected), inventory, enrollment token created in the app, the real station program enrolled with clearly labelled test hardware (`PUBLISHED-CHECK`), report → Add to inventory → re-report → laptop and drives agent-verified, boot stick not recorded, re-reports counted without duplicates, revocation deletes the station credential; 23/23 HTTP contract checks; outdated-code recovery test (all cases) against the published build | `tests/browser/published_station_check.py`, `tests/browser/stale_code_recovery_published.py`, `scripts/agent-contract-check.ts` with `ND_BASE` = published address |
+| **Published read-only pilot** (2026-10-31) — on the published address: password sign-in, required two-step code (wrong code rejected), inventory, enrollment token created in the app, the real station program enrolled with clearly labelled test hardware (`PUBLISHED-CHECK`), report → Add to inventory → re-report → laptop and drives recorded (that run labelled them "agent-verified"; **corrected 2026-10-31: `PUBLISHED-CHECK` / `PUBCHECK-36612` are synthetic test data and are now marked "Synthetic test hardware"**), boot stick not recorded, re-reports counted without duplicates, revocation deletes the station credential; 23/23 HTTP contract checks; outdated-code recovery test (all cases) against the published build | `tests/browser/published_station_check.py`, `tests/browser/stale_code_recovery_published.py`, `scripts/agent-contract-check.ts` with `ND_BASE` = published address |
 | Signed-out access: credentials, enrollment tokens, evidence, customers, devices, drives, jobs, audit, invitations all refused to signed-out visitors; station credentials and request nonces unreadable even for signed-in owners | REST probe of 21 tables (signed-out and signed-in), plus the tenant-isolation suites above |
+
+| **Hardware origin: synthetic stays synthetic** — every station report is classified: the station declares `hardware_source` (synthetic test tree / virtual machine / physical, station 0.2.1+); undeclared (older stations), VM-looking identities and sandbox kernels count as synthetic. Synthetic laptops and drives are labelled "Synthetic test hardware", are never marked station-reported, can never become station-reported later, and can never get an erasure job. App users cannot set or clear the origin. All earlier station-reported records (VM-0001, PUBCHECK-36612, REF-0001, CT-424073 and their drives) were re-marked synthetic | `tests/db/phase2d_hardware_origin.sql` (13/13 PASS), `phase2b_security.sql` re-run (33/33 PASS), station unit tests (17 PASS), browser: PUBCHECK-36612 and its drives show "Synthetic test hardware" in inventory, drive list and station reports |
+| **Brand-new invitee with public sign-up switched off** (2026-10-31, preview build): owner invited a never-seen address → real email arrived in the test mailbox → link signed the new user in → "Set your password" page → pending invitation shown → accepted as technician → signed out → signed in again with email + the new password → app opened. Sign-up API still refuses new accounts ("Signups not allowed") | browser + real email; caveat: the email link always lands on the published main address, so this run replayed that same sign-in onto the preview build, because the published build does not have the password step yet |
+| Google sign-in hand-off on the published sign-in page reaches Google's account chooser with the managed sign-in service | browser (stops at Google's page; no Google password available here) |
 
 ## 2. Implemented but unverified
 
-- **New invitee completing first password + required MFA**: blocked in testing — the sign-in service accepted two invitation emails (06:40, 06:52 UTC) but neither reached the test mailbox within ~25 minutes, most likely the default sender's hourly email limit. The steps after the email (accept, set first password, set up authenticator) are not verified.
+- **Invitee first-password step on the published address**: works in the preview build; not yet published, so a new invitee on the published site today would be signed in without being asked for a password. Publish before inviting pilot customers, then repeat the invitee test there.
+- **New invitee as owner/administrator setting up two-step verification**: the tested invitee was a technician (no two-step requirement). The owner/admin two-step gate itself is tested separately.
+- **Existing account signing in with Google** (with sign-up closed): not completed — needs a person with the Google account. The hand-off to Google works; one existing Google-linked account last signed in 05:48 UTC, before sign-up was closed.
+- Invitation emails come from the default sender and show the project's internal name ("Pixel Perfect Screenshot Maker") as the sender name.
 - **Physical laptop compatibility: UNVERIFIED.** The USB image has not been booted on any physical laptop. Secure Boot on real firmware, storage-controller modes (AHCI / RAID / RST / VMD), Wi-Fi, real drive identity strings and USB boot on real firmware are untested. Stays unverified until a filled-in record from `agent-handoff/PHYSICAL_TEST_CHECKLIST.md` exists per laptop.
-- **Invitations for brand-new users with public sign-up switched off**: invitations are sent by the trusted invitation function (administrator invite), which is expected to keep working, but no new-invitee email has been received since the change.
-- New Google sign-ins: with sign-up closed, a Google account that has no NextDrive account yet cannot sign in; existing accounts are unaffected (not re-tested).
+- New Google sign-ins: with sign-up closed, a Google account that has no NextDrive account yet cannot sign in.
+- "Station-reported identity" for a **physical** laptop: classification tested in the database only; no physical laptop has reported yet.
 - Email links redirect to the app's main address, not to the invitation page (the sign-in service only allows registered addresses); the in-app pending-invitation banner covers this.
 - Invitation links on a **custom domain** require `APP_ALLOWED_ORIGINS` to list it.
 - Agent API behaviour on the published site (all HTTP checks ran against the preview server).
@@ -67,7 +74,8 @@ _Last updated: read-only pilot publish (2026-10-31). Published address: https://
 ## 6. Remaining launch blockers
 
 - [ ] Agent Milestone 1 passed on real Dell, HP and Lenovo laptops (VM pass only so far)
-- [ ] New-invitee email + first password + MFA verified (needs reliable email delivery / own email domain)
+- [ ] Publish the invitee password step, then repeat the new-invitee test on the published address (preview: PASS)
+- [ ] Existing account signs in with Google on the published address (needs the account owner)
 - [ ] Hardware-backed station keys or request signing (see `docs/agent-api/station-auth.md`)
 - [ ] Stage 2 destructive testing and method qualification evidence per drive/laptop combination
 - [ ] Signed station requests or mTLS; credential rotation

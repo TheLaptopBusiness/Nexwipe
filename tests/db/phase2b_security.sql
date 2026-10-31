@@ -136,7 +136,7 @@ BEGIN
   -- ===== Discovery intake (read-only milestone) =====
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
-  res := public.agent_report_inventory(ag_a, '{"system":{"manufacturer":"Lenovo","model":"ThinkPad T14","serial":"NEW-SYS-9"},"drives":[{"serial":"NEW-DRV-9","model":"WD SN740","interface":"nvme_ssd","capacity_bytes":512110190592}]}');
+  res := public.agent_report_inventory(ag_a, '{"station":{"hardware_source":"physical"},"system":{"manufacturer":"Lenovo","model":"ThinkPad T14","serial":"NEW-SYS-9"},"drives":[{"serial":"NEW-DRV-9","model":"WD SN740","interface":"nvme_ssd","capacity_bytes":512110190592}]}');
   disc := (res->>'discovery_id')::uuid;
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ub, 'role','authenticated','aal','aal2')::text, true);
@@ -158,9 +158,9 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
   res := public.agent_heartbeat(ag_a, 'idle', null);
   r := r || ' [heartbeat_requests_reinventory ' || CASE WHEN (res->>'inventory_requested')::boolean THEN 'PASS' ELSE 'FAIL' END || ']';
-  PERFORM public.agent_report_inventory(ag_a, '{"system":{"serial":"NEW-SYS-9"},"drives":[{"serial":"NEW-DRV-9","interface":"nvme_ssd"}]}');
-  SELECT hardware_verified AND source = 'agent_reported' INTO ok FROM public.devices WHERE id = dev_new;
-  r := r || ' [re_report_marks_station_verified ' || CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || ']';
+  PERFORM public.agent_report_inventory(ag_a, '{"station":{"hardware_source":"physical"},"system":{"serial":"NEW-SYS-9"},"drives":[{"serial":"NEW-DRV-9","interface":"nvme_ssd"}]}');
+  SELECT hardware_verified AND hardware_origin = 'station_reported' AND source = 'agent_reported' INTO ok FROM public.devices WHERE id = dev_new;
+  r := r || ' [re_report_marks_station_reported ' || CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || ']';
   res := public.agent_heartbeat(ag_a, 'idle', null);
   r := r || ' [reinventory_flag_cleared ' || CASE WHEN NOT (res->>'inventory_requested')::boolean THEN 'PASS' ELSE 'FAIL' END || ']';
 

@@ -74,7 +74,10 @@ def draw(scr, st: Station) -> None:
     put(y, 0, "LAPTOP", B); y += 1
     put(y, 2, f"{sysd.get('manufacturer', '?')}  {sysd.get('model', '?')}   S/N {sysd.get('serial', 'MISSING')}"); y += 1
     put(y, 2, f"CPU {sysd.get('cpu', '?')}   RAM {_gb(sysd.get('ram_bytes'))}   {sysd.get('boot_mode', '?').upper()}"
-        + (f"  Secure Boot {'on' if sysd.get('secure_boot') else 'off'}" if 'secure_boot' in sysd else "")); y += 2
+        + (f"  Secure Boot {'on' if sysd.get('secure_boot') else 'off'}" if 'secure_boot' in sysd else "")); y += 1
+    stn = v.discovery.get("station", {})
+    src = stn.get("hardware_source", "?")
+    put(y, 2, f"Hardware source: {src.upper()} ({stn.get('hardware_source_reason', '')})", G if src == "physical" else Y); y += 2
     put(y, 0, "DRIVES", B); y += 1
     for d in v.discovery.get("drives", []):
         tag = "EXCLUDED boot USB" if d.get("is_boot_medium") else "excluded removable" if d.get("removable") else "INTERNAL"

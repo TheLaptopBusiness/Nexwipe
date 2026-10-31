@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmptyState, ErrorBlock, LoadingBlock, Mono, PageHeader, errorMessage } from "@/components/nd/page";
 import { ALL, FilterSelect } from "@/components/nd/filter-select";
 import { DEVICE_STATUS, StatusBadge, ToneBadge } from "@/components/nd/status-badge";
+import { HardwareOriginBadge } from "@/components/nd/hardware-origin-badge";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatDate, useBatches, useClients, useProjects, useSites } from "@/lib/queries";
@@ -59,7 +60,7 @@ function Inventory() {
     queryFn: async () => {
       let query = supabase
         .from("devices")
-        .select("id, asset_tag, manufacturer, model, system_serial, status, hardware_verified, source, received_at, intake_condition, sites(name), clients(name), projects(name)", { count: "exact" })
+        .select("id, asset_tag, manufacturer, model, system_serial, status, hardware_verified, hardware_origin, source, received_at, intake_condition, sites(name), clients(name), projects(name)", { count: "exact" })
         .eq("org_id", orgId)
         .order("received_at", { ascending: false })
         .range(page * PAGE, page * PAGE + PAGE - 1);
@@ -78,15 +79,15 @@ function Inventory() {
   async function exportCsv() {
     const { data, error } = await supabase
       .from("devices")
-      .select("asset_tag, manufacturer, model, system_serial, cpu, ram_gb, status, intake_condition, hardware_verified, source, received_at, notes, sites(name), clients(name), projects(name)")
+      .select("asset_tag, manufacturer, model, system_serial, cpu, ram_gb, status, intake_condition, hardware_verified, hardware_origin, source, received_at, notes, sites(name), clients(name), projects(name)")
       .eq("org_id", orgId)
       .order("received_at", { ascending: false })
       .limit(5000);
     if (error) { toast.error(errorMessage(error)); return; }
-    const headers = ["asset_tag", "manufacturer", "model", "system_serial", "cpu", "ram_gb", "status", "intake_condition", "hardware_verified", "source", "received_at", "site", "client", "project", "notes"];
+    const headers = ["asset_tag", "manufacturer", "model", "system_serial", "cpu", "ram_gb", "status", "intake_condition", "station_reported_identity", "hardware_origin", "source", "received_at", "site", "client", "project", "notes"];
     const csv = toCsv(
       headers,
-      data.map((d) => [d.asset_tag, d.manufacturer, d.model, d.system_serial, d.cpu, d.ram_gb, d.status, d.intake_condition, d.hardware_verified, d.source, d.received_at, d.sites?.name, d.clients?.name, d.projects?.name, d.notes]),
+      data.map((d) => [d.asset_tag, d.manufacturer, d.model, d.system_serial, d.cpu, d.ram_gb, d.status, d.intake_condition, d.hardware_verified, d.hardware_origin, d.source, d.received_at, d.sites?.name, d.clients?.name, d.projects?.name, d.notes]),
     );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
@@ -103,7 +104,7 @@ function Inventory() {
     <div className="space-y-5">
       <PageHeader
         title="Device inventory"
-        description="Laptops received for processing. Hardware identity is verified only when reported by the agent."
+        description="Laptops received for processing. A station report shows which station sent an identity, not that the hardware physically exists."
         actions={
           <>
             <Button variant="outline" onClick={exportCsv}>
@@ -185,11 +186,7 @@ function Inventory() {
                     <td className="px-4 py-2.5 text-muted-foreground">{d.sites?.name ?? "—"}</td>
                     <td className="px-4 py-2.5"><StatusBadge map={DEVICE_STATUS} value={d.status} /></td>
                     <td className="px-4 py-2.5">
-                      {d.hardware_verified ? (
-                        <ToneBadge tone="success">Agent verified</ToneBadge>
-                      ) : (
-                        <ToneBadge tone="neutral">{d.source === "csv_import" ? "CSV · unverified" : "Manual · unverified"}</ToneBadge>
-                      )}
+                      <HardwareOriginBadge record={d} />
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground tabular">{formatDate(d.received_at)}</td>
                   </tr>

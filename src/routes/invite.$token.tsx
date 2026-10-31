@@ -5,9 +5,11 @@ import { MailWarning, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SetPasswordForm } from "@/components/nd/set-password-form";
 import { Wordmark } from "@/components/nd/wordmark";
 import { LoadingBlock, errorMessage } from "@/components/nd/page";
 import { useSessionUser } from "@/lib/session";
+import { needsFirstPassword } from "@/lib/first-password";
 import { ROLE_LABELS, type OrgRole } from "@/lib/permissions";
 import { membershipsQueryKey, rememberOrg } from "@/lib/org-context";
 
@@ -52,6 +54,9 @@ function InvitePage() {
     navigate({ to: "/app", replace: true });
   }
 
+  // Accounts created by an invitation email have no password yet; set one before joining.
+  const needsPassword = needsFirstPassword(user);
+
   const here = `/invite/${token}`;
 
   return (
@@ -73,6 +78,8 @@ function InvitePage() {
               </Button>
             </div>
           </div>
+        ) : needsPassword ? (
+          <SetPasswordForm email={user.email} onDone={() => undefined} />
         ) : preview.isLoading ? (
           <LoadingBlock />
         ) : !preview.data ? (

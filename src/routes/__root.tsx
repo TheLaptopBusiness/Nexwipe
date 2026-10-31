@@ -26,6 +26,7 @@ import {
   type RecoveryDecision,
 } from "../lib/app-recovery";
 import { supabase } from "@/integrations/supabase/client";
+import { needsFirstPassword, skipFirstPasswordRedirect } from "@/lib/first-password";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -206,7 +207,16 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    // An invitation email signs a brand-new user in wherever it lands; make them choose a password first.
+    const checkFirstPassword = async () => {
+      const { data: s } = await supabase.auth.getSession();
+      const path = window.location.pathname;
+      if (!needsFirstPassword(s.session?.user) || skipFirstPasswordRedirect(path)) return;
+      router.navigate({ to: "/welcome", search: { next: path + window.location.search }, replace: true });
+    };
+    void checkFirstPassword();
     const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") setTimeout(() => void checkFirstPassword(), 0);
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
