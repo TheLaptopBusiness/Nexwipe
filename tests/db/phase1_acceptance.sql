@@ -8,7 +8,6 @@ DECLARE
   ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); ut uuid := gen_random_uuid(); uv uuid := gen_random_uuid();
   oa uuid; ob uuid; mt uuid; ca uuid; pa uuid; pa2 uuid; tok text; n int; ok boolean;
   r text := '';
-  PROCEDURE_DUMMY int;
 BEGIN
   INSERT INTO auth.users(id, email, email_confirmed_at, aud, role) VALUES
     (ua, 'a@test.local', now(), 'authenticated','authenticated'),
