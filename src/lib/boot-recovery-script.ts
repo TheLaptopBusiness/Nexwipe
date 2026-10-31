@@ -4,8 +4,12 @@
 // src/lib/app-recovery.ts (keep RETRY_KEY / window in sync): reload once per 5 minutes per tab, guard
 // stored before reloading; if the guard is already used, show a plain fallback with a manual reload.
 // It never reloads after the app has mounted (the in-app error screen handles those cases).
+// It also switches off TanStack Router's own silent "reload once on missing module" behaviour
+// (lazyRouteComponent checks sessionStorage key "tanstack_router_reload:<message>"), because that
+// reload ignores unsaved form input; our error screen applies the unsaved-work rule instead.
 export const BOOT_RECOVERY_SCRIPT = `(function(){
 var KEY='nd.staleCodeReloadAt',DKEY='nd.lastErrorDiagnostics',WIN=300000;
+try{var P=Storage.prototype,g=P.getItem;P.getItem=function(k){return typeof k==='string'&&k.indexOf('tanstack_router_reload:')===0?'1':g.call(this,k);};}catch(e){}
 var RE=/Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS/i;
 function red(s){return String(s||'').replace(/eyJ[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}/g,'[redacted-jwt]').replace(/\\b(ndagt|ndenr)_[A-Za-z0-9]{8,}/g,'$1_[redacted]').replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g,'[redacted-email]').replace(/([?&](?:access_token|refresh_token|token|code|apikey)=)[^&\\s]+/gi,'$1[redacted]').slice(0,400);}
 function done(){return !!window.__ndAppMounted;}
