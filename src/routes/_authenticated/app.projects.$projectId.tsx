@@ -43,7 +43,7 @@ function ProjectDetail() {
 
   async function setStatus(status: string) {
     const { error } = await supabase.from("projects").update({ status: status as never }).eq("id", p.id).eq("org_id", orgId);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["project", p.id] });
     qc.invalidateQueries({ queryKey: ["projects", orgId] });
   }
@@ -101,13 +101,13 @@ function Batches({ projectId }: { projectId: string }) {
   async function create(e: React.FormEvent) {
     e.preventDefault();
     const { error } = await supabase.from("batches").insert({ org_id: orgId, project_id: projectId, name: name.trim() });
-    if (error) return toast.error(error.code === "23505" ? "A batch with that name already exists in this project" : errorMessage(error));
+    if (error) { toast.error(error.code === "23505" ? "A batch with that name already exists in this project" : errorMessage(error)); return; }
     setName("");
     qc.invalidateQueries({ queryKey: ["batches", orgId] });
   }
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("batches").update({ status: status as never }).eq("id", id);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["batches", orgId] });
   }
 
@@ -233,13 +233,13 @@ function ViewerGrants({ projectId }: { projectId: string }) {
   async function grant() {
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("client_access_grants").insert({ org_id: orgId, project_id: projectId, user_id: user, granted_by: u.user!.id });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setUser("");
     qc.invalidateQueries({ queryKey: ["grants", projectId] });
   }
   async function revoke(id: string) {
     const { error } = await supabase.from("client_access_grants").update({ revoked_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     qc.invalidateQueries({ queryKey: ["grants", projectId] });
   }
 

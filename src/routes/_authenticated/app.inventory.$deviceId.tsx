@@ -179,7 +179,7 @@ function Overview({ device: d }: { device: DeviceRow }) {
       })
       .eq("id", d.id);
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Device updated");
     setEditing(false);
     qc.invalidateQueries({ queryKey: ["device", d.id] });
@@ -311,13 +311,13 @@ function Drives({ deviceId }: { deviceId: string }) {
         .single();
       if (error) {
         setBusy(false);
-        return toast.error(errorMessage(error));
+        { toast.error(errorMessage(error)); return; }
       }
       driveId = data.id;
     }
     const { error } = await supabase.from("device_drive_associations").insert({ org_id: orgId, device_id: deviceId, drive_id: driveId, slot: s("slot") });
     setBusy(false);
-    if (error) return toast.error(error.code === "23505" ? "That drive is currently attached to another device. Detach it there first." : errorMessage(error));
+    if (error) { toast.error(error.code === "23505" ? "That drive is currently attached to another device. Detach it there first." : errorMessage(error)); return; }
     toast.success("Drive attached");
     setAdding(false);
     qc.invalidateQueries({ queryKey: ["device-drives", deviceId] });
@@ -328,7 +328,7 @@ function Drives({ deviceId }: { deviceId: string }) {
     if (!detach) return;
     const { error } = await supabase.from("device_drive_associations").update({ detached_at: new Date().toISOString() }).eq("id", detach);
     setDetach(null);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Drive detached; history preserved");
     qc.invalidateQueries({ queryKey: ["device-drives", deviceId] });
     qc.invalidateQueries({ queryKey: ["custody", deviceId] });
@@ -339,7 +339,7 @@ function Drives({ deviceId }: { deviceId: string }) {
   const current = assoc.data!.filter((a) => !a.detached_at);
   const past = assoc.data!.filter((a) => a.detached_at);
 
-  const row = (a: (typeof assoc.data)[number], active: boolean) => (
+  const row = (a: NonNullable<typeof assoc.data>[number], active: boolean) => (
     <tr key={a.id}>
       <td className="px-4 py-2.5"><Mono className="font-medium text-foreground">{a.drives?.serial}</Mono></td>
       <td className="px-4 py-2.5 text-foreground">{[a.drives?.manufacturer, a.drives?.model].filter(Boolean).join(" ") || "—"}</td>
@@ -460,7 +460,7 @@ function Diagnostics({ device: d }: { device: DeviceRow }) {
       })
       .eq("id", d.id);
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Diagnostics saved");
     qc.invalidateQueries({ queryKey: ["device", d.id] });
   }
@@ -505,7 +505,7 @@ function Custody({ deviceId }: { deviceId: string }) {
     e.preventDefault();
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("custody_events").insert({ org_id: orgId, device_id: deviceId, event_type: "note", notes: note.trim(), actor_id: u.user!.id });
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     setNote("");
     qc.invalidateQueries({ queryKey: ["custody", deviceId] });
   }

@@ -112,7 +112,7 @@ function ProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!client) return toast.error("Choose a client");
+    if (!client) { toast.error("Choose a client"); return; }
     const f = new FormData(e.currentTarget);
     const s = (k: string) => {
       const v = String(f.get(k) ?? "").trim();
@@ -133,7 +133,7 @@ function ProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
       status: "active",
     });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     toast.success("Project created");
     qc.invalidateQueries({ queryKey: ["projects", orgId] });
     onOpenChange(false);

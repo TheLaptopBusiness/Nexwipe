@@ -91,7 +91,7 @@ function ClientDialog({ client, onClose }: { client: Client | null; onClose: () 
       ? await supabase.from("clients").update(values).eq("id", client.id)
       : await supabase.from("clients").insert({ ...values, org_id: orgId });
     setBusy(false);
-    if (error) return toast.error(error.code === "23505" ? "A client with that name already exists" : errorMessage(error));
+    if (error) { toast.error(error.code === "23505" ? "A client with that name already exists" : errorMessage(error)); return; }
     toast.success(client ? "Client updated" : "Client added");
     qc.invalidateQueries({ queryKey: ["clients", orgId] });
     onClose();

@@ -19,7 +19,8 @@ import { DEVICE_CSV_COLUMNS, toCsv, validateDeviceCsv, type ImportResult } from 
 import { manufacturerInScope } from "@/lib/hardware";
 
 export const Route = createFileRoute("/_authenticated/app/inventory/")({
-  validateSearch: (s: Record<string, unknown>) => ({ intake: s.intake === true || s.intake === "true" ? true : undefined }),
+  validateSearch: (s: Record<string, unknown>): { intake?: true } =>
+    s["intake"] === true || s["intake"] === "true" ? { intake: true } : {},
   component: Inventory,
 });
 
@@ -81,7 +82,7 @@ function Inventory() {
       .eq("org_id", orgId)
       .order("received_at", { ascending: false })
       .limit(5000);
-    if (error) return toast.error(errorMessage(error));
+    if (error) { toast.error(errorMessage(error)); return; }
     const headers = ["asset_tag", "manufacturer", "model", "system_serial", "cpu", "ram_gb", "status", "intake_condition", "hardware_verified", "source", "received_at", "site", "client", "project", "notes"];
     const csv = toCsv(
       headers,
@@ -166,7 +167,7 @@ function Inventory() {
                 {list.data!.rows.map((d) => (
                   <tr key={d.id} className="hover:bg-muted/40">
                     <td className="px-4 py-2.5">
-                      <Link to="/app/inventory/$deviceId" params={{ deviceId: d.id }} className="font-mono font-medium text-foreground hover:underline">
+                      <Link to="/app/inventory/$deviceId" params={{ deviceId: d.id }} className="whitespace-nowrap font-mono font-medium text-foreground hover:underline">
                         {d.asset_tag}
                       </Link>
                     </td>
@@ -369,7 +370,7 @@ function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
   const [busy, setBusy] = useState(false);
 
   async function onFile(file: File) {
-    if (file.size > 2_000_000) return toast.error("File is larger than 2 MB");
+    if (file.size > 2_000_000) { toast.error("File is larger than 2 MB"); return; }
     setResult(validateDeviceCsv(await file.text()));
   }
 

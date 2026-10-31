@@ -79,7 +79,7 @@ function SiteDialog({ site, onClose }: { site: Site | null; onClose: () => void 
     setBusy(true);
     const { error } = site ? await supabase.from("sites").update(values).eq("id", site.id) : await supabase.from("sites").insert({ ...values, org_id: orgId });
     setBusy(false);
-    if (error) return toast.error(error.code === "23505" ? "A site with that name already exists" : errorMessage(error));
+    if (error) { toast.error(error.code === "23505" ? "A site with that name already exists" : errorMessage(error)); return; }
     toast.success(site ? "Site updated" : "Site added");
     qc.invalidateQueries({ queryKey: ["sites", orgId] });
     onClose();

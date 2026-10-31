@@ -118,7 +118,7 @@ const NAV: { heading: string; items: NavItem[] }[] = [
   },
 ];
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   const { role } = useOrg();
   return (
     <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
@@ -196,7 +196,7 @@ function OrgSwitcher() {
   );
 }
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+function Sidebar({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   return (
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex h-16 items-center border-b border-sidebar-border px-5">
@@ -245,7 +245,7 @@ function UserMenu() {
     queryKey: ["auth-user"],
     queryFn: async () => (await supabase.auth.getUser()).data.user,
   });
-  const initials = (user?.user_metadata?.full_name as string | undefined)?.split(" ").map((p) => p[0]).slice(0, 2).join("") || user?.email?.[0]?.toUpperCase() || "?";
+  const initials = (user?.user_metadata?.["full_name"] as string | undefined)?.split(" ").map((p) => p[0]).slice(0, 2).join("") || user?.email?.[0]?.toUpperCase() || "?";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
