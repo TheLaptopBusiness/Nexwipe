@@ -17,7 +17,7 @@ const FAQ = [
   { q: "Can NextDrive erase a laptop from the browser?", a: "No. A browser cannot securely erase a laptop’s internal drive. Erasure is performed by the NextDrive Agent, which boots on the laptop itself. The agent is in development." },
   { q: "Is NextDrive certified?", a: "No. NextDrive holds no certifications and has not been independently assessed." },
   { q: "Which hardware will be supported first?", a: "x86-64 Dell, HP and Lenovo laptops with directly attached SATA and NVMe drives. See the supported hardware page." },
-  { q: "Does importing a CSV verify my hardware?", a: "No. Imported rows are recorded as unverified. Hardware identity is verified only when reported by the agent." },
+  { q: "Does importing a CSV verify my hardware?", a: "No. Imported rows are recorded as not station-reported. A station report shows which enrolled station sent an identity; it does not by itself prove the hardware physically exists, and test or virtual hardware is always labelled synthetic." },
   { q: "I didn’t receive my verification email.", a: "Check your spam folder, then try signing up again with the same address to resend it." },
 ];
 

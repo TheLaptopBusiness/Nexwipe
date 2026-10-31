@@ -11,7 +11,7 @@
 | 3 | Discover laptop + internal drives; flag boot USB | report shows correct service tag/serial, drive serial/model/capacity; boot USB marked "Station boot medium · not recorded" |
 | 4 | Upload inventory (`POST /inventory`) | entry under **Hardware reported by stations** |
 | 5 | Heartbeats every 30 s | "last seen" stays under 1 min; unplugging network shows the station stale/offline |
-| 6 | Display the real device: technician clicks **Add to inventory**, station re-reports on `inventory_requested` | laptop + drives in Inventory marked station-verified |
+| 6 | Display the real device: technician clicks **Add to inventory**, station re-reports on `inventory_requested` | laptop + drives in Inventory marked "Station-reported identity" (VMs and test data: "Synthetic test hardware") |
 | 7 | `GET /jobs` returns `[]`; `POST /reconcile` returns `[]` | logged |
 | 8 | Revoke the station in the app | next request returns 401; console shows revoked |
 

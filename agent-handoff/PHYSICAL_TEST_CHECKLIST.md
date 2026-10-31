@@ -63,7 +63,7 @@ Record for every change: setting name, original value, new value, time. **Restor
 | 2 | Connect and enroll | Cable in. App: Agents & stations → Enrollment token (1 h). Station: **S** (published `https://` address), **E**, type token, give a name | Station shows the name and "mode read_only"; app lists the station as "Read-only test station" |
 | 3 | Compare identifiers | Station screen + app ("Hardware reported by stations") vs firmware screen, case sticker and drive label | Manufacturer, model, system serial, CPU, RAM match; each drive's model, serial, capacity, firmware match. Any "Needs review" flag explained |
 | 4 | Boot USB excluded | Count drives on screen vs physically installed | Each internal drive listed as INTERNAL; the stick listed as "EXCLUDED boot USB"; the app never records the stick as a laptop drive |
-| 5 | Add to inventory | App: Add to inventory, enter asset tag; wait ≤ 1 min | Station uploads again; row shows the asset tag and "Station-verified"; laptop + drives in Inventory marked station-verified |
+| 5 | Add to inventory | App: Add to inventory, enter asset tag; wait ≤ 1 min | Station uploads again; row shows the asset tag and "Station-reported identity"; laptop + drives in Inventory marked "Station-reported identity". The station screen must show **Hardware source: PHYSICAL**; if it shows VIRTUAL or SYNTHETIC, or the app shows "Synthetic test hardware", stop and record it |
 | 6 | Disconnect / reconnect | Unplug the cable 1 min, plug back | "Network cable not connected", then "Connected"; app's last-seen time updates |
 | 7 | Restart, no duplicates | **P** to power off, boot again from the same stick | Still enrolled (no token); app shows the same report "reported N times"; no second inventory record |
 | 8 | Revoke | App: Revoke station | Within 30 s the screen shows REVOKED; the credential is deleted from the stick |
@@ -101,7 +101,7 @@ A failure in step 3 or 4 (wrong identifier, missing internal drive, boot stick r
 |---|---|---|
 | Boot USB shown as EXCLUDED and not recorded as a laptop drive | | |
 | Enrollment (station shown read-only in the app) | | |
-| Add to inventory → station-verified | | |
+| Add to inventory → "Station-reported identity" (not "Synthetic"); station shows Hardware source PHYSICAL | | |
 | Disconnect / reconnect | | |
 | Restart without duplicate records | | |
 | Credential revocation | | |
