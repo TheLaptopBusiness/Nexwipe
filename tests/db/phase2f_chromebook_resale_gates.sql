@@ -36,12 +36,12 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_online_setup_check(rec, true, false, 'Online, no enrollment screen');
     r := r || ' [unknown_mgmt_online_check_refused FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [unknown_mgmt_online_check_refused PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [unknown_mgmt_online_check_refused ' || CASE WHEN SQLERRM LIKE '%Management status is unknown%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   PERFORM set_config('request.jwt.claims', ca, true);
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', NULL);
     r := r || ' [unknown_mgmt_blocks_resale FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [unknown_mgmt_blocks_resale PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [unknown_mgmt_blocks_resale ' || CASE WHEN SQLERRM LIKE '%Management is unknown or unresolved%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   SELECT management_status INTO m FROM public.chromebook_records WHERE id = rec;
   r := r || ' [unknown_stays_unknown ' || CASE WHEN m = 'unknown' THEN 'PASS' ELSE 'FAIL ' || m END || ']';
 
@@ -50,7 +50,7 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_set_management(rec, 'owner_reported_never_managed', '');
     r := r || ' [never_managed_needs_note FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [never_managed_needs_note PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [never_managed_needs_note ' || CASE WHEN SQLERRM LIKE '%Record who you contacted%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   PERFORM public.chromebook_set_management(rec, 'owner_reported_never_managed', 'Owner A. Smith states consumer purchase, never enrolled (email 09:12)');
   PERFORM public.chromebook_online_setup_check(rec, true, false, 'Online, no enrollment screen');
   PERFORM set_config('request.jwt.claims', ca, true);
@@ -63,7 +63,7 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_set_management(rec, 'management_observed', 'Managed label seen later');
     r := r || ' [released_record_mgmt_change_refused FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [released_record_mgmt_change_refused PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [released_record_mgmt_change_refused ' || CASE WHEN SQLERRM LIKE '%already released%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
 
   -- G1d. "Never managed" cannot override observed management
   rec := public.chromebook_register(oa, 'F-1D', 'HP', 'Chromebook 11 G5', 'FSER1D');
@@ -71,7 +71,7 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_set_management(rec, 'owner_reported_never_managed', 'Owner says never managed');
     r := r || ' [never_managed_cannot_override_observed FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [never_managed_cannot_override_observed PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [never_managed_cannot_override_observed ' || CASE WHEN SQLERRM LIKE '%Management was observed%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
 
   ---------------------------------------------------------------------------
   -- G2. Missing reset evidence blocks release
@@ -89,7 +89,7 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', NULL);
     r := r || ' [missing_reset_evidence_blocks FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [missing_reset_evidence_blocks PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [missing_reset_evidence_blocks ' || CASE WHEN SQLERRM LIKE '%Reset completion evidence is missing%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   PERFORM set_config('request.jwt.claims', ct, true);
   PERFORM public.chromebook_reset_step(rec, 'evidence', NULL, NULL, 'Photo of welcome screen + recovery log');
 
@@ -100,14 +100,14 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', 'Accept anyway');
     r := r || ' [required_diag_fail_blocks FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [required_diag_fail_blocks PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [required_diag_fail_blocks ' || CASE WHEN SQLERRM LIKE '%Required check not passed: display%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   PERFORM set_config('request.jwt.claims', ct, true);
   PERFORM public.chromebook_record_diagnostics(rec, diag || '{"keyboard":"not_fitted"}', NULL);
   PERFORM set_config('request.jwt.claims', ca, true);
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', 'x');
     r := r || ' [required_diag_not_fitted_blocks FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [required_diag_not_fitted_blocks PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [required_diag_not_fitted_blocks ' || CASE WHEN SQLERRM LIKE '%Required check not passed: keyboard%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   -- optional check failing needs an explanation
   PERFORM set_config('request.jwt.claims', ct, true);
   PERFORM public.chromebook_record_diagnostics(rec, diag || '{"camera":"fail"}', 'Camera dead');
@@ -115,7 +115,7 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', '');
     r := r || ' [optional_fail_needs_explanation FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [optional_fail_needs_explanation PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [optional_fail_needs_explanation ' || CASE WHEN SQLERRM LIKE '%Explain the optional diagnostic exceptions%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   -- resolved: required failure re-tested as pass -> release allowed (positive control)
   PERFORM set_config('request.jwt.claims', ct, true);
   PERFORM public.chromebook_record_diagnostics(rec, diag, 'Display replaced and re-tested');
@@ -141,14 +141,14 @@ BEGIN
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', NULL);
     r := r || ' [no_online_check_blocks FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [no_online_check_blocks PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [no_online_check_blocks ' || CASE WHEN SQLERRM LIKE '%An online setup check after the reset%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   PERFORM set_config('request.jwt.claims', ct, true);
   PERFORM public.chromebook_online_setup_check(rec, true, true, 'Enterprise enrollment screen');
   PERFORM set_config('request.jwt.claims', ca, true);
   BEGIN
     PERFORM public.chromebook_review(rec, 'resale_ready', NULL);
     r := r || ' [enrollment_prompt_blocks FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [enrollment_prompt_blocks PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [enrollment_prompt_blocks ' || CASE WHEN SQLERRM LIKE '%An online setup check after the reset%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
 
   ---------------------------------------------------------------------------
   -- G5. Trusted/server path cannot skip authorization or evidence either (invariant trigger)
@@ -162,18 +162,18 @@ BEGIN
   BEGIN
     UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
     r := r || ' [trusted_path_needs_authorization FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [trusted_path_needs_authorization PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [trusted_path_needs_authorization ' || CASE WHEN SQLERRM LIKE '%Reset authorization by an owner or administrator is missing%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   UPDATE public.chromebook_records SET reset_authorized_by = ua, reset_authorized_at = reset_started_at - interval '1 minute',
     reset_status = 'technician_completed' WHERE id = rec;
   BEGIN
     UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
     r := r || ' [trusted_path_needs_evidence FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [trusted_path_needs_evidence PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [trusted_path_needs_evidence ' || CASE WHEN SQLERRM LIKE '%Reset completion evidence is missing%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   UPDATE public.chromebook_records SET reset_status = 'evidence_collected', online_setup_checked_at = reset_completed_at - interval '1 minute' WHERE id = rec;
   BEGIN
     UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
     r := r || ' [online_check_must_follow_reset FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [online_check_must_follow_reset PASS]'; END;
+  EXCEPTION WHEN others THEN r := r || ' [online_check_must_follow_reset ' || CASE WHEN SQLERRM LIKE '%must happen after the reset%' THEN 'PASS' ELSE 'FAIL ' || SQLERRM END || ']'; END;
   -- positive control: same record with every requirement satisfied is accepted by the trigger
   UPDATE public.chromebook_records SET online_setup_checked_at = reset_completed_at + interval '1 minute' WHERE id = rec;
   UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
