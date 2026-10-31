@@ -76,7 +76,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     const safe = new Error(d.message);
     safe.name = d.name;
     safe.stack = d.stack;
-    console.error(`[NextDrive] ${d.kind} ${d.id}: ${d.name}: ${d.message}`);
+    console.error(`[NexWipe] ${d.kind} ${d.id}: ${d.name}: ${d.message}`);
     reportLovableError(safe, { boundary: "tanstack_root_error_component", diagnostic_id: d.id, kind: d.kind, recovery: result.action });
   }, [error]);
 
@@ -98,7 +98,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-lg text-center" role="alert">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          {decision.action === "ask" ? "A newer version of NextDrive is available" : "This page didn't load"}
+          {decision.action === "ask" ? "A newer version of NexWipe is available" : "This page didn't load"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {decision.action === "ask"
@@ -156,12 +156,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NextDrive — Wipe. Verify. Renew." },
+      { title: "NexWipe — Wipe. Verify. Renew." },
       {
         name: "description",
-        content: "NextDrive Cloud: inventory, job orchestration and evidence records for laptop data-erasure operations.",
+        content: "NexWipe Cloud: inventory, job orchestration and evidence records for laptop data-erasure operations.",
       },
-      { property: "og:title", content: "NextDrive — Wipe. Verify. Renew." },
+      { property: "og:title", content: "NexWipe — Wipe. Verify. Renew." },
       {
         property: "og:description",
         content: "Inventory, job orchestration and evidence records for laptop data-erasure operations.",

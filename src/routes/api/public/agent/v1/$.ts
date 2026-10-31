@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// NextDrive Agent API v1. Public prefix so stations can reach it; every handler authenticates
+// NexWipe Agent API v1. Public prefix so stations can reach it; every handler authenticates
 // the agent itself (see src/server/agent-api/handler.server.ts and docs/agent-api/openapi.yaml).
 async function handle(request: Request, splat: string | undefined) {
   const { handleAgentRequest } = await import("@/server/agent-api/handler.server");

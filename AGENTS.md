@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-# NextDrive engineering rules
+# NexWipe engineering rules
 
 - Read `docs/ARCHITECTURE.md` and `docs/STATUS.md` before changing schema or features; update STATUS when a feature's status changes.
 - Tenant tables carry `org_id` with `UNIQUE (org_id, id)` and child rows use composite FKs `(org_id, parent_id)` — prevents cross-company references even with forged ids.

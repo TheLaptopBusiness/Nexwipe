@@ -1,5 +1,5 @@
-9dd4409b3b63d8611829c5e2ab29075de7607fb42e3762831ffcd2c6c5c1ad6d  nextdrive-station-readonly-0.2.1-readonly-production.img
-f28c506d5fd8f2f4725d93e22ed0ff7218a669b152483ece2b798e9d2199fe4a  nextdrive-station-readonly-0.2.1-readonly-production.img.xz
+9dd4409b3b63d8611829c5e2ab29075de7607fb42e3762831ffcd2c6c5c1ad6d  nexwipe-station-readonly-0.2.1-readonly-production.img
+f28c506d5fd8f2f4725d93e22ed0ff7218a669b152483ece2b798e9d2199fe4a  nexwipe-station-readonly-0.2.1-readonly-production.img.xz
 # production components (0.2.1)
 8c4e5d8009e12c50a3f256e92c6452116488cfc9ac666c72eee0a47d61593b3a  live/filesystem.squashfs
 2b2358b37674d2505350528875bb17afae2a36522a9e8a9417eaca65a7da0e08  live/vmlinuz

@@ -6,9 +6,9 @@ import { ToneBadge } from "@/components/nd/status-badge";
 export const Route = createFileRoute("/product")({
   head: () => ({
     meta: [
-      { title: "Product — NextDrive" },
-      { name: "description", content: "What NextDrive Cloud does today, what is in development, and what is planned." },
-      { property: "og:title", content: "Product — NextDrive" },
+      { title: "Product — NexWipe" },
+      { name: "description", content: "What NexWipe Cloud does today, what is in development, and what is planned." },
+      { property: "og:title", content: "Product — NexWipe" },
       { property: "og:description", content: "Capabilities available today, in development, and planned." },
     ],
   }),
@@ -56,7 +56,7 @@ function ProductPage() {
   return (
     <PublicLayout>
       <section className="mx-auto max-w-7xl px-6 py-16">
-        <h1 className="text-4xl font-semibold text-foreground">What NextDrive does</h1>
+        <h1 className="text-4xl font-semibold text-foreground">What NexWipe does</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           We list capabilities by their actual status. Nothing below the “Available” column should be relied on for
           production erasure today.
@@ -69,7 +69,7 @@ function ProductPage() {
         <div className="mt-10 rounded-xl border border-border bg-muted p-6 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">On certifications</p>
           <p className="mt-1">
-            NextDrive is not NIST certified, ADISA certified or R2 certified, and has not been independently validated.
+            NexWipe is not NIST certified, ADISA certified or R2 certified, and has not been independently validated.
             We will only state otherwise once a real assessment exists.
           </p>
         </div>

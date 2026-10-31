@@ -1,7 +1,7 @@
 # First physical read-only station test — instructions and record
 
 **Status of physical compatibility: UNVERIFIED.** It stays unverified until a filled-in copy of this record exists for each laptop.
-Real erasure is disabled. This test never erases, formats or changes a laptop's internal drives, and NextDrive issues no wipe certificate for it.
+Real erasure is disabled. This test never erases, formats or changes a laptop's internal drives, and NexWipe issues no wipe certificate for it.
 
 ## 0. Before you start — two very different things happen to drives
 
@@ -14,13 +14,13 @@ Use lab-owned laptops only. Leave drives in place as they are; do not use custom
 
 ## 1. What you need
 
-- Image: `nextdrive-station-readonly-0.2.1-readonly-production.img.xz` (station program `nd_station 0.2.1-readonly`).
+- Image: `nexwipe-station-readonly-0.2.1-readonly-production.img.xz` (station program `nd_station 0.2.1-readonly`).
   - SHA-256 of the `.img.xz` download: `8a25e9d0e5205f5cea17bbe1a35b71e7e7eb2ac1f2d3939299e05fd6988ba856`
   - SHA-256 of the unpacked `.img`: `18e98b597f1faf09223b92fd900a2e23068c2f93c33037a10bbc9945aca9f5a4`
-- A dedicated USB stick, 4 GB or larger, physically labelled "NextDrive station #…".
-- Server address: the **published** NextDrive address, `https://…` (the private preview address does not work for stations; plain `http://` is refused by this image).
+- A dedicated USB stick, 4 GB or larger, physically labelled "NexWipe station #…".
+- Server address: the **published** NexWipe address, `https://…` (the private preview address does not work for stations; plain `http://` is refused by this image).
 - An Ethernet cable on a network with internet access (Wi-Fi is possible with **W**, but test cable first).
-- A NextDrive owner or administrator signed in with two-step verification, to create the enrollment token.
+- A NexWipe owner or administrator signed in with two-step verification, to create the enrollment token.
 - A phone/camera for photos of firmware screens and the station screen.
 
 ## 2. Boot with the laptop's existing settings first
@@ -86,7 +86,7 @@ A failure in step 3 or 4 (wrong identifier, missing internal drive, boot stick r
 
 **Identifiers — actual vs reported**
 
-| Item | Actual (firmware / sticker / drive label) | Station screen | NextDrive app | Match? |
+| Item | Actual (firmware / sticker / drive label) | Station screen | NexWipe app | Match? |
 |---|---|---|---|---|
 | Manufacturer | | | | |
 | Model | | | | |

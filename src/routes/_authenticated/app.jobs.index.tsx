@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/app/jobs/")({
   validateSearch: (s: Record<string, unknown>): { view: View } => ({
     view: (Object.keys(VIEWS) as View[]).includes(s["view"] as View) ? (s["view"] as View) : "open",
   }),
-  head: () => ({ meta: [{ title: "Erasure jobs · NextDrive" }] }),
+  head: () => ({ meta: [{ title: "Erasure jobs · NexWipe" }] }),
   component: JobsPage,
 });
 

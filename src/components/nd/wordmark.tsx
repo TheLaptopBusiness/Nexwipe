@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Original placeholder NextDrive wordmark. Replaceable: swap this component. */
+/** Original placeholder NexWipe wordmark. Replaceable: swap this component. */
 export function Wordmark({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2 select-none", className)}>
@@ -17,7 +17,7 @@ export function Wordmark({ className, inverted = false }: { className?: string; 
           inverted ? "text-navy-foreground" : "text-foreground",
         )}
       >
-        Next<span className="text-signal">Drive</span>
+        Nex<span className="text-signal">Wipe</span>
       </span>
     </span>
   );

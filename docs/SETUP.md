@@ -21,7 +21,7 @@ Future (not yet required): Stripe test keys (Phase 4), report-signing key refere
 ## Auth configuration
 
 - Email/password and Google sign-in are enabled. Email confirmation is required.
-- Make a user a NextDrive platform admin: insert their user id into `public.platform_admins` (server-side only).
+- Make a user a NexWipe platform admin: insert their user id into `public.platform_admins` (server-side only).
 
 ## Agent API
 

@@ -1,8 +1,8 @@
-# NextDrive — status
+# NexWipe — status
 
 _Last updated: invitee first-password + hardware-origin correction (2026-10-31, after the read-only pilot publish; changes below are in the preview and not yet published). Published address: https://pixel-perfect-screenshot-maker-52.lovable.app_
 
-**NextDrive cannot erase a real drive today.** No production agent exists, and no erasure method has been implemented or tested on hardware. Everything below that touches jobs or evidence has only been exercised with the labelled simulator.
+**NexWipe cannot erase a real drive today.** No production agent exists, and no erasure method has been implemented or tested on hardware. Everything below that touches jobs or evidence has only been exercised with the labelled simulator.
 
 ## 1. Implemented and tested
 
@@ -42,12 +42,12 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 - **Existing account signing in with Google** (with sign-up closed): not completed — needs a person with the Google account. The hand-off to Google works; one existing Google-linked account last signed in 05:48 UTC, before sign-up was closed.
 - Invitation emails come from the default sender and show the project's internal name ("Pixel Perfect Screenshot Maker") as the sender name.
 - **Physical laptop compatibility: UNVERIFIED.** The USB image has not been booted on any physical laptop. Secure Boot on real firmware, storage-controller modes (AHCI / RAID / RST / VMD), Wi-Fi, real drive identity strings and USB boot on real firmware are untested. Stays unverified until a filled-in record from `agent-handoff/PHYSICAL_TEST_CHECKLIST.md` exists per laptop.
-- New Google sign-ins: with sign-up closed, a Google account that has no NextDrive account yet cannot sign in.
+- New Google sign-ins: with sign-up closed, a Google account that has no NexWipe account yet cannot sign in.
 - "Station-reported identity" for a **physical** laptop: classification tested in the database only; no physical laptop has reported yet.
 - Email links redirect to the app's main address, not to the invitation page (the sign-in service only allows registered addresses); the in-app pending-invitation banner covers this.
 - Invitation links on a **custom domain** require `APP_ALLOWED_ORIGINS` to list it.
 - Agent API behaviour on the published site (all HTTP checks ran against the preview server).
-- **Outdated-code recovery after a real update**: tested on the development server and on the published build by blocking/replacing code files in a test browser; not yet observed during an actual new deploy with a tab left open. Not tested in Safari or Firefox (their error wording is covered only by unit tests). The browser's own error log on the user's computer can still show the raw error message (development and published); NextDrive's stored, shown and reported details are redacted.
+- **Outdated-code recovery after a real update**: tested on the development server and on the published build by blocking/replacing code files in a test browser; not yet observed during an actual new deploy with a tab left open. Not tested in Safari or Firefox (their error wording is covered only by unit tests). The browser's own error log on the user's computer can still show the raw error message (development and published); NexWipe's stored, shown and reported details are redacted.
 - The reference client's hardware discovery on a real laptop (only tested with replayed test hardware data in this environment, which has no laptop hardware).
 
 ## 3. Simulated
@@ -66,7 +66,7 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 
 - **Boot the USB image on one Dell, one HP and one Lenovo laptop** and fill in `agent-handoff/PHYSICAL_TEST_CHECKLIST.md`.
 
-- **The NextDrive bootable agent** (image, discovery, capability detection, local confirmation, privileged engine, evidence, credential storage, signed updates, recovery). Handoff: `agent-handoff/`. Milestone 1 is read-only; destructive testing only on designated disposable drives (Stage 2).
+- **The NexWipe bootable agent** (image, discovery, capability detection, local confirmation, privileged engine, evidence, credential storage, signed updates, recovery). Handoff: `agent-handoff/`. Milestone 1 is read-only; destructive testing only on designated disposable drives (Stage 2).
 - Per-model hardware qualification and method-support evidence (`agent-handoff/MILESTONES.md`).
 - Independent third-party assessment of the erasure engine.
 - An email sender domain owned by Used Tech Solutions for branded emails.

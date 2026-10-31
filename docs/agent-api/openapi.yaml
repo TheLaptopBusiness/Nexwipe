@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
-  title: NextDrive Agent API
+  title: NexWipe Agent API
   version: "1.2.0"
   description: |
-    Contract between a NextDrive erasure station (the bootable agent, a separate deliverable)
-    and NextDrive Cloud. The labelled simulator in this repository uses exactly this contract.
+    Contract between a NexWipe erasure station (the bootable agent, a separate deliverable)
+    and NexWipe Cloud. The labelled simulator in this repository uses exactly this contract.
 
     ## Authentication
     * `POST /enroll` exchanges a single-use enrollment token (created by an owner or administrator)

@@ -4,10 +4,10 @@ import { PublicLayout } from "@/components/nd/public-layout";
 export const Route = createFileRoute("/workflow")({
   head: () => ({
     meta: [
-      { title: "Workflow — NextDrive" },
-      { name: "description", content: "From intake to release: how a laptop moves through NextDrive." },
-      { property: "og:title", content: "Workflow — NextDrive" },
-      { property: "og:description", content: "From intake to release: how a laptop moves through NextDrive." },
+      { title: "Workflow — NexWipe" },
+      { name: "description", content: "From intake to release: how a laptop moves through NexWipe." },
+      { property: "og:title", content: "Workflow — NexWipe" },
+      { property: "og:description", content: "From intake to release: how a laptop moves through NexWipe." },
     ],
   }),
   component: WorkflowPage,

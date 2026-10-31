@@ -92,7 +92,7 @@ function Inventory() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `nextdrive-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `nexwipe-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -410,7 +410,7 @@ function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "nextdrive-device-template.csv";
+    a.download = "nexwipe-device-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   }

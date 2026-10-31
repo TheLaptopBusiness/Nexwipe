@@ -6,9 +6,9 @@ import { PublicLayout } from "@/components/nd/public-layout";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — NextDrive" },
-      { name: "description", content: "NextDrive plans: a subscription plus prepaid per-drive credits, billed only on approved drive jobs." },
-      { property: "og:title", content: "Pricing — NextDrive" },
+      { title: "Pricing — NexWipe" },
+      { name: "description", content: "NexWipe plans: a subscription plus prepaid per-drive credits, billed only on approved drive jobs." },
+      { property: "og:title", content: "Pricing — NexWipe" },
       { property: "og:description", content: "Subscription plus prepaid per-drive credits, billed only on approved drive jobs." },
     ],
   }),

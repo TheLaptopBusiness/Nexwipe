@@ -16,7 +16,7 @@ function done(){return !!window.__ndAppMounted;}
 function fallback(msg){
   var id=Math.random().toString(36).slice(2,10).toUpperCase(),now=new Date().toISOString();
   try{sessionStorage.setItem(DKEY,JSON.stringify({id:id,at:now,kind:'outdated_code',name:'BootLoadError',message:red(msg),path:location.pathname}));}catch(e){}
-  try{console.error('[NextDrive] outdated_code '+id+': '+red(msg));}catch(e){}
+  try{console.error('[NexWipe] outdated_code '+id+': '+red(msg));}catch(e){}
   var show=function(){
     if(done()||document.getElementById('nd-boot-fallback'))return;
     var d=document.createElement('div');d.id='nd-boot-fallback';d.setAttribute('role','alert');

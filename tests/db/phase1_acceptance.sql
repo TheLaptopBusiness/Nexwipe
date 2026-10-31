@@ -1,4 +1,4 @@
--- NextDrive Phase 1 database acceptance checks.
+-- NexWipe Phase 1 database acceptance checks.
 -- Sessions are simulated at AAL2 (two-step verified) so owner/admin rights apply; see phase2b_security.sql for AAL1 checks.
 -- Runs as a single DO block, creates temporary users/orgs, and always ends by
 -- raising an exception so the whole transaction rolls back (nothing persists).

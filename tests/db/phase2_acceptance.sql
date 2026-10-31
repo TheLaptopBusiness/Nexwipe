@@ -1,4 +1,4 @@
--- NextDrive Phase 2 database acceptance checks (policies, jobs, authorizations, agent API RPCs).
+-- NexWipe Phase 2 database acceptance checks (policies, jobs, authorizations, agent API RPCs).
 -- Sessions are simulated at AAL2 (two-step verified) so owner/admin rights apply; see phase2b_security.sql for AAL1 checks.
 -- Single DO block; always ends with RAISE so everything rolls back. Every item must read PASS.
 DO $$

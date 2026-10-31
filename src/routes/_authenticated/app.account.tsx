@@ -100,7 +100,7 @@ function Mfa() {
   async function start() {
     // Clean up any abandoned, unverified factors first.
     for (const f of factors.data?.all ?? []) if (f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `NextDrive ${Date.now()}` });
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `NexWipe ${Date.now()}` });
     if (error) { toast.error(errorMessage(error)); return; }
     setEnroll({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
   }

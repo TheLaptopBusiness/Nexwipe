@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# NextDrive read-only station USB image builder.
+# NexWipe read-only station USB image builder.
 #
-# Produces build/nextdrive-station-readonly-<version>.img: a GPT disk image with
+# Produces build/nexwipe-station-readonly-<version>.img: a GPT disk image with
 #   p1  ESP (FAT32)  : signed shim + signed GRUB + Debian kernel/initrd + live/filesystem.squashfs
 #   p2  ND-STATE ext4: station credential and metadata (the only writable area)
 # Write it to a USB stick with dd/balenaEtcher (see README.md).
@@ -11,7 +11,7 @@
 #
 # Usage:
 #   sudo ./build.sh                       # production image (server address entered on the station)
-#   sudo ND_SERVER=https://nextdrive.example.com ./build.sh
+#   sudo ND_SERVER=https://nexwipe.example.com ./build.sh
 #   sudo ND_VARIANT=vm-test ND_SERVER=http://10.0.2.2:8080 ND_ALLOW_HTTP_HOSTS=10.0.2.2 ./build.sh   # QEMU lab only
 #   sudo ROOTFS_READY=1 ./build.sh        # reuse build/rootfs (skip debootstrap/apt)
 set -euo pipefail
@@ -26,7 +26,7 @@ VERSION="$(python3 -c "import sys; sys.path.insert(0,'$STATION_SRC'); import nd_
 VARIANT="${ND_VARIANT:-production}"
 OUT="${ND_OUT:-$HERE/build}"
 ROOT="$OUT/rootfs"
-IMG="$OUT/nextdrive-station-readonly-${VERSION}-${VARIANT}.img"
+IMG="$OUT/nexwipe-station-readonly-${VERSION}-${VARIANT}.img"
 export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date -d "${SNAPSHOT:0:8}" +%s)}"
 ESP_MB=1400
 STATE_MB=64
@@ -106,7 +106,7 @@ cp "$ROOT/usr/lib/shim/shimx64.efi.signed" "$STAGE/EFI/BOOT/BOOTX64.EFI"
 cp "$ROOT/usr/lib/shim/mmx64.efi.signed" "$STAGE/EFI/BOOT/mmx64.efi"
 cp "$ROOT/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed" "$STAGE/EFI/BOOT/grubx64.efi"
 for d in EFI/BOOT EFI/debian boot/grub; do cp "$HERE/grub.cfg" "$STAGE/$d/grub.cfg"; done
-mkdir -p "$STAGE/.disk"; echo "NextDrive read-only station ${VERSION}-${VARIANT}" > "$STAGE/.disk/info"
+mkdir -p "$STAGE/.disk"; echo "NexWipe read-only station ${VERSION}-${VARIANT}" > "$STAGE/.disk/info"
 ( cd "$STAGE" && find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SHA256SUMS )
 
 log "Assembling GPT disk image"

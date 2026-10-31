@@ -1,4 +1,4 @@
-// SIMULATED agent client. Speaks the real NextDrive Agent API v1 contract through a pluggable
+// SIMULATED agent client. Speaks the real NexWipe Agent API v1 contract through a pluggable
 // transport (in-process handler inside the app, or fetch against a deployed URL). It never
 // touches a disk: every "operation" is a canned message clearly marked SIMULATED.
 import { AGENT_API_BASE } from "@/lib/agent-api/schemas";

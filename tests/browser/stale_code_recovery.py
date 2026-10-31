@@ -84,7 +84,7 @@ async def main():
         diag=await pg.get_by_test_id("error-diagnostics").inner_text()
         stored=await pg.evaluate("sessionStorage.getItem('nd.lastErrorDiagnostics')") or ""
         logged="\n".join(st["console"])
-        ours="\n".join(l for l in st["console"] if l.startswith("[NextDrive]"))
+        ours="\n".join(l for l in st["console"] if l.startswith("[NexWipe]"))
         leak=[s for s in SECRETS+["jane.doe@example.com"] if s in diag or s in stored or s in ours]
         res["D_raw_error_in_framework_dev_console"]=any(s in logged for s in SECRETS)
         res["D_diag_has_reference"]="Reference:" in diag and "Controlled application failure" in diag

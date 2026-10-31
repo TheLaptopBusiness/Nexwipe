@@ -7,13 +7,13 @@ import { ToneBadge } from "@/components/nd/status-badge";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NextDrive — Laptop data-erasure operations platform" },
+      { title: "NexWipe — Laptop data-erasure operations platform" },
       {
         name: "description",
         content:
-          "NextDrive Cloud tracks laptops and drives, orchestrates authorized erasure jobs and keeps evidence records for refurbishers and ITAD teams.",
+          "NexWipe Cloud tracks laptops and drives, orchestrates authorized erasure jobs and keeps evidence records for refurbishers and ITAD teams.",
       },
-      { property: "og:title", content: "NextDrive — Wipe. Verify. Renew." },
+      { property: "og:title", content: "NexWipe — Wipe. Verify. Renew." },
       {
         property: "og:description",
         content: "Inventory, authorization and evidence records for laptop data-erasure operations.",
@@ -41,7 +41,7 @@ function Home() {
               Erasure operations you can account for, drive by drive.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-navy-muted">
-              NextDrive Cloud tracks every laptop and every drive from intake to release, requires explicit
+              NexWipe Cloud tracks every laptop and every drive from intake to release, requires explicit
               authorization before anything destructive happens, and keeps the evidence your auditors ask for.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
@@ -55,7 +55,7 @@ function Home() {
               </Button>
             </div>
             <p className="mt-8 max-w-xl text-xs leading-relaxed text-navy-muted">
-              In development. The bootable erasure agent is not yet available for production use, and NextDrive holds
+              In development. The bootable erasure agent is not yet available for production use, and NexWipe holds
               no certifications.
             </p>
           </div>
@@ -90,13 +90,13 @@ function Home() {
         <div className="max-w-2xl">
           <h2 className="text-3xl font-semibold text-foreground">Two components, one clear boundary</h2>
           <p className="mt-3 text-muted-foreground">
-            A browser cannot securely erase a laptop’s internal drive. NextDrive separates the work accordingly.
+            A browser cannot securely erase a laptop’s internal drive. NexWipe separates the work accordingly.
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-7 shadow-card">
             <Cloud className="size-6 text-success" aria-hidden />
-            <h3 className="mt-4 text-xl font-semibold text-foreground">NextDrive Cloud</h3>
+            <h3 className="mt-4 text-xl font-semibold text-foreground">NexWipe Cloud</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Customer accounts, sites and clients, device and drive inventory, chain of custody, job authorization,
               evidence storage, reports and billing.
@@ -104,7 +104,7 @@ function Home() {
           </div>
           <div className="rounded-xl border border-border bg-card p-7 shadow-card">
             <Cpu className="size-6 text-info" aria-hidden />
-            <h3 className="mt-4 text-xl font-semibold text-foreground">NextDrive Agent</h3>
+            <h3 className="mt-4 text-xl font-semibold text-foreground">NexWipe Agent</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Bootable Linux software that runs on the laptop itself: identifies drives, detects capabilities, performs
               supported sanitization operations and collects evidence. Developed separately; not yet released.
@@ -136,7 +136,7 @@ function Home() {
             <ClipboardCheck className="size-6 text-signal" aria-hidden />
             <h2 className="mt-3 text-2xl font-semibold text-navy-foreground">Built inside a working refurbishment shop</h2>
             <p className="mt-2 text-navy-muted">
-              NextDrive is being developed and used first at Used Tech Solutions. A limited pilot is open to
+              NexWipe is being developed and used first at Used Tech Solutions. A limited pilot is open to
               refurbishers, recyclers, ITAD providers and internal IT teams.
             </p>
           </div>

@@ -1,5 +1,5 @@
 [Unit]
-Description=NextDrive station state partition (credential + metadata)
+Description=NexWipe station state partition (credential + metadata)
 DefaultDependencies=no
 Before=nd-console.service
 

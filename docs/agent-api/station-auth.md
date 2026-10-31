@@ -41,5 +41,5 @@ Tested: `tests/db/phase2c_readonly_stations.sql` (18 checks: read-only enforceme
 
 - Bearer credential, not a signature (A-planned).
 - No hardware-backed key storage yet (B-planned).
-- No station image attestation: the server cannot prove a request comes from an unmodified NextDrive image.
+- No station image attestation: the server cannot prove a request comes from an unmodified NexWipe image.
 - Rate limiting relies on the hosting platform.

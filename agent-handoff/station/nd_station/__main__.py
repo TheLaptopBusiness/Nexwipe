@@ -1,5 +1,5 @@
 """
-nd-station — NextDrive read-only station.
+nd-station — NexWipe read-only station.
 
   python3 -m nd_station                 full-screen console (default on the USB image, tty1)
   python3 -m nd_station discover        print the hardware report that would be uploaded

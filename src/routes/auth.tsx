@@ -23,10 +23,10 @@ export const Route = createFileRoute("/auth")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — NextDrive" },
-      { name: "description", content: "Sign in to NextDrive. Accounts are created by invitation during the pilot." },
-      { property: "og:title", content: "Sign in — NextDrive" },
-      { property: "og:description", content: "Sign in to NextDrive. Accounts are created by invitation during the pilot." },
+      { title: "Sign in — NexWipe" },
+      { name: "description", content: "Sign in to NexWipe. Accounts are created by invitation during the pilot." },
+      { property: "og:title", content: "Sign in — NexWipe" },
+      { property: "og:description", content: "Sign in to NexWipe. Accounts are created by invitation during the pilot." },
     ],
   }),
   component: AuthPage,
@@ -101,7 +101,7 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-blueprint p-12 lg:flex">
-        <Link to="/" aria-label="NextDrive home">
+        <Link to="/" aria-label="NexWipe home">
           <Wordmark inverted />
         </Link>
         <div>
@@ -110,7 +110,7 @@ function AuthPage() {
             Every laptop, every drive, every decision on the record.
           </p>
         </div>
-        <p className="text-xs text-navy-muted">NextDrive Cloud · in development</p>
+        <p className="text-xs text-navy-muted">NexWipe Cloud · in development</p>
       </div>
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
@@ -137,7 +137,7 @@ function AuthPage() {
                 {mode === "mfa" && "Two-step verification"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {mode === "signin" && "Welcome back to NextDrive."}
+                {mode === "signin" && "Welcome back to NexWipe."}
                 {mode === "forgot" && "We’ll email you a reset link."}
                 {mode === "mfa" && "Enter the 6-digit code from your authenticator app."}
               </p>
@@ -200,7 +200,7 @@ function AuthPage() {
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 {mode === "signin" ? (
                   <>
-                    NextDrive is in a closed pilot. Accounts are created by invitation —{" "}
+                    NexWipe is in a closed pilot. Accounts are created by invitation —{" "}
                     <Link to="/pilot" className="font-medium text-foreground underline underline-offset-4">
                       request pilot access
                     </Link>
