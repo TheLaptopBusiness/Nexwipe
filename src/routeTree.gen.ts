@@ -27,6 +27,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
+import { Route as AuthenticatedAppProjectsProjectIdRouteImport } from './routes/_authenticated/app.projects.$projectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -120,6 +121,12 @@ const AuthenticatedAppProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppProjectsProjectIdRoute =
+  AuthenticatedAppProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
   '/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
 }
@@ -155,6 +163,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
   '/app/projects': typeof AuthenticatedAppProjectsIndexRoute
 }
@@ -176,6 +185,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
   '/_authenticated/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
 }
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/app/'
     | '/app/inventory/$deviceId'
+    | '/app/projects/$projectId'
     | '/app/inventory/'
     | '/app/projects/'
   fileRoutesByTo: FileRoutesByTo
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/app'
     | '/app/inventory/$deviceId'
+    | '/app/projects/$projectId'
     | '/app/inventory'
     | '/app/projects'
   id:
@@ -235,6 +247,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/_authenticated/app/'
     | '/_authenticated/app/inventory/$deviceId'
+    | '/_authenticated/app/projects/$projectId'
     | '/_authenticated/app/inventory/'
     | '/_authenticated/app/projects/'
   fileRoutesById: FileRoutesById
@@ -382,12 +395,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/projects/$projectId': {
+      id: '/_authenticated/app/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/app/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedAppProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
+  AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
   AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
   AuthenticatedAppProjectsIndexRoute: typeof AuthenticatedAppProjectsIndexRoute
 }
@@ -396,6 +417,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppInventoryDeviceIdRoute:
     AuthenticatedAppInventoryDeviceIdRoute,
+  AuthenticatedAppProjectsProjectIdRoute:
+    AuthenticatedAppProjectsProjectIdRoute,
   AuthenticatedAppInventoryIndexRoute: AuthenticatedAppInventoryIndexRoute,
   AuthenticatedAppProjectsIndexRoute: AuthenticatedAppProjectsIndexRoute,
 }
