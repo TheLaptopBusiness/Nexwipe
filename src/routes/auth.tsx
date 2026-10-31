@@ -75,6 +75,13 @@ function AuthPage() {
             toast.info("Verify your email first. We sent you a new verification link.");
             return;
           }
+          if (error.code === "invalid_credentials") {
+            // The sign-in service gives the same answer for a wrong password and an unverified new account.
+            setEmail(em);
+            setUnverifiedHint(true);
+            toast.error("Email or password is incorrect — or your email isn’t verified yet.", { duration: 8000 });
+            return;
+          }
           throw error;
         }
         await afterPassword();
