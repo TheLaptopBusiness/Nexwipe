@@ -64,14 +64,12 @@ function InvitePage() {
           <div className="mt-6">
             <h1 className="text-xl font-semibold text-foreground">You’ve been invited to NextDrive</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Sign in or create an account with the email address the invitation was sent to.
+              Sign in with the email address the invitation was sent to. If you don’t have an account yet, open
+              the invitation email — its link sets up your account (public sign-up is closed during the pilot).
             </p>
             <div className="mt-6 flex gap-2">
               <Button asChild>
                 <Link to="/auth" search={{ redirect: here }}>Sign in</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/auth" search={{ redirect: here, mode: "signup" }}>Create account</Link>
               </Button>
             </div>
           </div>
