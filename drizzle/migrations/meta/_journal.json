@@ -29,6 +29,13 @@
       "when": 1793419913771,
       "tag": "0003_harden_privileges_and_trusted_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793421329796,
+      "tag": "0004_phase2_policies_jobs_agents_schema",
+      "breakpoints": true
     }
   ]
 }

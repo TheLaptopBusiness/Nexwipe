@@ -14,6 +14,199 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_credentials: {
+        Row: {
+          agent_id: string
+          created_at: string
+          credential_hash: string
+          id: string
+          org_id: string
+          revoked_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          credential_hash: string
+          id?: string
+          org_id: string
+          revoked_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          credential_hash?: string
+          id?: string
+          org_id?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_credentials_org_id_agent_id_fkey"
+            columns: ["org_id", "agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "agent_credentials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_discoveries: {
+        Row: {
+          agent_id: string
+          device_id: string | null
+          id: string
+          is_simulated: boolean
+          org_id: string
+          payload: Json
+          reported_at: string
+          system_serial: string | null
+        }
+        Insert: {
+          agent_id: string
+          device_id?: string | null
+          id?: string
+          is_simulated?: boolean
+          org_id: string
+          payload: Json
+          reported_at?: string
+          system_serial?: string | null
+        }
+        Update: {
+          agent_id?: string
+          device_id?: string | null
+          id?: string
+          is_simulated?: boolean
+          org_id?: string
+          payload?: Json
+          reported_at?: string
+          system_serial?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_discoveries_org_id_agent_id_fkey"
+            columns: ["org_id", "agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "agent_discoveries_org_id_device_id_fkey"
+            columns: ["org_id", "device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "agent_discoveries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_request_nonces: {
+        Row: {
+          agent_id: string
+          nonce: string
+          seen_at: string
+        }
+        Insert: {
+          agent_id: string
+          nonce: string
+          seen_at?: string
+        }
+        Update: {
+          agent_id?: string
+          nonce?: string
+          seen_at?: string
+        }
+        Relationships: []
+      }
+      agents: {
+        Row: {
+          agent_version: string | null
+          created_at: string
+          credential_prefix: string
+          enrolled_at: string
+          enrollment_token_id: string | null
+          hostname: string | null
+          id: string
+          is_simulated: boolean
+          last_heartbeat_at: string | null
+          last_state: string | null
+          name: string
+          org_id: string
+          platform: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          site_id: string | null
+          status: Database["public"]["Enums"]["agent_status"]
+        }
+        Insert: {
+          agent_version?: string | null
+          created_at?: string
+          credential_prefix: string
+          enrolled_at?: string
+          enrollment_token_id?: string | null
+          hostname?: string | null
+          id?: string
+          is_simulated?: boolean
+          last_heartbeat_at?: string | null
+          last_state?: string | null
+          name: string
+          org_id: string
+          platform?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+        }
+        Update: {
+          agent_version?: string | null
+          created_at?: string
+          credential_prefix?: string
+          enrolled_at?: string
+          enrollment_token_id?: string | null
+          hostname?: string | null
+          id?: string
+          is_simulated?: boolean
+          last_heartbeat_at?: string | null
+          last_state?: string | null
+          name?: string
+          org_id?: string
+          platform?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["agent_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agents_org_id_site_id_fkey"
+            columns: ["org_id", "site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -316,6 +509,7 @@ export type Database = {
           id: string
           intake_condition: Database["public"]["Enums"]["intake_condition"]
           is_demo: boolean
+          is_simulated: boolean
           manufacturer: string | null
           model: string | null
           notes: string | null
@@ -344,6 +538,7 @@ export type Database = {
           id?: string
           intake_condition?: Database["public"]["Enums"]["intake_condition"]
           is_demo?: boolean
+          is_simulated?: boolean
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
@@ -372,6 +567,7 @@ export type Database = {
           id?: string
           intake_condition?: Database["public"]["Enums"]["intake_condition"]
           is_demo?: boolean
+          is_simulated?: boolean
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
@@ -438,6 +634,7 @@ export type Database = {
           hardware_verified: boolean
           id: string
           interface: Database["public"]["Enums"]["drive_interface"]
+          is_simulated: boolean
           manufacturer: string | null
           model: string | null
           notes: string | null
@@ -453,6 +650,7 @@ export type Database = {
           hardware_verified?: boolean
           id?: string
           interface: Database["public"]["Enums"]["drive_interface"]
+          is_simulated?: boolean
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
@@ -468,6 +666,7 @@ export type Database = {
           hardware_verified?: boolean
           id?: string
           interface?: Database["public"]["Enums"]["drive_interface"]
+          is_simulated?: boolean
           manufacturer?: string | null
           model?: string | null
           notes?: string | null
@@ -483,6 +682,129 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          is_simulated: boolean
+          label: string
+          org_id: string
+          revoked_at: string | null
+          site_id: string | null
+          token_hash: string
+          used_at: string | null
+          used_by_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          is_simulated?: boolean
+          label: string
+          org_id: string
+          revoked_at?: string | null
+          site_id?: string | null
+          token_hash: string
+          used_at?: string | null
+          used_by_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          is_simulated?: boolean
+          label?: string
+          org_id?: string
+          revoked_at?: string | null
+          site_id?: string | null
+          token_hash?: string
+          used_at?: string | null
+          used_by_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_tokens_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_tokens_org_id_site_id_fkey"
+            columns: ["org_id", "site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      evidence_objects: {
+        Row: {
+          agent_id: string | null
+          content: string
+          content_type: string
+          created_at: string
+          filename: string
+          id: string
+          idempotency_key: string
+          is_simulated: boolean
+          job_id: string
+          kind: string
+          org_id: string
+          sha256: string
+          size_bytes: number
+        }
+        Insert: {
+          agent_id?: string | null
+          content: string
+          content_type?: string
+          created_at?: string
+          filename: string
+          id?: string
+          idempotency_key: string
+          is_simulated?: boolean
+          job_id: string
+          kind: string
+          org_id: string
+          sha256: string
+          size_bytes: number
+        }
+        Update: {
+          agent_id?: string | null
+          content?: string
+          content_type?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          idempotency_key?: string
+          is_simulated?: boolean
+          job_id?: string
+          kind?: string
+          org_id?: string
+          sha256?: string
+          size_bytes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_objects_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_objects_org_id_job_id_fkey"
+            columns: ["org_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["org_id", "id"]
           },
         ]
       }
@@ -533,6 +855,366 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_authorizations: {
+        Row: {
+          agent_id: string
+          association_id: string
+          authorized_at: string
+          authorized_by: string
+          confirmed_asset_tag: string
+          confirmed_drive_serial: string
+          consumed_at: string | null
+          device_id: string
+          drive_id: string
+          expires_at: string
+          id: string
+          job_id: string
+          local_confirmation: Json | null
+          local_confirmation_required: boolean
+          org_id: string
+          policy_version_id: string
+          revoke_reason: string | null
+          revoked_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          association_id: string
+          authorized_at?: string
+          authorized_by: string
+          confirmed_asset_tag: string
+          confirmed_drive_serial: string
+          consumed_at?: string | null
+          device_id: string
+          drive_id: string
+          expires_at: string
+          id?: string
+          job_id: string
+          local_confirmation?: Json | null
+          local_confirmation_required?: boolean
+          org_id: string
+          policy_version_id: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          association_id?: string
+          authorized_at?: string
+          authorized_by?: string
+          confirmed_asset_tag?: string
+          confirmed_drive_serial?: string
+          consumed_at?: string | null
+          device_id?: string
+          drive_id?: string
+          expires_at?: string
+          id?: string
+          job_id?: string
+          local_confirmation?: Json | null
+          local_confirmation_required?: boolean
+          org_id?: string
+          policy_version_id?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_authorizations_org_id_agent_id_fkey"
+            columns: ["org_id", "agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_association_id_fkey"
+            columns: ["org_id", "association_id"]
+            isOneToOne: false
+            referencedRelation: "device_drive_associations"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_device_id_fkey"
+            columns: ["org_id", "device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_drive_id_fkey"
+            columns: ["org_id", "drive_id"]
+            isOneToOne: false
+            referencedRelation: "drives"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_job_id_fkey"
+            columns: ["org_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "job_authorizations_org_id_policy_version_id_fkey"
+            columns: ["org_id", "policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "policy_versions"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      job_events: {
+        Row: {
+          actor_id: string | null
+          agent_id: string | null
+          agent_seq: number | null
+          event_type: string
+          from_status: Database["public"]["Enums"]["job_status"] | null
+          id: number
+          idempotency_key: string | null
+          job_id: string
+          message: string | null
+          occurred_at: string | null
+          org_id: string
+          payload: Json
+          received_at: string
+          request_hash: string | null
+          source: string
+          to_status: Database["public"]["Enums"]["job_status"] | null
+        }
+        Insert: {
+          actor_id?: string | null
+          agent_id?: string | null
+          agent_seq?: number | null
+          event_type: string
+          from_status?: Database["public"]["Enums"]["job_status"] | null
+          id?: never
+          idempotency_key?: string | null
+          job_id: string
+          message?: string | null
+          occurred_at?: string | null
+          org_id: string
+          payload?: Json
+          received_at?: string
+          request_hash?: string | null
+          source: string
+          to_status?: Database["public"]["Enums"]["job_status"] | null
+        }
+        Update: {
+          actor_id?: string | null
+          agent_id?: string | null
+          agent_seq?: number | null
+          event_type?: string
+          from_status?: Database["public"]["Enums"]["job_status"] | null
+          id?: never
+          idempotency_key?: string | null
+          job_id?: string
+          message?: string | null
+          occurred_at?: string | null
+          org_id?: string
+          payload?: Json
+          received_at?: string
+          request_hash?: string | null
+          source?: string
+          to_status?: Database["public"]["Enums"]["job_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_events_org_id_job_id_fkey"
+            columns: ["org_id", "job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          agent_id: string | null
+          association_id: string
+          billable_unit: boolean | null
+          certificate_eligible: boolean | null
+          created_at: string
+          created_by: string | null
+          current_phase: string | null
+          device_id: string
+          drive_id: string
+          exception_code: string | null
+          exception_detail: string | null
+          execution_detail: Json | null
+          execution_finished_at: string | null
+          execution_outcome: Database["public"]["Enums"]["execution_outcome"]
+          finished_at: string | null
+          id: string
+          is_simulated: boolean
+          job_number: number
+          last_agent_seq: number
+          last_event_at: string | null
+          method: Database["public"]["Enums"]["erasure_method"] | null
+          org_id: string
+          policy_version_id: string
+          progress_measured: boolean
+          progress_pct: number | null
+          review_decision: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          target_asset_tag: string
+          target_drive_capacity_bytes: number | null
+          target_drive_interface: Database["public"]["Enums"]["drive_interface"]
+          target_drive_model: string | null
+          target_drive_serial: string
+          target_system_serial: string | null
+          updated_at: string
+          verification_detail: Json | null
+          verification_finished_at: string | null
+          verification_outcome: Database["public"]["Enums"]["verification_outcome"]
+        }
+        Insert: {
+          agent_id?: string | null
+          association_id: string
+          billable_unit?: boolean | null
+          certificate_eligible?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          current_phase?: string | null
+          device_id: string
+          drive_id: string
+          exception_code?: string | null
+          exception_detail?: string | null
+          execution_detail?: Json | null
+          execution_finished_at?: string | null
+          execution_outcome?: Database["public"]["Enums"]["execution_outcome"]
+          finished_at?: string | null
+          id?: string
+          is_simulated?: boolean
+          job_number?: never
+          last_agent_seq?: number
+          last_event_at?: string | null
+          method?: Database["public"]["Enums"]["erasure_method"] | null
+          org_id: string
+          policy_version_id: string
+          progress_measured?: boolean
+          progress_pct?: number | null
+          review_decision?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          target_asset_tag: string
+          target_drive_capacity_bytes?: number | null
+          target_drive_interface: Database["public"]["Enums"]["drive_interface"]
+          target_drive_model?: string | null
+          target_drive_serial: string
+          target_system_serial?: string | null
+          updated_at?: string
+          verification_detail?: Json | null
+          verification_finished_at?: string | null
+          verification_outcome?: Database["public"]["Enums"]["verification_outcome"]
+        }
+        Update: {
+          agent_id?: string | null
+          association_id?: string
+          billable_unit?: boolean | null
+          certificate_eligible?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          current_phase?: string | null
+          device_id?: string
+          drive_id?: string
+          exception_code?: string | null
+          exception_detail?: string | null
+          execution_detail?: Json | null
+          execution_finished_at?: string | null
+          execution_outcome?: Database["public"]["Enums"]["execution_outcome"]
+          finished_at?: string | null
+          id?: string
+          is_simulated?: boolean
+          job_number?: never
+          last_agent_seq?: number
+          last_event_at?: string | null
+          method?: Database["public"]["Enums"]["erasure_method"] | null
+          org_id?: string
+          policy_version_id?: string
+          progress_measured?: boolean
+          progress_pct?: number | null
+          review_decision?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          target_asset_tag?: string
+          target_drive_capacity_bytes?: number | null
+          target_drive_interface?: Database["public"]["Enums"]["drive_interface"]
+          target_drive_model?: string | null
+          target_drive_serial?: string
+          target_system_serial?: string | null
+          updated_at?: string
+          verification_detail?: Json | null
+          verification_finished_at?: string | null
+          verification_outcome?: Database["public"]["Enums"]["verification_outcome"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_org_id_agent_id_fkey"
+            columns: ["org_id", "agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_association_id_fkey"
+            columns: ["org_id", "association_id"]
+            isOneToOne: false
+            referencedRelation: "device_drive_associations"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_device_id_fkey"
+            columns: ["org_id", "device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_drive_id_fkey"
+            columns: ["org_id", "drive_id"]
+            isOneToOne: false
+            referencedRelation: "drives"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_policy_version_id_fkey"
+            columns: ["org_id", "policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "policy_versions"
+            referencedColumns: ["org_id", "id"]
           },
         ]
       }
@@ -673,6 +1355,128 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      policies: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_archived: boolean
+          is_simulator: boolean
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_simulator?: boolean
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_simulator?: boolean
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_versions: {
+        Row: {
+          allowed_interfaces: Database["public"]["Enums"]["drive_interface"][]
+          allowed_manufacturers: string[]
+          allowed_methods: Database["public"]["Enums"]["erasure_method"][]
+          authorization_ttl_minutes: number
+          change_note: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          on_execution_failure: Database["public"]["Enums"]["failure_action"]
+          on_verification_failure: Database["public"]["Enums"]["failure_action"]
+          org_id: string
+          policy_id: string
+          require_evidence: boolean
+          require_separate_reviewer: boolean
+          reviewer_roles: Database["public"]["Enums"]["org_role"][]
+          verification_method: string
+          verification_sample_pct: number | null
+          version: number
+        }
+        Insert: {
+          allowed_interfaces: Database["public"]["Enums"]["drive_interface"][]
+          allowed_manufacturers: string[]
+          allowed_methods: Database["public"]["Enums"]["erasure_method"][]
+          authorization_ttl_minutes?: number
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          on_execution_failure?: Database["public"]["Enums"]["failure_action"]
+          on_verification_failure?: Database["public"]["Enums"]["failure_action"]
+          org_id: string
+          policy_id: string
+          require_evidence?: boolean
+          require_separate_reviewer?: boolean
+          reviewer_roles: Database["public"]["Enums"]["org_role"][]
+          verification_method: string
+          verification_sample_pct?: number | null
+          version: number
+        }
+        Update: {
+          allowed_interfaces?: Database["public"]["Enums"]["drive_interface"][]
+          allowed_manufacturers?: string[]
+          allowed_methods?: Database["public"]["Enums"]["erasure_method"][]
+          authorization_ttl_minutes?: number
+          change_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          on_execution_failure?: Database["public"]["Enums"]["failure_action"]
+          on_verification_failure?: Database["public"]["Enums"]["failure_action"]
+          org_id?: string
+          policy_id?: string
+          require_evidence?: boolean
+          require_separate_reviewer?: boolean
+          reviewer_roles?: Database["public"]["Enums"]["org_role"][]
+          verification_method?: string
+          verification_sample_pct?: number | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_versions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_versions_org_id_policy_id_fkey"
+            columns: ["org_id", "policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["org_id", "id"]
           },
         ]
       }
@@ -883,6 +1687,10 @@ export type Database = {
         Args: { _name: string; _slug: string }
         Returns: string
       }
+      device_all_drives_approved: {
+        Args: { _device: string }
+        Returns: boolean
+      }
       has_client_grant: { Args: { _client: string }; Returns: boolean }
       has_org_role: {
         Args: {
@@ -896,6 +1704,24 @@ export type Database = {
       is_org_staff: { Args: { _org: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       is_untrusted_caller: { Args: never; Returns: boolean }
+      job_is_terminal: {
+        Args: { _s: Database["public"]["Enums"]["job_status"] }
+        Returns: boolean
+      }
+      job_transition_allowed: {
+        Args: {
+          _from: Database["public"]["Enums"]["job_status"]
+          _to: Database["public"]["Enums"]["job_status"]
+        }
+        Returns: boolean
+      }
+      method_fits_interface: {
+        Args: {
+          _i: Database["public"]["Enums"]["drive_interface"]
+          _m: Database["public"]["Enums"]["erasure_method"]
+        }
+        Returns: boolean
+      }
       preview_invitation: {
         Args: { _token: string }
         Returns: {
@@ -917,6 +1743,7 @@ export type Database = {
       }
     }
     Enums: {
+      agent_status: "active" | "revoked"
       batch_status: "open" | "processing" | "closed"
       custody_event_type:
         | "received"
@@ -941,6 +1768,17 @@ export type Database = {
         | "sata_ssd"
         | "nvme_ssd"
         | "unsupported_other"
+      erasure_method:
+        | "nvme_sanitize_crypto"
+        | "nvme_sanitize_block"
+        | "nvme_format_crypto"
+        | "ata_sanitize_crypto"
+        | "ata_sanitize_block"
+        | "ata_enhanced_secure_erase"
+        | "ata_secure_erase"
+        | "overwrite_single_pass"
+      execution_outcome: "pending" | "succeeded" | "failed" | "not_run"
+      failure_action: "fail" | "quarantine"
       intake_condition:
         | "good"
         | "fair"
@@ -948,6 +1786,19 @@ export type Database = {
         | "missing_parts"
         | "unknown"
       invitation_status: "pending" | "accepted" | "revoked"
+      job_status:
+        | "draft"
+        | "awaiting_authorization"
+        | "queued"
+        | "running"
+        | "verifying"
+        | "awaiting_validation"
+        | "approved"
+        | "failed"
+        | "interrupted"
+        | "unsupported"
+        | "quarantined"
+        | "cancelled"
       membership_status: "active" | "revoked"
       org_role: "owner" | "admin" | "technician" | "auditor" | "customer_viewer"
       org_status: "active" | "suspended" | "closed"
@@ -958,6 +1809,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       record_source: "manual" | "csv_import" | "agent_reported"
+      verification_outcome: "pending" | "passed" | "failed" | "not_run"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1085,6 +1937,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_status: ["active", "revoked"],
       batch_status: ["open", "processing", "closed"],
       custody_event_type: [
         "received",
@@ -1112,8 +1965,34 @@ export const Constants = {
         "nvme_ssd",
         "unsupported_other",
       ],
+      erasure_method: [
+        "nvme_sanitize_crypto",
+        "nvme_sanitize_block",
+        "nvme_format_crypto",
+        "ata_sanitize_crypto",
+        "ata_sanitize_block",
+        "ata_enhanced_secure_erase",
+        "ata_secure_erase",
+        "overwrite_single_pass",
+      ],
+      execution_outcome: ["pending", "succeeded", "failed", "not_run"],
+      failure_action: ["fail", "quarantine"],
       intake_condition: ["good", "fair", "damaged", "missing_parts", "unknown"],
       invitation_status: ["pending", "accepted", "revoked"],
+      job_status: [
+        "draft",
+        "awaiting_authorization",
+        "queued",
+        "running",
+        "verifying",
+        "awaiting_validation",
+        "approved",
+        "failed",
+        "interrupted",
+        "unsupported",
+        "quarantined",
+        "cancelled",
+      ],
       membership_status: ["active", "revoked"],
       org_role: ["owner", "admin", "technician", "auditor", "customer_viewer"],
       org_status: ["active", "suspended", "closed"],
@@ -1125,6 +2004,7 @@ export const Constants = {
         "cancelled",
       ],
       record_source: ["manual", "csv_import", "agent_reported"],
+      verification_outcome: ["pending", "passed", "failed", "not_run"],
     },
   },
 } as const
