@@ -11,6 +11,7 @@ import { Wordmark } from "@/components/nd/wordmark";
 import { errorMessage } from "@/components/nd/page";
 import { membershipsQueryKey, rememberOrg } from "@/lib/org-context";
 import { useSignOut } from "@/lib/session";
+import { PendingInvitations } from "@/components/nd/pending-invitations";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -71,6 +72,7 @@ function Onboarding() {
           <p className="mt-1 text-sm text-muted-foreground">
             Your organization holds your sites, team, clients, devices and records. You’ll be its owner.
           </p>
+          {verified && <PendingInvitations />}
           {!verified ? (
             <p className="mt-6 rounded-md bg-warning-soft p-3 text-sm text-warning">Verify your email address first.</p>
           ) : (
