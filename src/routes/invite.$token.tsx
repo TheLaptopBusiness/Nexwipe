@@ -5,6 +5,8 @@ import { MailWarning, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Wordmark } from "@/components/nd/wordmark";
 import { LoadingBlock, errorMessage } from "@/components/nd/page";
 import { useSessionUser } from "@/lib/session";
@@ -52,6 +54,22 @@ function InvitePage() {
     navigate({ to: "/app", replace: true });
   }
 
+  // Accounts created by an invitation email have no password yet; set one before joining.
+  const needsPassword = !!user && !!user.invited_at && user.user_metadata?.["password_set"] !== true;
+
+  async function setPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const pw = String(f.get("password") ?? "");
+    if (pw !== String(f.get("confirm") ?? "")) { toast.error("The passwords don’t match"); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: pw, data: { password_set: true } });
+    setBusy(false);
+    if (error) { toast.error(errorMessage(error)); return; }
+    toast.success("Password set. Use it with your email to sign in from now on.");
+    await qc.invalidateQueries({ queryKey: ["session-user"] });
+  }
+
   const here = `/invite/${token}`;
 
   return (
@@ -73,6 +91,26 @@ function InvitePage() {
               </Button>
             </div>
           </div>
+        ) : needsPassword ? (
+          <form className="mt-6 space-y-4" onSubmit={setPassword}>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Set your password</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Your account for <span className="font-mono text-foreground">{user.email}</span> was created by this invitation.
+                Choose a password to sign in with from now on, then accept the invitation.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" name="password" type="password" minLength={10} required autoComplete="new-password" />
+              <p className="text-xs text-muted-foreground">At least 10 characters.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirm">Confirm password</Label>
+              <Input id="confirm" name="confirm" type="password" minLength={10} required autoComplete="new-password" />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>Set password and continue</Button>
+          </form>
         ) : preview.isLoading ? (
           <LoadingBlock />
         ) : !preview.data ? (
