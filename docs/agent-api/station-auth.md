@@ -17,7 +17,7 @@ Verified by: `tests/db/phase2_acceptance.sql`, `tests/db/phase2b_security.sql`, 
 
 ## Limitations (must be addressed before production use)
 
-1. **Bearer credential, not a signature.** The credential is sent on every request. Anyone who obtains it (e.g. from an unprotected boot USB) can act as that station until it is revoked. The nonce prevents replay of *captured requests*, not misuse of a *stolen credential*. Planned: per-station keypair generated on the station (ideally sealed in the laptop's or USB's TPM/secure element is not available on boot media — see handoff), Ed25519 request signatures over method + path + timestamp + nonce + body hash, or mutual TLS.
+1. **Bearer credential, not a signature.** The credential is sent on every request. Anyone who obtains it (e.g. from an unprotected boot USB) can act as that station until it is revoked. The nonce prevents replay of *captured requests*, not misuse of a *stolen credential*. Planned: a per-station Ed25519 keypair generated at enrollment, with every request signed over method + path + timestamp + nonce + body hash (or mutual TLS). The private key would live on the boot medium, so it also needs at-rest protection (see the agent handoff).
 2. **No credential rotation endpoint yet.** Rotation today = revoke + re-enroll.
 3. **Credential at rest on the boot medium.** The handoff requires an encrypted credential file bound to the medium serial; this is an agent-side responsibility and is not verified by the server.
 4. **No station attestation.** The server cannot prove the request comes from an unmodified NextDrive image. Signed images + measured boot are planned (see handoff).
