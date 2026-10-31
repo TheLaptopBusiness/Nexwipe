@@ -426,12 +426,9 @@ function Review({ r, canReview }: { r: Rec; canReview: boolean }) {
     },
     enabled: r.release_decision === "pending",
   });
-  const needsNote = resaleBlockers(r, "").includes("Explain the optional diagnostic exceptions in the review notes");
   const blockers = (server.data ?? resaleBlockers(r, note)).filter(
     (b) => b !== "Explain the optional diagnostic exceptions in the review notes" || !note.trim(),
   );
-  if (needsNote && !note.trim() && server.data && !blockers.includes("Explain the optional diagnostic exceptions in the review notes"))
-    blockers.push("Explain the optional diagnostic exceptions in the review notes");
   return (
     <Step n={7} title="Review and release" done={r.release_decision !== "pending"}>
       {r.release_decision !== "pending" ? (
@@ -507,6 +504,7 @@ function ProcessingRecord({ r }: { r: Rec }) {
       <section><h3 className="mb-1 font-medium">Management / deprovisioning evidence</h3><dl>
         <Row k="Ownership authorization" v={r.ownership_status === "recorded" ? <>{r.ownership_authorized_by} · ref {r.ownership_reference} · {formatDateTime(r.ownership_recorded_at)}</> : <span className="text-warning">Not recorded</span>} />
         <Row k="Management status" v={MANAGEMENT_LABEL[r.management_status as ManagementStatus]?.label} />
+        <Row k="Management basis" v={r.management_basis ? MANAGEMENT_LABEL[r.management_basis as ManagementStatus]?.label : "Unresolved"} />
         {mgmtEvents.map((e) => <Row key={e.id} k={formatDateTime(e.created_at)} v={<>{e.step === "ownership_recorded" ? "Ownership authorization recorded" : MANAGEMENT_LABEL[e.to_value as ManagementStatus]?.label ?? e.step} · {EVIDENCE_KIND_LABEL[e.evidence_kind]} by {who(e.actor_id)}{e.notes && <> — {e.notes}</>}</>} />)}
       </dl></section>
       <section><h3 className="mb-1 font-medium">Reset method and evidence</h3><dl>
