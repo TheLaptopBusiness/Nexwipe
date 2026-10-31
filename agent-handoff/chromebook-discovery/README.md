@@ -1,7 +1,7 @@
 # NexWipe Chromebook discovery build (read-only) — 0.1.0-cb-discovery
 
 Read-only discovery USB image for one authorized lab Chromebook. No erasure commands, no firmware or
-flag tools. **Hardware compatibility unverified: the image has not been booted on any Chromebook.**
+flag tools. **Built 2026-10-31 and booted in a virtual PC only (`BUILD_RESULT_2026-10-31.md`). Not booted on any Chromebook; hardware compatibility unverified.**
 
 - How to build: `BUILD.md` (`sudo ./build.sh` on Debian 13 amd64)
 - How read-only is enforced and tested: `SAFETY.md`

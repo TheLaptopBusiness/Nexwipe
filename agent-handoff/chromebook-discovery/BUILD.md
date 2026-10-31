@@ -29,7 +29,7 @@ folders plus the engineering plan. Unzip it anywhere; keep the folder layout.
 | RAM | **8 GiB minimum** (16 GiB recommended for `JOBS` ≥ 8) |
 | Disk | **30 GiB free** in the output directory (rootfs + builder chroot + kernel tree + images) |
 | Network | HTTPS to `snapshot.debian.org` (all packages come from the pinned snapshot `20260913T000000Z`) |
-| Time | ~30–90 min (kernel compiles twice; pass 2 is short) |
+| Time | ~30–90 min (kernel compiles twice; pass 2 is short). Sandbox reference: pass 1 took 28 min on 16 cores without KVM |
 
 ### Host packages (Debian 13 names)
 
@@ -146,7 +146,11 @@ The manifest always says `"boot_tested": false`. Only the filled lab checklist c
 | `kernel blob … larger than KERN-A` / `WARNING … >16 MiB` | Initramfs too large; trim modules. The warning is about older firmware limits and is unverified |
 | After a failure | Rerun with `ROOTFS_READY=1 BUILDER_READY=1` to skip the slow bootstrap stages |
 
-## 7. Limitations
+## 7. Results so far
+
+See `BUILD_RESULT_2026-10-31.md`: built in the project sandbox with documented deviations, checked, and booted in a QEMU virtual PC only. A clean build on a Debian 13 VM and any Chromebook boot are still pending.
+
+## 8. Limitations
 
 - Only x86-64 Chromebooks whose stock firmware boots developer-signed USB media in Developer Mode.
   Whether SETZER does with this image is **unknown**.
