@@ -91,6 +91,21 @@ interface AgentIdentity {
   org_id: string;
   is_simulated: boolean;
   name: string;
+  read_only: boolean;
+  credential_id: string;
+  credential_expires_at: string | null;
+}
+
+/** Stations should rotate when fewer than this many days of credential lifetime remain. */
+export const ROTATE_WITHIN_DAYS = 14;
+
+function credentialInfo(agent: AgentIdentity) {
+  const exp = agent.credential_expires_at ? Date.parse(agent.credential_expires_at) : null;
+  return {
+    mode: agent.read_only ? "read_only" : agent.is_simulated ? "simulated" : "standard",
+    credential_expires_at: agent.credential_expires_at,
+    rotate_recommended: exp !== null && exp - Date.now() < ROTATE_WITHIN_DAYS * 86_400_000,
+  };
 }
 
 async function authenticate(request: Request): Promise<AgentIdentity> {
@@ -149,7 +164,11 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
 
     if (method === "POST" && parts.length === 1 && parts[0] === "heartbeat") {
       const body = await readBody(request, HeartbeatRequest);
-      return json(200, await rpc("agent_heartbeat", { _agent: a, _state: body.state, _version: body.agent_version ?? null }));
+      const hb = await rpc("agent_heartbeat", { _agent: a, _state: body.state, _version: body.agent_version ?? null });
+      return json(200, { ...hb, ...credentialInfo(agent) });
+    }
+    if (method === "POST" && parts.length === 2 && parts[0] === "credentials" && parts[1] === "rotate") {
+      return json(200, await rpc("agent_rotate_credential", { _agent: a, _credential_id: agent.credential_id }));
     }
     if (method === "POST" && parts.length === 1 && parts[0] === "inventory") {
       const body = await readBody(request, InventoryRequest);
