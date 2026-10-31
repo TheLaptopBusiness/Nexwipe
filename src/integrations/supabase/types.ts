@@ -138,6 +138,7 @@ export type Database = {
           enrollment_token_id: string | null
           hostname: string | null
           id: string
+          inventory_requested_at: string | null
           is_simulated: boolean
           last_heartbeat_at: string | null
           last_state: string | null
@@ -158,6 +159,7 @@ export type Database = {
           enrollment_token_id?: string | null
           hostname?: string | null
           id?: string
+          inventory_requested_at?: string | null
           is_simulated?: boolean
           last_heartbeat_at?: string | null
           last_state?: string | null
@@ -178,6 +180,7 @@ export type Database = {
           enrollment_token_id?: string | null
           hostname?: string | null
           id?: string
+          inventory_requested_at?: string | null
           is_simulated?: boolean
           last_heartbeat_at?: string | null
           last_state?: string | null
@@ -1779,6 +1782,10 @@ export type Database = {
         Args: { _job: string; _reason: string }
         Returns: undefined
       }
+      create_device_from_discovery: {
+        Args: { _asset_tag: string; _discovery: string }
+        Returns: string
+      }
       create_enrollment_token: {
         Args: {
           _label: string
@@ -1817,6 +1824,7 @@ export type Database = {
         Args: { _note: string; _policy: string; _rules: Json }
         Returns: string
       }
+      current_aal: { Args: never; Returns: string }
       device_all_drives_approved: {
         Args: { _device: string }
         Returns: boolean
