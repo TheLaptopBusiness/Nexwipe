@@ -29,6 +29,13 @@ describe("outdated-code recovery", () => {
     expect(isOutdatedCodeError(new Error("Cannot read properties of undefined"))).toBe(false);
   });
 
+  it("treats an empty lazily loaded page module as outdated code (Safari and Chrome wording)", () => {
+    expect(isOutdatedCodeError(new TypeError("undefined is not an object (evaluating 'e[t??`default`]')"))).toBe(true);
+    expect(isOutdatedCodeError(new TypeError("Cannot read properties of undefined (reading 'default')"))).toBe(true);
+    expect(isOutdatedCodeError(new TypeError("undefined is not an object (evaluating 'user.name')"))).toBe(false);
+    expect(isOutdatedCodeError(new TypeError("Cannot read properties of undefined (reading 'name')"))).toBe(false);
+  });
+
   it("reloads exactly once, and the guard (stored before reloading) blocks a second reload", () => {
     const s = new MemStorage();
     const t0 = 1_000_000;
