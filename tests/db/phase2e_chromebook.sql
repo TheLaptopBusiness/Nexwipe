@@ -82,6 +82,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal1')::text, true);
   PERFORM public.chromebook_reset_step(rec, 'start', 'powerwash', NULL, NULL);
   PERFORM public.chromebook_reset_step(rec, 'complete');
+  PERFORM public.chromebook_reset_step(rec, 'evidence', NULL, NULL, 'Photo of welcome screen');
 
   -- 4. reset completion does not imply deprovisioning or unmanaged
   SELECT management_status INTO m FROM public.chromebook_records WHERE id = rec;
@@ -137,9 +138,11 @@ BEGIN
     VALUES (oa, 'CB-SYN', 'HP', 'SYNCB01', 'synthetic') RETURNING id INTO dsyn;
   rsyn := public.chromebook_start_for_device(dsyn);
   PERFORM public.chromebook_record_ownership(rsyn, 'Test', 'T-1');
+  PERFORM public.chromebook_set_management(rsyn, 'owner_reported_never_managed', 'Test fixture');
   PERFORM public.chromebook_reset_step(rsyn, 'authorize', NULL, 'SYNCB01', NULL);
   PERFORM public.chromebook_reset_step(rsyn, 'start', 'powerwash', NULL, NULL);
   PERFORM public.chromebook_reset_step(rsyn, 'complete');
+  PERFORM public.chromebook_reset_step(rsyn, 'evidence', NULL, NULL, 'test');
   PERFORM public.chromebook_online_setup_check(rsyn, true, false, 'test');
   PERFORM public.chromebook_record_diagnostics(rsyn, diag, NULL);
   BEGIN
