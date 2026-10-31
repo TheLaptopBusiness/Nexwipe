@@ -11,8 +11,7 @@ import { Wordmark } from "@/components/nd/wordmark";
 import { errorMessage } from "@/components/nd/page";
 import { safeRedirect } from "@/lib/session";
 
-// Closed read-only pilot: public sign-up is switched off in the auth service as well as here.
-// Accounts are created only through invitations (admin invite from the invitation server function).
+// Sign-in only. New accounts are created at /signup (email verification required) or through invitations.
 type Mode = "signin" | "forgot" | "check-email" | "mfa";
 
 export const Route = createFileRoute("/auth")({
@@ -24,9 +23,9 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — NexWipe" },
-      { name: "description", content: "Sign in to NexWipe. Accounts are created by invitation during the pilot." },
+      { name: "description", content: "Sign in to your NexWipe account." },
       { property: "og:title", content: "Sign in — NexWipe" },
-      { property: "og:description", content: "Sign in to NexWipe. Accounts are created by invitation during the pilot." },
+      { property: "og:description", content: "Sign in to your NexWipe account." },
     ],
   }),
   component: AuthPage,
@@ -68,7 +67,16 @@ function AuthPage() {
     try {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: em, password: pw });
-        if (error) throw error;
+        if (error) {
+          if (error.code === "email_not_confirmed" || /not confirmed/i.test(error.message)) {
+            await supabase.auth.resend({ type: "signup", email: em, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+            setEmail(em);
+            setMode("check-email");
+            toast.info("Verify your email first. We sent you a new verification link.");
+            return;
+          }
+          throw error;
+        }
         await afterPassword();
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(em, {
@@ -110,7 +118,7 @@ function AuthPage() {
             Every laptop, every drive, every decision on the record.
           </p>
         </div>
-        <p className="text-xs text-navy-muted">NexWipe Cloud · in development</p>
+        <p className="text-xs text-navy-muted">NexWipe Cloud</p>
       </div>
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
@@ -200,11 +208,10 @@ function AuthPage() {
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 {mode === "signin" ? (
                   <>
-                    NexWipe is in a closed pilot. Accounts are created by invitation —{" "}
-                    <Link to="/pilot" className="font-medium text-foreground underline underline-offset-4">
-                      request pilot access
+                    New to NexWipe?{" "}
+                    <Link to="/signup" className="font-medium text-foreground underline underline-offset-4">
+                      Create an account
                     </Link>
-                    .
                   </>
                 ) : (
                   <button className="font-medium text-foreground underline underline-offset-4" onClick={() => setMode("signin")}>

@@ -46,12 +46,12 @@ function Home() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="signal" size="lg">
-                <Link to="/pilot">
-                  Join the pilot program <ArrowRight />
+                <Link to="/signup">
+                  Start Now <ArrowRight />
                 </Link>
               </Button>
               <Button asChild variant="onNavy" size="lg">
-                <Link to="/workflow">See the workflow</Link>
+                <Link to="/demo">Book a Demo</Link>
               </Button>
             </div>
             <p className="mt-8 max-w-xl text-xs leading-relaxed text-navy-muted">
@@ -136,13 +136,18 @@ function Home() {
             <ClipboardCheck className="size-6 text-signal" aria-hidden />
             <h2 className="mt-3 text-2xl font-semibold text-navy-foreground">Built inside a working refurbishment shop</h2>
             <p className="mt-2 text-navy-muted">
-              NexWipe is being developed and used first at Used Tech Solutions. A limited pilot is open to
-              refurbishers, recyclers, ITAD providers and internal IT teams.
+              NexWipe is developed and used at Used Tech Solutions, for refurbishers, recyclers, ITAD providers
+              and internal IT teams. Create an account to track inventory and custody, or book a demo.
             </p>
           </div>
-          <Button asChild variant="signal" size="lg">
-            <Link to="/pilot">Request pilot access</Link>
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild variant="signal" size="lg">
+              <Link to="/signup">Start Now</Link>
+            </Button>
+            <Button asChild variant="onNavy" size="lg">
+              <Link to="/demo">Book a Demo</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </PublicLayout>
