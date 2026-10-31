@@ -35,6 +35,7 @@ import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
 import { Route as AuthenticatedAppJobsIndexRouteImport } from './routes/_authenticated/app.jobs.index'
+import { Route as AuthenticatedAppJobsJobIdRouteImport } from './routes/_authenticated/app.jobs.$jobId'
 import { Route as AuthenticatedAppPoliciesIndexRouteImport } from './routes/_authenticated/app.policies.index'
 import { Route as AuthenticatedAppPoliciesPolicyIdRouteImport } from './routes/_authenticated/app.policies.$policyId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
@@ -175,6 +176,12 @@ const AuthenticatedAppJobsIndexRoute =
     path: '/jobs/',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppJobsJobIdRoute =
+  AuthenticatedAppJobsJobIdRouteImport.update({
+    id: '/jobs/$jobId',
+    path: '/jobs/$jobId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPoliciesIndexRoute =
   AuthenticatedAppPoliciesIndexRouteImport.update({
     id: '/policies/',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
@@ -260,6 +268,7 @@ export interface FileRoutesByTo {
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
@@ -294,6 +303,7 @@ export interface FileRoutesById {
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/_authenticated/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/_authenticated/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
   '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/app/'
     | '/app/inventory/$deviceId'
+    | '/app/jobs/$jobId'
     | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory/'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/app'
     | '/app/inventory/$deviceId'
+    | '/app/jobs/$jobId'
     | '/app/policies/$policyId'
     | '/app/projects/$projectId'
     | '/app/inventory'
@@ -392,6 +404,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/team'
     | '/_authenticated/app/'
     | '/_authenticated/app/inventory/$deviceId'
+    | '/_authenticated/app/jobs/$jobId'
     | '/_authenticated/app/policies/$policyId'
     | '/_authenticated/app/projects/$projectId'
     | '/_authenticated/app/inventory/'
@@ -601,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppJobsIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/jobs/$jobId': {
+      id: '/_authenticated/app/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/app/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedAppJobsJobIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/policies/': {
       id: '/_authenticated/app/policies/'
       path: '/policies'
@@ -650,6 +670,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
+  AuthenticatedAppJobsJobIdRoute: typeof AuthenticatedAppJobsJobIdRoute
   AuthenticatedAppPoliciesPolicyIdRoute: typeof AuthenticatedAppPoliciesPolicyIdRoute
   AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
   AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
@@ -670,6 +691,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppInventoryDeviceIdRoute:
     AuthenticatedAppInventoryDeviceIdRoute,
+  AuthenticatedAppJobsJobIdRoute: AuthenticatedAppJobsJobIdRoute,
   AuthenticatedAppPoliciesPolicyIdRoute: AuthenticatedAppPoliciesPolicyIdRoute,
   AuthenticatedAppProjectsProjectIdRoute:
     AuthenticatedAppProjectsProjectIdRoute,
