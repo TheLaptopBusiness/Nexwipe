@@ -91,7 +91,7 @@ function DeviceDetail() {
         <div>
           <p className="font-mono text-sm text-muted-foreground">{d.asset_tag}</p>
           <h1 className="text-2xl font-semibold text-foreground">{[d.manufacturer, d.model].filter(Boolean).join(" ") || "Unidentified device"}</h1>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap items-start gap-2">
             <StatusBadge map={DEVICE_STATUS} value={d.status} />
             {d.is_simulated && <SimulatedBadge />}
             <HardwareOriginBadge record={d} showExplanation />
