@@ -31,3 +31,9 @@
 - [ ] Clean reproduction of the build on a Debian 13 VM (`sudo ./build.sh`) — needs a Debian 13 VM
 - [ ] G1–G5 on one authorized lab unit: identify, boot, storage identification, boot-USB exclusion, evidence upload, restore to stock — needs the unit (agent-handoff/chromebook-discovery/LAB_UNIT_CHECKLIST.md)
 - [ ] G6–G8 storage procedure review, method review, enable for one board — after G1–G5; erasure stays disabled
+
+## Public signup (2026-10-31)
+- [ ] Public signup (name/email/password) with email verification; "Start Now" CTAs; "Book a Demo" secondary; remove pilot/early-access wording
+- [ ] Post-verification onboarding: create organization → first site → first-device setup checklist; invitations keep working
+- [ ] Signup abuse protection (leaked-password check, rate limits, bot honeypot); no platform-admin grants; no free credits/paid plans until built
+- [ ] Verify signup → email verification → login → onboarding end-to-end
