@@ -11,21 +11,22 @@ import { Wordmark } from "@/components/nd/wordmark";
 import { errorMessage } from "@/components/nd/page";
 import { safeRedirect } from "@/lib/session";
 
-type Mode = "signin" | "signup" | "forgot" | "check-email" | "mfa";
+// Closed read-only pilot: public sign-up is switched off in the auth service as well as here.
+// Accounts are created only through invitations (admin invite from the invitation server function).
+type Mode = "signin" | "forgot" | "check-email" | "mfa";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>): { redirect?: string; mode?: "signup" } => {
-    const out: { redirect?: string; mode?: "signup" } = {};
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
+    const out: { redirect?: string } = {};
     if (typeof s["redirect"] === "string") out.redirect = s["redirect"];
-    if (s["mode"] === "signup") out.mode = "signup";
     return out;
   },
   head: () => ({
     meta: [
       { title: "Sign in — NextDrive" },
-      { name: "description", content: "Sign in or create a NextDrive account." },
+      { name: "description", content: "Sign in to NextDrive. Accounts are created by invitation during the pilot." },
       { property: "og:title", content: "Sign in — NextDrive" },
-      { property: "og:description", content: "Sign in or create a NextDrive account." },
+      { property: "og:description", content: "Sign in to NextDrive. Accounts are created by invitation during the pilot." },
     ],
   }),
   component: AuthPage,
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>(search.mode === "signup" ? "signup" : "signin");
+  const [mode, setMode] = useState<Mode>("signin");
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [factorId, setFactorId] = useState<string | null>(null);
@@ -69,22 +70,6 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email: em, password: pw });
         if (error) throw error;
         await afterPassword();
-      } else if (mode === "signup") {
-        const full_name = String(f.get("full_name") ?? "").trim();
-        const { data, error } = await supabase.auth.signUp({
-          email: em,
-          password: pw,
-          options: {
-            emailRedirectTo: window.location.origin + target,
-            data: { full_name },
-          },
-        });
-        if (error) throw error;
-        if (data.session) done();
-        else {
-          setEmail(em);
-          setMode("check-email");
-        }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(em, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -148,13 +133,11 @@ function AuthPage() {
             <>
               <h1 className="text-2xl font-semibold text-foreground">
                 {mode === "signin" && "Sign in"}
-                {mode === "signup" && "Create your account"}
                 {mode === "forgot" && "Reset your password"}
                 {mode === "mfa" && "Two-step verification"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {mode === "signin" && "Welcome back to NextDrive."}
-                {mode === "signup" && "You’ll verify your email before creating an organization."}
                 {mode === "forgot" && "We’ll email you a reset link."}
                 {mode === "mfa" && "Enter the 6-digit code from your authenticator app."}
               </p>
@@ -167,12 +150,6 @@ function AuthPage() {
                   </div>
                 ) : (
                   <>
-                    {mode === "signup" && (
-                      <div className="space-y-1.5">
-                        <Label htmlFor="full_name">Full name</Label>
-                        <Input id="full_name" name="full_name" required maxLength={120} autoComplete="name" />
-                      </div>
-                    )}
                     <div className="space-y-1.5">
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" name="email" type="email" required autoComplete="email" />
@@ -192,17 +169,14 @@ function AuthPage() {
                           name="password"
                           type="password"
                           required
-                          minLength={mode === "signup" ? 10 : undefined}
-                          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                          autoComplete="current-password"
                         />
-                        {mode === "signup" && <p className="text-xs text-muted-foreground">At least 10 characters.</p>}
                       </div>
                     )}
                   </>
                 )}
                 <Button type="submit" className="w-full" disabled={busy}>
                   {mode === "signin" && "Sign in"}
-                  {mode === "signup" && "Create account"}
                   {mode === "forgot" && "Send reset link"}
                   {mode === "mfa" && (
                     <>
@@ -212,7 +186,7 @@ function AuthPage() {
                 </Button>
               </form>
 
-              {(mode === "signin" || mode === "signup") && (
+              {mode === "signin" && (
                 <>
                   <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
@@ -226,10 +200,11 @@ function AuthPage() {
               <p className="mt-6 text-center text-sm text-muted-foreground">
                 {mode === "signin" ? (
                   <>
-                    New to NextDrive?{" "}
-                    <button className="font-medium text-foreground underline underline-offset-4" onClick={() => setMode("signup")}>
-                      Create an account
-                    </button>
+                    NextDrive is in a closed pilot. Accounts are created by invitation —{" "}
+                    <Link to="/pilot" className="font-medium text-foreground underline underline-offset-4">
+                      request pilot access
+                    </Link>
+                    .
                   </>
                 ) : (
                   <button className="font-medium text-foreground underline underline-offset-4" onClick={() => setMode("signin")}>
