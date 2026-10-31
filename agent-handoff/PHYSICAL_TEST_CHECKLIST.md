@@ -14,7 +14,7 @@ Use lab-owned laptops only. Leave drives in place as they are; do not use custom
 
 ## 1. What you need
 
-- Image: `nextdrive-station-readonly-0.2.0-readonly-production.img.xz` (station program `nd_station 0.2.0-readonly`).
+- Image: `nextdrive-station-readonly-0.2.1-readonly-production.img.xz` (station program `nd_station 0.2.1-readonly`).
   - SHA-256 of the `.img.xz` download: `8a25e9d0e5205f5cea17bbe1a35b71e7e7eb2ac1f2d3939299e05fd6988ba856`
   - SHA-256 of the unpacked `.img`: `18e98b597f1faf09223b92fd900a2e23068c2f93c33037a10bbc9945aca9f5a4`
 - A dedicated USB stick, 4 GB or larger, physically labelled "NextDrive station #…".
