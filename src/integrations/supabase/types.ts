@@ -1747,6 +1747,10 @@ export type Database = {
       _sweep_jobs: { Args: { _org: string }; Returns: number }
       _sync_device_after_job: { Args: { _job: string }; Returns: undefined }
       accept_invitation: { Args: { _token: string }; Returns: string }
+      accept_invitation_by_id: {
+        Args: { _invitation: string }
+        Returns: string
+      }
       agent_authenticate: {
         Args: { _credential: string; _nonce: string; _timestamp: string }
         Returns: Json
@@ -1894,6 +1898,15 @@ export type Database = {
           _m: Database["public"]["Enums"]["erasure_method"]
         }
         Returns: boolean
+      }
+      my_pending_invitations: {
+        Args: never
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          org_name: string
+          role: Database["public"]["Enums"]["org_role"]
+        }[]
       }
       preview_invitation: {
         Args: { _token: string }

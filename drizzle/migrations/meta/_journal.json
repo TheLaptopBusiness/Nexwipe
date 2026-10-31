@@ -71,6 +71,13 @@
       "when": 1793425188993,
       "tag": "0009_readonly_stations_credential_expiry_discovery_dedupe",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793428485182,
+      "tag": "0010_email_bound_invitation_acceptance",
+      "breakpoints": true
     }
   ]
 }
