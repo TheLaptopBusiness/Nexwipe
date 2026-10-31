@@ -30,7 +30,7 @@ function PricingPage() {
     <PublicLayout>
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h1 className="text-4xl font-semibold text-foreground">Simple pricing. Built to grow with you.</h1>
-        <p className="mt3 mt-3 max-w-2xl text-muted-foreground">
+        <p className="mt-3 max-w-2xl text-muted-foreground">
           Every plan includes asset tracking, wipe reports, and team access.
         </p>
 
