@@ -10,33 +10,335 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as HardwareRouteImport } from './routes/hardware'
+import { Route as PilotRouteImport } from './routes/pilot'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProductRouteImport } from './routes/product'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticated/app.audit'
+import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
+import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticated/app.sites'
+import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
+import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
+import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
+import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
+import { Route as AuthenticatedAppProjectsProjectIdRouteImport } from './routes/_authenticated/app.projects.$projectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HardwareRoute = HardwareRouteImport.update({
+  id: '/hardware',
+  path: '/hardware',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PilotRoute = PilotRouteImport.update({
+  id: '/pilot',
+  path: '/pilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductRoute = ProductRouteImport.update({
+  id: '/product',
+  path: '/product',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowRoute = WorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAuditRoute = AuthenticatedAppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppClientsRoute = AuthenticatedAppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppHardwareRoute =
+  AuthenticatedAppHardwareRouteImport.update({
+    id: '/hardware',
+    path: '/hardware',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppSitesRoute = AuthenticatedAppSitesRouteImport.update({
+  id: '/sites',
+  path: '/sites',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppInventoryIndexRoute =
+  AuthenticatedAppInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppInventoryDeviceIdRoute =
+  AuthenticatedAppInventoryDeviceIdRouteImport.update({
+    id: '/inventory/$deviceId',
+    path: '/inventory/$deviceId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppProjectsIndexRoute =
+  AuthenticatedAppProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppProjectsProjectIdRoute =
+  AuthenticatedAppProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/clients': typeof AuthenticatedAppClientsRoute
+  '/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/sites': typeof AuthenticatedAppSitesRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
+  '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/app/audit': typeof AuthenticatedAppAuditRoute
+  '/app/clients': typeof AuthenticatedAppClientsRoute
+  '/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/sites': typeof AuthenticatedAppSitesRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app': typeof AuthenticatedAppIndexRoute
+  '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
+  '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
+  '/app/projects': typeof AuthenticatedAppProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/hardware': typeof HardwareRoute
+  '/pilot': typeof PilotRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/support': typeof SupportRoute
+  '/workflow': typeof WorkflowRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/auth_/callback': typeof AuthCallbackRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/_authenticated/app/audit': typeof AuthenticatedAppAuditRoute
+  '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
+  '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/sites': typeof AuthenticatedAppSitesRoute
+  '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
+  '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
+  '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
+  '/_authenticated/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/app'
+    | '/onboarding'
+    | '/auth/callback'
+    | '/invite/$token'
+    | '/app/audit'
+    | '/app/clients'
+    | '/app/hardware'
+    | '/app/settings'
+    | '/app/sites'
+    | '/app/team'
+    | '/app/'
+    | '/app/inventory/$deviceId'
+    | '/app/projects/$projectId'
+    | '/app/inventory/'
+    | '/app/projects/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/onboarding'
+    | '/auth/callback'
+    | '/invite/$token'
+    | '/app/audit'
+    | '/app/clients'
+    | '/app/hardware'
+    | '/app/settings'
+    | '/app/sites'
+    | '/app/team'
+    | '/app'
+    | '/app/inventory/$deviceId'
+    | '/app/projects/$projectId'
+    | '/app/inventory'
+    | '/app/projects'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/hardware'
+    | '/pilot'
+    | '/pricing'
+    | '/product'
+    | '/reset-password'
+    | '/support'
+    | '/workflow'
+    | '/_authenticated/app'
+    | '/_authenticated/onboarding'
+    | '/auth_/callback'
+    | '/invite/$token'
+    | '/_authenticated/app/audit'
+    | '/_authenticated/app/clients'
+    | '/_authenticated/app/hardware'
+    | '/_authenticated/app/settings'
+    | '/_authenticated/app/sites'
+    | '/_authenticated/app/team'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/inventory/$deviceId'
+    | '/_authenticated/app/projects/$projectId'
+    | '/_authenticated/app/inventory/'
+    | '/_authenticated/app/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  HardwareRoute: typeof HardwareRoute
+  PilotRoute: typeof PilotRoute
+  PricingRoute: typeof PricingRoute
+  ProductRoute: typeof ProductRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SupportRoute: typeof SupportRoute
+  WorkflowRoute: typeof WorkflowRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +350,236 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hardware': {
+      id: '/hardware'
+      path: '/hardware'
+      fullPath: '/hardware'
+      preLoaderRoute: typeof HardwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pilot': {
+      id: '/pilot'
+      path: '/pilot'
+      fullPath: '/pilot'
+      preLoaderRoute: typeof PilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product': {
+      id: '/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof ProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflow': {
+      id: '/workflow'
+      path: '/workflow'
+      fullPath: '/workflow'
+      preLoaderRoute: typeof WorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/audit': {
+      id: '/_authenticated/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AuthenticatedAppAuditRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/clients': {
+      id: '/_authenticated/app/clients'
+      path: '/clients'
+      fullPath: '/app/clients'
+      preLoaderRoute: typeof AuthenticatedAppClientsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/hardware': {
+      id: '/_authenticated/app/hardware'
+      path: '/hardware'
+      fullPath: '/app/hardware'
+      preLoaderRoute: typeof AuthenticatedAppHardwareRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/sites': {
+      id: '/_authenticated/app/sites'
+      path: '/sites'
+      fullPath: '/app/sites'
+      preLoaderRoute: typeof AuthenticatedAppSitesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/team': {
+      id: '/_authenticated/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/inventory/': {
+      id: '/_authenticated/app/inventory/'
+      path: '/inventory'
+      fullPath: '/app/inventory/'
+      preLoaderRoute: typeof AuthenticatedAppInventoryIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/inventory/$deviceId': {
+      id: '/_authenticated/app/inventory/$deviceId'
+      path: '/inventory/$deviceId'
+      fullPath: '/app/inventory/$deviceId'
+      preLoaderRoute: typeof AuthenticatedAppInventoryDeviceIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/projects/': {
+      id: '/_authenticated/app/projects/'
+      path: '/projects'
+      fullPath: '/app/projects/'
+      preLoaderRoute: typeof AuthenticatedAppProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/projects/$projectId': {
+      id: '/_authenticated/app/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/app/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedAppProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAuditRoute: typeof AuthenticatedAppAuditRoute
+  AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
+  AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSitesRoute: typeof AuthenticatedAppSitesRoute
+  AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
+  AuthenticatedAppProjectsProjectIdRoute: typeof AuthenticatedAppProjectsProjectIdRoute
+  AuthenticatedAppInventoryIndexRoute: typeof AuthenticatedAppInventoryIndexRoute
+  AuthenticatedAppProjectsIndexRoute: typeof AuthenticatedAppProjectsIndexRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAuditRoute: AuthenticatedAppAuditRoute,
+  AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
+  AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSitesRoute: AuthenticatedAppSitesRoute,
+  AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppInventoryDeviceIdRoute:
+    AuthenticatedAppInventoryDeviceIdRoute,
+  AuthenticatedAppProjectsProjectIdRoute:
+    AuthenticatedAppProjectsProjectIdRoute,
+  AuthenticatedAppInventoryIndexRoute: AuthenticatedAppInventoryIndexRoute,
+  AuthenticatedAppProjectsIndexRoute: AuthenticatedAppProjectsIndexRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  HardwareRoute: HardwareRoute,
+  PilotRoute: PilotRoute,
+  PricingRoute: PricingRoute,
+  ProductRoute: ProductRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SupportRoute: SupportRoute,
+  WorkflowRoute: WorkflowRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
