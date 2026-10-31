@@ -18,22 +18,23 @@ export const Route = createFileRoute("/product")({
 const AVAILABLE = [
   "Multi-company accounts with separate data per organization",
   "Roles: owner, administrator, technician, auditor, customer viewer",
-  "Team invitations, password reset, email verification and authenticator-app MFA",
+  "Emailed team invitations, password reset, email verification",
+  "Two-step verification (authenticator app) required for owners and administrators",
   "Sites, downstream clients, projects and batches",
   "Laptop inventory with search, filters, CSV import/export and scanner-friendly asset-tag entry",
   "Drives tracked separately from laptops, with attachment history",
   "Automatic chain-of-custody timeline and append-only audit history",
+  "Versioned processing policies and a server-enforced, per-drive job workflow with reviewer approval",
+  "Station enrollment, revocation and a documented agent API (tested with a clearly labeled simulator only)",
 ];
 const IN_DEVELOPMENT = [
-  "Versioned processing policies",
-  "Server-enforced job state machine and destructive-action authorization",
-  "Versioned agent API, OpenAPI specification and a clearly labeled agent simulator",
-  "Live job monitoring, evidence storage and review workflow",
+  "First read-only station integration: boot, enroll, discover and report hardware (no erasure)",
+  "Live job monitoring with file evidence storage",
   "Erasure records (PDF) with demo watermarking and opaque QR verification",
   "Subscriptions and prepaid per-drive credits",
 ];
 const PLANNED = [
-  "Production bootable agent for SATA HDD, SATA SSD and NVMe on Dell, HP and Lenovo laptops",
+  "Production bootable agent for SATA HDD, SATA SSD and NVMe on Dell, HP and Lenovo laptops — no real erasure is performed today",
   "Hardware compatibility qualification",
   "Independent assessment of the erasure engine",
 ];

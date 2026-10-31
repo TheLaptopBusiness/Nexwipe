@@ -32,7 +32,20 @@ export const InventoryRequest = z.object({
     manufacturer: shortText(80).optional(),
     model: shortText(120).optional(),
     serial: shortText(120).min(1),
+    sku: shortText(120).optional(),
+    cpu: shortText(120).optional(),
+    ram_bytes: z.number().int().nonnegative().optional(),
+    bios_version: shortText(80).optional(),
+    boot_mode: z.enum(["uefi", "legacy", "unknown"]).optional(),
+    secure_boot: z.boolean().optional(),
   }),
+  station: z
+    .object({
+      agent_version: shortText(40).optional(),
+      boot_medium_serial: shortText(120).optional(),
+      kernel: shortText(120).optional(),
+    })
+    .optional(),
   drives: z
     .array(
       z.object({
@@ -41,6 +54,13 @@ export const InventoryRequest = z.object({
         interface: DriveInterface.optional(),
         capacity_bytes: z.number().int().nonnegative().optional(),
         firmware: shortText(60).optional(),
+        bus_path: shortText(200).optional(),
+        transport: shortText(40).optional(),
+        removable: z.boolean().optional(),
+        is_boot_medium: z.boolean().optional(),
+        wwn: shortText(64).optional(),
+        nvme_eui64: shortText(64).optional(),
+        nvme_nguid: shortText(64).optional(),
         capabilities: z.record(z.string(), z.unknown()).optional(),
       }),
     )

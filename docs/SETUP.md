@@ -29,6 +29,18 @@ Future (not yet required): Stripe test keys (Phase 4), report-signing key refere
 - Stations enroll with a single-use token from **Agents & stations**; credentials are shown once.
 - Acceptance checks for Phase 2: `tests/db/phase2_acceptance.sql` (same procedure as Phase 1).
 
+## Two-step verification
+
+Owners and administrators must use an authenticator app; the database ignores their permissions in sessions that have not been verified with a code.
+
+## Invitation emails
+
+Sent by the sign-in email service (default sender until a company email domain is configured). Links use the app address the admin is on; custom domains must be listed in the `APP_ALLOWED_ORIGINS` server setting (comma-separated origins).
+
+## Agent contract check
+
+`ND_BASE=… ND_SUPABASE_URL=… ND_SUPABASE_KEY=… ND_USER_TOKEN=<owner/admin two-step session token> ND_ORG_ID=… ND_TRANSCRIPT=docs/agent-api/transcript.md bun scripts/agent-contract-check.ts` — enrolls a temporary CONTRACT-TEST station, runs 18 HTTP checks, revokes it. Phase 2b database checks: `tests/db/phase2b_security.sql`.
+
 ## Local checks
 
 - `bunx vitest run`

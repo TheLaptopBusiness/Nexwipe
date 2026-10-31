@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: NextDrive Agent API
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     Contract between a NextDrive erasure station (the bootable agent, a separate deliverable)
     and NextDrive Cloud. The labelled simulator in this repository uses exactly this contract.
@@ -89,7 +89,7 @@ paths:
       requestBody:
         content: { application/json: { schema: { type: object, properties: { state: { type: string, enum: [idle, busy, reconciling] }, agent_version: { type: string } } } } }
       responses:
-        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer } } } } } }
+        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report).", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean } } } } } }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
   /inventory:
@@ -105,7 +105,25 @@ paths:
               type: object
               required: [system, drives]
               properties:
-                system: { type: object, required: [serial], properties: { manufacturer: { type: string }, model: { type: string }, serial: { type: string } } }
+                system:
+                  type: object
+                  required: [serial]
+                  properties:
+                    manufacturer: { type: string, description: "SMBIOS type 1 manufacturer" }
+                    model: { type: string, description: "SMBIOS type 1 product name" }
+                    serial: { type: string, description: "SMBIOS type 1 serial number (service tag)" }
+                    sku: { type: string }
+                    cpu: { type: string }
+                    ram_bytes: { type: integer }
+                    bios_version: { type: string }
+                    boot_mode: { type: string, enum: [uefi, legacy, unknown] }
+                    secure_boot: { type: boolean }
+                station:
+                  type: object
+                  properties:
+                    agent_version: { type: string }
+                    boot_medium_serial: { type: string, description: "Serial of the USB medium the station booted from" }
+                    kernel: { type: string }
                 drives:
                   type: array
                   maxItems: 16
@@ -118,9 +136,16 @@ paths:
                       interface: { type: string, enum: [sata_hdd, sata_ssd, nvme_ssd, unsupported_other] }
                       capacity_bytes: { type: integer }
                       firmware: { type: string }
-                      capabilities: { type: object, additionalProperties: true }
+                      bus_path: { type: string, description: "Stable path, e.g. pci-0000:02:00.0-nvme-1 or pci-0000:00:17.0-ata-1" }
+                      transport: { type: string, example: nvme }
+                      removable: { type: boolean }
+                      is_boot_medium: { type: boolean, description: "MUST be true for the station's own boot device; never recorded as a laptop drive" }
+                      wwn: { type: string }
+                      nvme_eui64: { type: string }
+                      nvme_nguid: { type: string }
+                      capabilities: { type: object, additionalProperties: true, description: "Detected sanitize/secure-erase/crypto capabilities (see agent handoff)" }
       responses:
-        "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
+        "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { discovery_id: { type: string, format: uuid }, device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
   /jobs:
     get:
       summary: Jobs bound to this agent (queued, running, verifying, interrupted)
