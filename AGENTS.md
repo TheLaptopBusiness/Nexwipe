@@ -27,3 +27,4 @@
 - Invitation tokens are only ever known to `create_invitation`'s caller; send emails from the same server function that created the token, never by re-deriving tokens.
 - `agent-handoff/` holds docs, the read-only station program (`station/`) and the USB build (`usb-image/`); never add erasure commands or destructive tools there — `verify-image.sh` and `station/nd_station/safety.py` enforce this.
 - Physical stations enroll read-only (`agents.read_only`, enforced by triggers on authorizations/events/evidence); only trusted server code may unlock one, never an app user.
+- Outdated-code/stale-chunk recovery has one policy: `src/lib/app-recovery.ts` (in-app) and `src/lib/boot-recovery-script.ts` (before mount, keep in sync); TanStack Router's own silent reload is disabled there — it ignores unsaved form input and has no loop guard window.
