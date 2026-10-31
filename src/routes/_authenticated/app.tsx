@@ -90,7 +90,7 @@ const NAV: { heading: string; items: NavItem[] }[] = [
   {
     heading: "Operations",
     items: [
-      { to: "/app", label: "Dashboard", icon: LayoutDashboard, cap: "inventory.view" },
+      { to: "/app", label: "Dashboard", icon: LayoutDashboard },
       { to: "/app/inventory", label: "Inventory", icon: Boxes, cap: "inventory.view" },
       { to: "/app/projects", label: "Projects & batches", icon: FolderKanban },
       { to: "/app/clients", label: "Clients", icon: Building, cap: "inventory.view" },
