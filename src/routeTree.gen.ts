@@ -33,6 +33,7 @@ import { Route as AuthenticatedAppAuditRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppHardwareRouteImport } from './routes/_authenticated/app.hardware'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
+import { Route as AuthenticatedAppSetupRouteImport } from './routes/_authenticated/app.setup'
 import { Route as AuthenticatedAppSimulatorRouteImport } from './routes/_authenticated/app.simulator'
 import { Route as AuthenticatedAppSitesRouteImport } from './routes/_authenticated/app.sites'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
@@ -170,6 +171,11 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSetupRoute = AuthenticatedAppSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppSimulatorRoute =
   AuthenticatedAppSimulatorRouteImport.update({
     id: '/simulator',
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/setup': typeof AuthenticatedAppSetupRoute
   '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/setup': typeof AuthenticatedAppSetupRoute
   '/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/app/sites': typeof AuthenticatedAppSitesRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/hardware': typeof AuthenticatedAppHardwareRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/setup': typeof AuthenticatedAppSetupRoute
   '/_authenticated/app/simulator': typeof AuthenticatedAppSimulatorRoute
   '/_authenticated/app/sites': typeof AuthenticatedAppSitesRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/setup'
     | '/app/simulator'
     | '/app/sites'
     | '/app/team'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/hardware'
     | '/app/settings'
+    | '/app/setup'
     | '/app/simulator'
     | '/app/sites'
     | '/app/team'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/clients'
     | '/_authenticated/app/hardware'
     | '/_authenticated/app/settings'
+    | '/_authenticated/app/setup'
     | '/_authenticated/app/simulator'
     | '/_authenticated/app/sites'
     | '/_authenticated/app/team'
@@ -691,6 +703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/setup': {
+      id: '/_authenticated/app/setup'
+      path: '/setup'
+      fullPath: '/app/setup'
+      preLoaderRoute: typeof AuthenticatedAppSetupRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/simulator': {
       id: '/_authenticated/app/simulator'
       path: '/simulator'
@@ -806,6 +825,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppHardwareRoute: typeof AuthenticatedAppHardwareRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSetupRoute: typeof AuthenticatedAppSetupRoute
   AuthenticatedAppSimulatorRoute: typeof AuthenticatedAppSimulatorRoute
   AuthenticatedAppSitesRoute: typeof AuthenticatedAppSitesRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
@@ -830,6 +850,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppHardwareRoute: AuthenticatedAppHardwareRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSetupRoute: AuthenticatedAppSetupRoute,
   AuthenticatedAppSimulatorRoute: AuthenticatedAppSimulatorRoute,
   AuthenticatedAppSitesRoute: AuthenticatedAppSitesRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
