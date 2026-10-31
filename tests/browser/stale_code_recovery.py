@@ -8,7 +8,7 @@ m=json.load(open("/tmp/browser/p3/aal2_session.json"))
 async def setup(p, mode):
     b=await p.chromium.launch(headless=True); ctx=await b.new_context(viewport={"width":1280,"height":1800}); pg=await ctx.new_page()
     st={"loads":0,"blocked":0,"mode":mode,"console":[]}
-    pg.on("load", lambda _: st.__setitem__("loads", st["loads"]+1))
+    pg.on("request", lambda r: st.__setitem__("loads", st["loads"]+1) if r.resource_type=="document" and r.frame==pg.main_frame else None)
     pg.on("console", lambda x: st["console"].append(x.text))
     async def handler(route):
         if st["mode"]=="block":
@@ -24,8 +24,10 @@ async def setup(p, mode):
             await route.continue_()
     await pg.route(CHUNK, handler)
     async def boot_handler(route):
-        if st.get("boot")=="block":
-            st["boot_blocked"]=st.get("boot_blocked",0)+1; await route.abort("failed")
+        if st.get("boot") in ("block","block_once"):
+            st["boot_blocked"]=st.get("boot_blocked",0)+1
+            if st["boot"]=="block_once": st["boot"]="pass"   # the new version becomes available right after the first failure
+            await route.abort("failed")
         else:
             await route.continue_()
     await pg.route(BOOT, boot_handler)
@@ -107,7 +109,7 @@ async def main():
         res["F_reloads"]=st["loads"]-base
         await b.close()
         # E1: start-up load fails once (blank-screen case) -> one reload -> app loads
-        b,pg,st=await setup(p,"pass"); st["boot"]="block"; base=st["loads"]
+        b,pg,st=await setup(p,"pass"); st["boot"]="block_once"; base=st["loads"]
         await pg.goto("http://localhost:8080/app", wait_until="domcontentloaded")
         for _ in range(40):
             await asyncio.sleep(0.25)

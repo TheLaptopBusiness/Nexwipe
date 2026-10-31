@@ -15,7 +15,7 @@ This package is for the team building the **NextDrive Agent**: the bootable x86-
 | [MILESTONES.md](./MILESTONES.md) | Milestone 1 (read-only), Stage 2 (controlled destructive testing on disposable drives), method-qualification evidence |
 | [station/](./station/) | Read-only station program `nd_station` (discovery, enrollment, console, heartbeat, rotation) + tests |
 | [usb-image/](./usb-image/) | Reproducible bootable USB build, pinned versions, checksums, USB creation instructions |
-| [PHYSICAL_TEST_CHECKLIST.md](./PHYSICAL_TEST_CHECKLIST.md) | Dell / HP / Lenovo read-only test checklist (with the VM results) |
+| [PHYSICAL_TEST_CHECKLIST.md](./PHYSICAL_TEST_CHECKLIST.md) | First physical read-only test: instructions (existing firmware settings first) and the record to fill in per laptop. VM results: `usb-image/vm-test-evidence/` |
 
 API contract: `../docs/agent-api/CONTRACT.md` (+ `openapi.yaml`, `transcript.md`, `station-auth.md`).
 

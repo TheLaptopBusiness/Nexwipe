@@ -1,6 +1,6 @@
 # NextDrive — status
 
-_Last updated: Phase 2c (first physical read-only laptop test preparation)._
+_Last updated: read-only pilot publish (2026-10-31). Published address: https://pixel-perfect-screenshot-maker-52.lovable.app_
 
 **NextDrive cannot erase a real drive today.** No production agent exists, and no erasure method has been implemented or tested on hardware. Everything below that touches jobs or evidence has only been exercised with the labelled simulator.
 
@@ -27,14 +27,20 @@ _Last updated: Phase 2c (first physical read-only laptop test preparation)._
 | Invitations addressed to a signed-in user's confirmed email are shown and can be accepted even without the link | browser (same test) |
 | **Bootable USB build** (Debian 13, signed shim/GRUB/kernel, read-only squashfs, encrypted state partition) and **read-only station program** (real sysfs/SMBIOS discovery, boot USB excluded by device ancestry, console, enrollment, network errors) | Image built here; booted in a **virtual machine** (QEMU/OVMF UEFI) and all 8 checklist steps passed there; 14 station unit tests; build-time destructive-tool scan |
 
+| **Closed pilot sign-up** — public sign-up is switched off in the auth service (sign-up requests are refused with "signups not allowed"); the sign-in and invitation pages no longer offer "Create account" | API probe after the change; published sign-in page checked |
+| **Published read-only pilot** (2026-10-31) — on the published address: password sign-in, required two-step code (wrong code rejected), inventory, enrollment token created in the app, the real station program enrolled with clearly labelled test hardware (`PUBLISHED-CHECK`), report → Add to inventory → re-report → laptop and drives agent-verified, boot stick not recorded, re-reports counted without duplicates, revocation deletes the station credential; 23/23 HTTP contract checks; outdated-code recovery test (all cases) against the published build | `tests/browser/published_station_check.py`, `tests/browser/stale_code_recovery_published.py`, `scripts/agent-contract-check.ts` with `ND_BASE` = published address |
+| Signed-out access: credentials, enrollment tokens, evidence, customers, devices, drives, jobs, audit, invitations all refused to signed-out visitors; station credentials and request nonces unreadable even for signed-in owners | REST probe of 21 tables (signed-out and signed-in), plus the tenant-isolation suites above |
+
 ## 2. Implemented but unverified
 
 - **New invitee completing first password + required MFA**: blocked in testing — the sign-in service accepted two invitation emails (06:40, 06:52 UTC) but neither reached the test mailbox within ~25 minutes, most likely the default sender's hourly email limit. The steps after the email (accept, set first password, set up authenticator) are not verified.
-- **USB image on physical Dell/HP/Lenovo laptops**: not booted on any physical laptop yet. Secure Boot on, Wi-Fi, real drive identity strings and USB boot on real firmware are untested.
+- **Physical laptop compatibility: UNVERIFIED.** The USB image has not been booted on any physical laptop. Secure Boot on real firmware, storage-controller modes (AHCI / RAID / RST / VMD), Wi-Fi, real drive identity strings and USB boot on real firmware are untested. Stays unverified until a filled-in record from `agent-handoff/PHYSICAL_TEST_CHECKLIST.md` exists per laptop.
+- **Invitations for brand-new users with public sign-up switched off**: invitations are sent by the trusted invitation function (administrator invite), which is expected to keep working, but no new-invitee email has been received since the change.
+- New Google sign-ins: with sign-up closed, a Google account that has no NextDrive account yet cannot sign in; existing accounts are unaffected (not re-tested).
 - Email links redirect to the app's main address, not to the invitation page (the sign-in service only allows registered addresses); the in-app pending-invitation banner covers this.
 - Invitation links on a **custom domain** require `APP_ALLOWED_ORIGINS` to list it.
 - Agent API behaviour on the published site (all HTTP checks ran against the preview server).
-- **Outdated-code recovery on the published site after a real update**: only tested on the development server by blocking/replacing code files in a test browser; a real deploy's file names differ. Not tested in Safari or Firefox (their error wording is covered only by unit tests). In development mode the framework itself still prints the raw error to the local browser console; our stored, shown and reported details are redacted.
+- **Outdated-code recovery after a real update**: tested on the development server and on the published build by blocking/replacing code files in a test browser; not yet observed during an actual new deploy with a tab left open. Not tested in Safari or Firefox (their error wording is covered only by unit tests). The browser's own error log on the user's computer can still show the raw error message (development and published); NextDrive's stored, shown and reported details are redacted.
 - The reference client's hardware discovery on a real laptop (only tested with replayed test hardware data in this environment, which has no laptop hardware).
 
 ## 3. Simulated
