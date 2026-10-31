@@ -156,7 +156,8 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
   UPDATE public.chromebook_records SET management_status = 'online_setup_checked', management_basis = 'admin_reported_deprovisioned',
     online_setup_result = 'no_enrollment_prompt', online_setup_checked_at = now(),
-    reset_status = 'evidence_collected', reset_authorized_by = NULL, reset_authorized_at = NULL
+    reset_status = 'evidence_collected', reset_authorized_by = NULL, reset_authorized_at = NULL,
+    reviewed_by = ua, reviewed_at = now()
   WHERE id = rec;
   BEGIN
     UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
@@ -173,6 +174,11 @@ BEGIN
     UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
     r := r || ' [online_check_must_follow_reset FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [online_check_must_follow_reset PASS]'; END;
+  -- positive control: same record with every requirement satisfied is accepted by the trigger
+  UPDATE public.chromebook_records SET online_setup_checked_at = reset_completed_at + interval '1 minute' WHERE id = rec;
+  UPDATE public.chromebook_records SET release_decision = 'resale_ready' WHERE id = rec;
+  SELECT release_decision INTO s FROM public.chromebook_records WHERE id = rec;
+  r := r || ' [control_trusted_complete_release ' || CASE WHEN s = 'resale_ready' THEN 'PASS' ELSE 'FAIL ' || s END || ']';
 
   RAISE EXCEPTION 'RESULTS:%', r;
 END $$;
