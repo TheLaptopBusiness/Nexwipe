@@ -106,7 +106,7 @@ BEGIN
   PERFORM public.agent_upload_evidence(ag_a, j1, 'evi-a-000001', 'execution_log', 'x.log', 'text/plain', 'log', ev_sha);
   res := public.agent_upload_evidence(ag_a, j1, 'evi-a-000001', 'execution_log', 'x.log', 'text/plain', 'log', ev_sha);
   SELECT count(*) INTO n FROM public.evidence_objects WHERE job_id = j1;
-  r := r || ' [duplicate_evidence_idempotent ' || CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END || ']';
+  r := r || ' [duplicate_evidence_idempotent ' || CASE WHEN n = 1 AND (res->>'duplicate')::boolean THEN 'PASS' ELSE 'FAIL' END || ']';
   BEGIN
     PERFORM public.agent_job_event(ag_a, j1, 'progress', 2, 'ack-a-000001', '{"phase":"x"}', now());
     r := r || ' [idempotency_key_reuse_with_other_body_rejected FAIL]';
@@ -127,6 +127,7 @@ BEGIN
     PERFORM public.agent_heartbeat(ag_a, 'idle', null);
     r := r || ' [browser_cannot_call_agent_rpcs FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [browser_cannot_call_agent_rpcs PASS]'; END;
+  PERFORM set_config('role', me, true);
   SELECT count(*) INTO n FROM storage.buckets;
   r := r || ' [no_storage_buckets_exposed ' || CASE WHEN n = 0 THEN 'PASS' ELSE 'REVIEW(' || n || ' buckets)' END || ']';
 
