@@ -1,0 +1,27 @@
+# Removed from the image: tools that can erase, trim, zone-reset, overwrite, partition or format storage.
+# The station program never needs them; removing them reduces the damage a bug or misuse could cause.
+/usr/sbin/blkdiscard
+/usr/sbin/blkzone
+/usr/sbin/fstrim
+/usr/sbin/wipefs
+/usr/sbin/mkfs
+/usr/sbin/mkswap
+/usr/sbin/fdisk
+/usr/sbin/sfdisk
+/usr/sbin/cfdisk
+/usr/sbin/mke2fs
+/usr/sbin/debugfs
+/usr/sbin/resize2fs
+/usr/sbin/tune2fs
+/usr/sbin/e2fsck
+/usr/sbin/badblocks
+/usr/sbin/e2image
+/usr/sbin/mkfs.ext2
+/usr/sbin/mkfs.ext3
+/usr/sbin/mkfs.ext4
+/usr/sbin/fsck
+/usr/sbin/hdparm
+/usr/sbin/nvme
+/usr/bin/dd
+/usr/bin/shred
+/usr/bin/truncate

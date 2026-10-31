@@ -1,0 +1,4 @@
+# Top-level packages and exact versions (Debian 13 "trixie", snapshot 20260913T000000Z).
+# Generated from an actual install; see build/installed-packages.txt after a build for the full closure.
+# package version
+PLACEHOLDER-REGENERATED-BY-BUILD
