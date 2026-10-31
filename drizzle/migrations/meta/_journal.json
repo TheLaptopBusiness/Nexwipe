@@ -43,6 +43,13 @@
       "when": 1793421675851,
       "tag": "0005_phase2_job_and_agent_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793421944818,
+      "tag": "0006_phase2_least_privilege_grants",
+      "breakpoints": true
     }
   ]
 }
