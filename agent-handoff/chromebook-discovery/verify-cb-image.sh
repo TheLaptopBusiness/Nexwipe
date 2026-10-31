@@ -49,8 +49,11 @@ echo "cmdline: $cmdline"
 for need in "boot=live" "live-media=removable-usb" "live-boot.read-only=/dev/mmcblk*,/dev/nvme*" "noresume" "systemd.swap=0" "systemd.gpt_auto=0" "nofstab" "nopersistence" "nd_profile=chromebook-discovery"; do
   [[ " $cmdline " == *" $need "* ]] || { echo "FAIL: cmdline missing '$need'"; fail=1; }
 done
-for bad in cros_debug "init=" " rw " " swap " "swap=" "resume=" "persistence " "toram" "todisk"; do
-  [[ " $cmdline " == *"$bad"* ]] && { echo "FAIL: cmdline contains '$bad'"; fail=1; }
+for word in $cmdline; do
+  case "$word" in
+    cros_debug|rw|swap|persistence|toram|toram=*|todisk=*|init=*|swap=*|live-boot.swap*|resume=*|persistence-*)
+      echo "FAIL: cmdline contains '$word'"; fail=1;;
+  esac
 done
 
 dd if="$IMG" of="$W/data.fat" bs=512 skip="$(cgpt show -i 1 -b "$IMG")" count="$(cgpt show -i 1 -s "$IMG")" status=none
