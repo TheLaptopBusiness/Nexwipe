@@ -126,7 +126,7 @@ def identity(s: Sys, fw: dict) -> tuple[dict, list]:
         "board_candidates": candidates,
         "smbios": {k: _clean(s.read("/sys/class/dmi/id", k)) for k in ("sys_vendor", "product_name", "product_serial", "board_name")},
         "vpd": vpd or None,
-        "architecture": _clean(s.read("/proc/sys/kernel/arch")) or os.uname().machine if s.root == "/" else _clean(s.read("/proc/sys/kernel/arch")),
+        "architecture": _clean(s.read("/proc/sys/kernel/arch")) or (os.uname().machine if s.root == "/" else None),
     }
     out["smbios"] = {k: v for k, v in out["smbios"].items() if v} or None
     return {k: v for k, v in out.items() if v is not None}, flags
@@ -225,10 +225,9 @@ def _emmc(s: Sys, disk: str, devpath: str, drive: dict) -> tuple[dict, list]:
     return {"kind": "emmc", "identity": ident or None, "ext_csd": ext, "regions": [{k: v for k, v in r.items() if v is not None} for r in regions]}, flags
 
 
-def storage(s: Sys, drives: list) -> tuple[list, list]:
+def storage(s: Sys) -> tuple[list, list]:
     flags: list = []
     out = []
-    internal = [d for d in drives if not d.get("removable") and not d.get("is_boot_medium")]
     names = {d for d in s.listdir("/sys/block")}
     by_bus = {}
     for disk in names:
@@ -237,7 +236,6 @@ def storage(s: Sys, drives: list) -> tuple[list, list]:
     for disk, devpath in sorted(by_bus.items()):
         if re.fullmatch(r"mmcblk\d+(boot\d+|rpmb)", disk):
             continue  # hardware partitions of an eMMC; reported as regions of the parent
-        d = next((x for x in internal if (x.get("bus_path") and x.get("bus_path") in devpath) or x.get("serial") and x.get("serial") == _clean(s.read("/sys/block", disk, "device", "serial"), 120)), None)
         removable = s.read("/sys/block", disk, "removable") == "1" or "/usb" in devpath
         if removable:
             continue
@@ -252,7 +250,7 @@ def storage(s: Sys, drives: list) -> tuple[list, list]:
             info = {"kind": "nvme", "identity": {k: _clean(s.read("/sys/block", disk, "device", k), 64) for k in ("model", "serial", "firmware_rev")},
                     "capabilities": "not_read_in_discovery_build"}
         elif re.search(r"/ata\d+/", devpath):
-            info = {"kind": "sata", "identity": {"model": (d or {}).get("model"), "serial": (d or {}).get("serial"), "firmware": (d or {}).get("firmware")},
+            info = {"kind": "sata", "identity": "see the matching entry in drives",
                     "capabilities": "not_read_in_discovery_build"}
         else:
             info = {"kind": "other"}
@@ -273,7 +271,7 @@ def discover_chromebook(s: Sys, report: dict) -> tuple[dict, list]:
         flags.append(flag("chromeos_firmware_not_detected", detail="This build is only for Chromebooks"))
     fw = firmware_info(s)
     ident, f1 = identity(s, fw)
-    stor, f2 = storage(s, report.get("drives", []))
+    stor, f2 = storage(s)
     boot = report.get("_boot_detection") or {}
     block = {
         "profile": "chromebook-discovery",
