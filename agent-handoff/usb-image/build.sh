@@ -96,8 +96,10 @@ KVER="$(ls "$ROOT/boot" | sed -n 's/^vmlinuz-//p' | sort -V | tail -1)"
 cp "$ROOT/boot/vmlinuz-$KVER" "$STAGE/live/vmlinuz"
 cp "$ROOT/boot/initrd.img-$KVER" "$STAGE/live/initrd.img"
 rm -f "$OUT/filesystem.squashfs"
-mksquashfs "$ROOT" "$STAGE/live/filesystem.squashfs" -comp xz -noappend -no-progress \
-  -e proc sys dev run tmp boot -mkfs-time "$SOURCE_DATE_EPOCH" -all-time "$SOURCE_DATE_EPOCH" >/dev/null
+# Keep proc/sys/dev/run/tmp as empty mount points; drop their contents and /boot (kernel lives on the ESP).
+mksquashfs "$ROOT" "$STAGE/live/filesystem.squashfs" -comp xz -noappend -no-progress -wildcards \
+  -e 'proc/*' 'sys/*' 'dev/*' 'run/*' 'tmp/*' 'boot/*' 'var/cache/apt/archives/*.deb' \
+  -mkfs-time "$SOURCE_DATE_EPOCH" -all-time "$SOURCE_DATE_EPOCH" >/dev/null
 
 log "Installing signed boot chain (shim -> GRUB -> kernel)"
 cp "$ROOT/usr/lib/shim/shimx64.efi.signed" "$STAGE/EFI/BOOT/BOOTX64.EFI"
