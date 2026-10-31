@@ -16,3 +16,11 @@
 - [ ] Phase 4: Stripe test billing, credit ledger, onboarding polish, platform admin
 - [ ] Signed station requests / mTLS + credential rotation
 - [ ] Branded email sender domain (needs a domain from the owner)
+
+## Chromebook track (priority)
+- [x] Chromebook inventory fields with value sources (manual / imported / API-reported / physically observed); unknown stays unknown
+- [x] Separate management and reset statuses; guided barcode batch workflow; processing record; append-only history (implemented, DB-tested 23/23, technician steps browser-tested; owner authorize/release steps DB-tested only)
+- [x] Compatibility research + feasibility matrix (research only; no model claimed)
+- [ ] Physically identify board/arch/storage on real HP 11 G5, HP 14 G5, Lenovo 300e, ASUS C203 units — needs hardware
+- [ ] Google Admin integration (read-only first) — design only; needs a school's consent and a Google Cloud project/OAuth client
+- [ ] Chromebook agent (USB/PXE, ARM build, storage sanitization) — external engineering + physical hardware

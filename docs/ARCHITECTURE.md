@@ -63,6 +63,14 @@ Integrity rules enforced in the database:
 - `agent_discoveries`: one row per station + laptop (`report_count`, `last_reported_at`, `payload_sha256`), `review_flags`, `is_read_only_test`.
 - `my_pending_invitations()` / `accept_invitation_by_id()` for email-bound acceptance without the link token.
 
+## Chromebook track
+
+- `devices.device_class` (`laptop` | `chromebook`). Chromebooks never get drive-erasure jobs (trigger on `jobs`), and a device with a Chromebook record stays a Chromebook.
+- `chromebook_records` (one per device): board, architecture, storage, ChromeOS version, AUE (date + source + retrieval date), each with its value source; ownership authorization; `management_status` and `reset_status` (independent); online setup result; manual diagnostics; release decision; `is_synthetic` (inherited from the device, permanent, never resale-ready).
+- `chromebook_events`: append-only history with `evidence_kind` (technician observation, administrator report, integration result, machine-generated). App users can only produce the first two.
+- Changes only via `chromebook_*` RPCs; browser has SELECT only. Reset authorization and release need owner/admin (AAL2). Integration-confirmed deprovisioning and API-reported values are refused for app users.
+- Google Admin integration: design only (`docs/chromebook/GOOGLE_ADMIN_INTEGRATION.md`); no tokens stored.
+
 ## Planned schema (Phases 3–4)
 
 | Table | Purpose |
@@ -77,4 +85,4 @@ Job state machine: `draft → awaiting_authorization → queued → running → 
 
 ## Migrations
 
-Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`, `phase2b_security.sql`, `phase2c_readonly_stations.sql`, `phase2d_hardware_origin.sql`.
+Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`, `phase2b_security.sql`, `phase2c_readonly_stations.sql`, `phase2d_hardware_origin.sql`, `phase2e_chromebook.sql`.

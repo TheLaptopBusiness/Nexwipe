@@ -35,7 +35,12 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 | **Brand-new invitee with public sign-up switched off** (2026-10-31, preview build): owner invited a never-seen address → real email arrived in the test mailbox → link signed the new user in → "Set your password" page → pending invitation shown → accepted as technician → signed out → signed in again with email + the new password → app opened. Sign-up API still refuses new accounts ("Signups not allowed") | browser + real email; caveat: the email link always lands on the published main address, so this run replayed that same sign-in onto the preview build, because the published build does not have the password step yet |
 | Google sign-in hand-off on the published sign-in page reaches Google's account chooser with the managed sign-in service | browser (stops at Google's page; no Google password available here) |
 
+| **Chromebook processing track** (2026-10-31, preview) — Chromebook inventory fields with value sources; separate management and reset statuses; guided batch workflow (scan → receive → ownership → management → deprovisioning request/administrator report → serial-confirmed reset authorization → method/outcome → online setup check → manual diagnostics → resale-ready or quarantine); Chromebook Processing Record; append-only history | `tests/db/phase2e_chromebook.sql` (23/23 PASS: reset ≠ deprovisioning, unknown never becomes unmanaged, offline setup refused, managed/unresolved/enrollment-prompt devices cannot be resale-ready, synthetic never resale-ready and its history stays synthetic, app users cannot claim integration confirmation or API values, interrupted resets keep history, append-only events, no erasure jobs on Chromebooks, tenant isolation); `src/lib/chromebook.test.ts` (9 PASS); browser: temporary technician received a Chromebook by scan, recorded board, ownership, management observed → deprovisioning requested → administrator-reported, viewed record and history (test account and company deleted afterwards) |
+
 ## 2. Implemented but unverified
+
+- **Chromebook owner/administrator steps in the browser** (authorize reset, approve resale-ready, quarantine): tested in the database only — no two-step-verified session was available for a browser run.
+- **Chromebook model research** (boards for HP 11 G5 = SETZER, 11 G5 EE = RELM, 14 G5 = SNAPPY, Lenovo 300e Gen 2/3 = PHASER360/TREEYA360/VILBOZ360) comes from a third-party community list; Lenovo 300e 1st gen and ASUS C203XA boards are unconfirmed. No Chromebook has been handled by NexWipe; storage type and AUE dates are not filled in.
 
 - **Invitee first-password step on the published address**: works in the preview build; not yet published, so a new invitee on the published site today would be signed in without being asked for a password. Publish before inviting pilot customers, then repeat the invitee test there.
 - **New invitee as owner/administrator setting up two-step verification**: the tested invitee was a technician (no two-step requirement). The owner/admin two-step gate itself is tested separately.
@@ -52,6 +57,9 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 
 ## 3. Simulated
 
+- Nothing Chromebook-related is simulated. Google Admin shows “Not connected”.
+
+
 - Agent simulator jobs, laptops (`SIM-…`), drives, stations and evidence. Always labelled SIMULATED; can never be billable, certificate-eligible, run on a real station, or be added to real inventory.
 
 ## 4. Not built
@@ -63,6 +71,9 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 - Logo upload, retention enforcement, legal holds, account deletion.
 
 ## 5. External development required
+
+- **Chromebook agent research** (feasibility matrix in the app): external USB/PXE boot, ARM builds, eMMC/SATA/NVMe sanitization and restoring stock ChromeOS all need separate agent engineering and physical Chromebooks. Developer Mode and firmware flashing are not enabled.
+- **Google Admin integration**: needs a Google Cloud project, OAuth client, a school willing to authorize, and validation of current Admin SDK scopes/licensing (`docs/chromebook/GOOGLE_ADMIN_INTEGRATION.md`).
 
 - **Boot the USB image on one Dell, one HP and one Lenovo laptop** and fill in `agent-handoff/PHYSICAL_TEST_CHECKLIST.md`.
 
