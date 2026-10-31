@@ -71,6 +71,7 @@ mkdir -p "$ROOT/opt/nextdrive"
 cp -r "$STATION_SRC/nd_station" "$ROOT/opt/nextdrive/"
 find "$ROOT/opt/nextdrive" -name '__pycache__' -prune -exec rm -rf {} +
 cp -r "$HERE/rootfs/." "$ROOT/"
+mkdir -p "$ROOT/etc/nextdrive"
 python3 - "$ROOT/etc/nextdrive/station.json" <<PY
 import json, os, sys
 cfg = {"server": os.environ.get("ND_SERVER", ""), "allow_http_hosts": [h for h in os.environ.get("ND_ALLOW_HTTP_HOSTS", "").split(",") if h],
