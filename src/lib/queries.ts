@@ -149,7 +149,7 @@ export function usePolicies() {
 }
 
 export const AGENT_COLUMNS =
-  "id, org_id, site_id, name, status, is_simulated, agent_version, platform, hostname, credential_prefix, enrolled_at, last_heartbeat_at, last_state, revoked_at, revoke_reason";
+  "id, org_id, site_id, name, status, is_simulated, agent_version, platform, hostname, credential_prefix, enrolled_at, last_heartbeat_at, last_state, revoked_at, revoke_reason, read_only";
 
 export function useAgents(opts: { refetchMs?: number } = {}) {
   const { orgId } = useOrg();

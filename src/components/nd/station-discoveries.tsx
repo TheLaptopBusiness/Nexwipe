@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Cpu, HardDrive, Plus, ScanSearch } from "lucide-react";
+import { AlertTriangle, Cpu, HardDrive, Plus, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { SimulatedBadge, ToneBadge } from "@/components/nd/status-badge";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatBytes, formatDateTime } from "@/lib/queries";
-import { summarizeDiscovery, type DiscoveryPayload } from "@/lib/discovery";
+import { reviewFlags, summarizeDiscovery, type DiscoveryPayload } from "@/lib/discovery";
 
 export function StationDiscoveries() {
   const { orgId, role } = useOrg();
@@ -26,9 +26,9 @@ export function StationDiscoveries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agent_discoveries")
-        .select("id, agent_id, device_id, system_serial, payload, is_simulated, reported_at, agents(name), devices(asset_tag, hardware_verified)")
+        .select("id, agent_id, device_id, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, agents(name), devices(asset_tag, hardware_verified)")
         .eq("org_id", orgId)
-        .order("reported_at", { ascending: false })
+        .order("last_reported_at", { ascending: false })
         .limit(25);
       if (error) throw error;
       return data;
@@ -61,6 +61,7 @@ export function StationDiscoveries() {
         <ul className="space-y-2">
           {q.data!.map((d) => {
             const s = summarizeDiscovery(d.payload as DiscoveryPayload);
+            const flags = reviewFlags(d.review_flags);
             return (
               <li key={d.id} className="rounded-lg border border-border bg-card p-4 shadow-card">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -68,7 +69,12 @@ export function StationDiscoveries() {
                   <span className="font-medium text-foreground">{s.title}</span>
                   {d.system_serial && <Mono className="text-xs text-muted-foreground">S/N {d.system_serial}</Mono>}
                   {d.is_simulated && <SimulatedBadge />}
-                  <span className="text-xs text-muted-foreground">from {d.agents?.name ?? "station"} · {formatDateTime(d.reported_at)}</span>
+                  {d.is_read_only_test && <ToneBadge tone="info">Read-only test station</ToneBadge>}
+                  {flags.length > 0 && <ToneBadge tone="warning" icon={AlertTriangle}>Needs review</ToneBadge>}
+                  <span className="text-xs text-muted-foreground">
+                    from {d.agents?.name ?? "station"} · last {formatDateTime(d.last_reported_at)}
+                    {d.report_count > 1 ? ` · reported ${d.report_count} times` : ""}
+                  </span>
                   <span className="ml-auto">
                     {d.device_id ? (
                       <span className="inline-flex items-center gap-2">
@@ -82,6 +88,11 @@ export function StationDiscoveries() {
                     )}
                   </span>
                 </div>
+                {flags.length > 0 && (
+                  <ul className="mt-2 space-y-0.5 pl-6 text-xs text-warning">
+                    {flags.map((f, i) => <li key={`${f.code}-${i}`}>{f.label}{f.target ? `: ${f.target}` : ""}{f.detail ? ` (${f.detail})` : ""}</li>)}
+                  </ul>
+                )}
                 {s.drives.length > 0 && (
                   <ul className="mt-2 grid gap-1 pl-6 text-xs text-muted-foreground sm:grid-cols-2">
                     {s.drives.map((dr, i) => (

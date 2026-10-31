@@ -31,7 +31,8 @@ export const InventoryRequest = z.object({
   system: z.object({
     manufacturer: shortText(80).optional(),
     model: shortText(120).optional(),
-    serial: shortText(120).min(1),
+    // Optional so a laptop with a missing/placeholder serial can still be reported and flagged for review.
+    serial: shortText(120).optional(),
     sku: shortText(120).optional(),
     cpu: shortText(120).optional(),
     ram_bytes: z.number().int().nonnegative().optional(),
@@ -44,12 +45,24 @@ export const InventoryRequest = z.object({
       agent_version: shortText(40).optional(),
       boot_medium_serial: shortText(120).optional(),
       kernel: shortText(120).optional(),
+      mode: z.enum(["read_only"]).optional(),
+      image_version: shortText(60).optional(),
     })
+    .optional(),
+  review_flags: z
+    .array(
+      z.object({
+        code: z.string().regex(/^[a-z0-9_]{3,60}$/),
+        target: shortText(200).optional(),
+        detail: shortText(300).optional(),
+      }),
+    )
+    .max(50)
     .optional(),
   drives: z
     .array(
       z.object({
-        serial: shortText(120).min(1),
+        serial: shortText(120).optional(),
         model: shortText(120).optional(),
         interface: DriveInterface.optional(),
         capacity_bytes: z.number().int().nonnegative().optional(),

@@ -1,8 +1,8 @@
 # Agent API contract transcript
 
-Captured 2026-10-31T05:20:46.477Z against `http://localhost:8080/api/public/agent/v1` by `scripts/agent-contract-check.ts`. Credentials and tokens are redacted. Hardware is fake and labelled CONTRACT-TEST. No erasure was requested.
+Captured 2026-10-31T06:33:02.353Z against `http://localhost:8080/api/public/agent/v1` by `scripts/agent-contract-check.ts`. Credentials and tokens are redacted. Hardware is fake and labelled CONTRACT-TEST. No erasure was requested.
 
-Result: **18/18 steps returned the expected status.**
+Result: **23/23 steps returned the expected status.**
 
 ## 1. Health (no auth) — as expected (200, expected 200)
 ```http
@@ -13,7 +13,7 @@ content-type: application/json
 {
   "ok": true,
   "api_version": "1",
-  "server_time": "2026-10-31T05:20:43.102Z"
+  "server_time": "2026-10-31T06:32:57.206Z"
 }
 ```
 
@@ -34,7 +34,7 @@ content-type: application/json
 {
   "name": "CONTRACT-TEST station",
   "org_id": "52c0c2c7-fa32-4c0e-a6ab-aed17f445d32",
-  "agent_id": "37b24e45-a8b7-45a6-97d5-a11a9d1e50e5",
+  "agent_id": "49a4c26d-f026-4fe9-9d6a-cda322bfe58b",
   "credential": "ndagt_<redacted>",
   "is_simulated": false,
   "api_version": "1",
@@ -61,13 +61,13 @@ content-type: application/json
 }
 ```
 
-## 4. Heartbeat — as expected (200, expected 200)
+## 4. Heartbeat (read-only station, credential expiry reported) — as expected (200, expected 200)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:43.476Z
-x-nd-nonce: 36355631f1704863837cf56db9cd3933
+x-nd-timestamp: 2026-10-31T06:32:57.576Z
+x-nd-nonce: 1654a6550aa947929a66880db49264f8
 
 {
   "state": "idle",
@@ -77,25 +77,115 @@ x-nd-nonce: 36355631f1704863837cf56db9cd3933
 ```json
 {
   "queued_jobs": 0,
-  "server_time": "2026-10-31T05:20:43.696834+00:00",
+  "server_time": "2026-10-31T06:32:57.994328+00:00",
   "inventory_requested": false,
-  "heartbeat_timeout_seconds": 180
+  "heartbeat_timeout_seconds": 180,
+  "mode": "read_only",
+  "credential_expires_at": "2027-01-29T06:32:57.375084+00:00",
+  "rotate_recommended": false
 }
 ```
 
-## 5. Inventory discovery (read-only) — as expected (200, expected 200)
+## 5. Rotate credential — as expected (200, expected 200)
+```http
+POST /credentials/rotate
+content-type: application/json
+authorization: Bearer ndagt_<redacted>
+x-nd-timestamp: 2026-10-31T06:32:58.050Z
+x-nd-nonce: 5f46a7de348545058e145ce5cedb2214
+
+{}
+```
+```json
+{
+  "credential": "ndagt_<redacted>",
+  "expires_at": "2027-01-29T06:32:58.292181+00:00",
+  "previous_valid_until": "2026-10-31T06:42:58.292181+00:00"
+}
+```
+
+## 6. New credential works — as expected (200, expected 200)
+```http
+POST /heartbeat
+content-type: application/json
+authorization: Bearer ndagt_<redacted>
+x-nd-timestamp: 2026-10-31T06:32:58.351Z
+x-nd-nonce: bdec6b53ae44405388644df931be64e4
+
+{}
+```
+```json
+{
+  "queued_jobs": 0,
+  "server_time": "2026-10-31T06:32:58.582808+00:00",
+  "inventory_requested": false,
+  "heartbeat_timeout_seconds": 180,
+  "mode": "read_only",
+  "credential_expires_at": "2027-01-29T06:32:58.292181+00:00",
+  "rotate_recommended": false
+}
+```
+
+## 7. Old credential still works during 10-minute grace — as expected (200, expected 200)
+```http
+POST /heartbeat
+content-type: application/json
+authorization: Bearer ndagt_<redacted>
+x-nd-timestamp: 2026-10-31T06:32:58.637Z
+x-nd-nonce: 4e4c51659cfb4b8e89219fc0bf3cf6cb
+
+{}
+```
+```json
+{
+  "queued_jobs": 0,
+  "server_time": "2026-10-31T06:32:58.873304+00:00",
+  "inventory_requested": false,
+  "heartbeat_timeout_seconds": 180,
+  "mode": "read_only",
+  "credential_expires_at": "2026-10-31T06:42:58.292181+00:00",
+  "rotate_recommended": true
+}
+```
+
+## 8. Old credential cannot rotate again — as expected (409, expected 409)
+```http
+POST /credentials/rotate
+content-type: application/json
+authorization: Bearer ndagt_<redacted>
+x-nd-timestamp: 2026-10-31T06:32:58.930Z
+x-nd-nonce: 8427b24a39564b0cb9d100f95069b888
+
+{}
+```
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "This credential was already rotated; use the replacement"
+  }
+}
+```
+
+## 9. Inventory discovery (read-only) — as expected (200, expected 200)
 ```http
 POST /inventory
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:43.752Z
-x-nd-nonce: c144441c58844440876696d7017f8c56
+x-nd-timestamp: 2026-10-31T06:32:59.327Z
+x-nd-nonce: 6a376103942d42f285c6bcaeb2049eb0
 
 {
+  "review_flags": [
+    {
+      "code": "drive_model_missing",
+      "target": "pci-0000:00:17.0-ata-2"
+    }
+  ],
   "system": {
     "manufacturer": "Dell Inc.",
     "model": "CONTRACT-TEST Latitude",
-    "serial": "CONTRACT-TEST-SYS-MVVYDC1R",
+    "serial": "CONTRACT-TEST-SYS-MVW0Y8A9",
     "cpu": "Test CPU",
     "ram_bytes": 17179869184,
     "bios_version": "1.0.0",
@@ -104,11 +194,12 @@ x-nd-nonce: c144441c58844440876696d7017f8c56
   },
   "station": {
     "agent_version": "contract-check",
-    "boot_medium_serial": "CONTRACT-TEST-USB-MVVYDC1R"
+    "boot_medium_serial": "CONTRACT-TEST-USB-MVW0Y8A9",
+    "mode": "read_only"
   },
   "drives": [
     {
-      "serial": "CONTRACT-TEST-NVME-MVVYDC1R",
+      "serial": "CONTRACT-TEST-NVME-MVW0Y8A9",
       "model": "Test NVMe 512GB",
       "interface": "nvme_ssd",
       "capacity_bytes": 512110190592,
@@ -119,7 +210,7 @@ x-nd-nonce: c144441c58844440876696d7017f8c56
       "is_boot_medium": false
     },
     {
-      "serial": "CONTRACT-TEST-USB-MVVYDC1R",
+      "serial": "CONTRACT-TEST-USB-MVW0Y8A9",
       "model": "Boot USB",
       "interface": "unsupported_other",
       "capacity_bytes": 32010928128,
@@ -134,29 +225,117 @@ x-nd-nonce: c144441c58844440876696d7017f8c56
 {
   "drives": [
     {
-      "serial": "CONTRACT-TEST-NVME-MVVYDC1R",
+      "serial": "CONTRACT-TEST-NVME-MVW0Y8A9",
       "drive_id": null,
       "attached_to_device": false
     },
     {
-      "serial": "CONTRACT-TEST-USB-MVVYDC1R",
+      "serial": "CONTRACT-TEST-USB-MVW0Y8A9",
       "drive_id": null,
       "attached_to_device": false
     }
   ],
   "asset_tag": null,
   "device_id": null,
-  "discovery_id": "9c8e6e7a-c21c-40ec-a77c-a9b698b47bf7"
+  "discovery_id": "b0f2b291-adf6-4715-a36c-da7826c2b669",
+  "report_count": 1,
+  "review_flags": [
+    {
+      "code": "drive_model_missing",
+      "target": "pci-0000:00:17.0-ata-2"
+    }
+  ]
 }
 ```
 
-## 6. Authorized jobs (none expected) — as expected (200, expected 200)
+## 10. Repeat report updates the same record (no duplicate) — as expected (200, expected 200)
+```http
+POST /inventory
+content-type: application/json
+authorization: Bearer ndagt_<redacted>
+x-nd-timestamp: 2026-10-31T06:32:59.630Z
+x-nd-nonce: d263bff72e4847f78b52a5a8770fc979
+
+{
+  "review_flags": [
+    {
+      "code": "drive_model_missing",
+      "target": "pci-0000:00:17.0-ata-2"
+    }
+  ],
+  "system": {
+    "manufacturer": "Dell Inc.",
+    "model": "CONTRACT-TEST Latitude",
+    "serial": "CONTRACT-TEST-SYS-MVW0Y8A9",
+    "cpu": "Test CPU",
+    "ram_bytes": 17179869184,
+    "bios_version": "1.0.0",
+    "boot_mode": "uefi",
+    "secure_boot": true
+  },
+  "station": {
+    "agent_version": "contract-check",
+    "boot_medium_serial": "CONTRACT-TEST-USB-MVW0Y8A9",
+    "mode": "read_only"
+  },
+  "drives": [
+    {
+      "serial": "CONTRACT-TEST-NVME-MVW0Y8A9",
+      "model": "Test NVMe 512GB",
+      "interface": "nvme_ssd",
+      "capacity_bytes": 512110190592,
+      "firmware": "T1",
+      "transport": "nvme",
+      "bus_path": "pci-0000:02:00.0-nvme-1",
+      "removable": false,
+      "is_boot_medium": false
+    },
+    {
+      "serial": "CONTRACT-TEST-USB-MVW0Y8A9",
+      "model": "Boot USB",
+      "interface": "unsupported_other",
+      "capacity_bytes": 32010928128,
+      "transport": "usb",
+      "removable": true,
+      "is_boot_medium": true
+    }
+  ]
+}
+```
+```json
+{
+  "drives": [
+    {
+      "serial": "CONTRACT-TEST-NVME-MVW0Y8A9",
+      "drive_id": null,
+      "attached_to_device": false
+    },
+    {
+      "serial": "CONTRACT-TEST-USB-MVW0Y8A9",
+      "drive_id": null,
+      "attached_to_device": false
+    }
+  ],
+  "asset_tag": null,
+  "device_id": null,
+  "discovery_id": "b0f2b291-adf6-4715-a36c-da7826c2b669",
+  "report_count": 2,
+  "review_flags": [
+    {
+      "code": "drive_model_missing",
+      "target": "pci-0000:00:17.0-ata-2"
+    }
+  ]
+}
+```
+
+## 11. Authorized jobs (none expected) — as expected (200, expected 200)
 ```http
 GET /jobs
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:44.051Z
-x-nd-nonce: 97bc76ff06c04d3abafc31a93f43de6a
+x-nd-timestamp: 2026-10-31T06:32:59.908Z
+x-nd-nonce: 080a8c2417c74506b0a1b50eb80379f9
 ```
 ```json
 {
@@ -164,13 +343,13 @@ x-nd-nonce: 97bc76ff06c04d3abafc31a93f43de6a
 }
 ```
 
-## 7. Reconcile after restart — as expected (200, expected 200)
+## 12. Reconcile after restart — as expected (200, expected 200)
 ```http
 POST /reconcile
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:44.346Z
-x-nd-nonce: 4fda6c9618a6460fb53e985ddc12a133
+x-nd-timestamp: 2026-10-31T06:33:00.168Z
+x-nd-nonce: 1f5e80339de744359cfc7ca6864b3c33
 
 {
   "jobs": []
@@ -179,17 +358,17 @@ x-nd-nonce: 4fda6c9618a6460fb53e985ddc12a133
 ```json
 {
   "jobs": [],
-  "server_time": "2026-10-31T05:20:44.594215+00:00"
+  "server_time": "2026-10-31T06:33:00.385161+00:00"
 }
 ```
 
-## 8. Request with nonce N — as expected (200, expected 200)
+## 13. Request with nonce N — as expected (200, expected 200)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:44.643Z
-x-nd-nonce: 948c6cef21f74c3db937b346fc7bc2b3
+x-nd-timestamp: 2026-10-31T06:33:00.436Z
+x-nd-nonce: 8145f3b2320b4b5b90b40a8f5ff68a62
 
 {
   "state": "idle"
@@ -198,19 +377,22 @@ x-nd-nonce: 948c6cef21f74c3db937b346fc7bc2b3
 ```json
 {
   "queued_jobs": 0,
-  "server_time": "2026-10-31T05:20:44.883827+00:00",
+  "server_time": "2026-10-31T06:33:00.643683+00:00",
   "inventory_requested": false,
-  "heartbeat_timeout_seconds": 180
+  "heartbeat_timeout_seconds": 180,
+  "mode": "read_only",
+  "credential_expires_at": "2027-01-29T06:32:58.292181+00:00",
+  "rotate_recommended": false
 }
 ```
 
-## 9. Replay of nonce N is rejected — as expected (409, expected 409)
+## 14. Replay of nonce N is rejected — as expected (409, expected 409)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:44.935Z
-x-nd-nonce: 948c6cef21f74c3db937b346fc7bc2b3
+x-nd-timestamp: 2026-10-31T06:33:00.697Z
+x-nd-nonce: 8145f3b2320b4b5b90b40a8f5ff68a62
 
 {
   "state": "idle"
@@ -225,13 +407,13 @@ x-nd-nonce: 948c6cef21f74c3db937b346fc7bc2b3
 }
 ```
 
-## 10. Stale timestamp is rejected — as expected (401, expected 401)
+## 15. Stale timestamp is rejected — as expected (401, expected 401)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:10:45.065Z
-x-nd-nonce: 7b9b78af8efc4ec69cbf0d1de84ada43
+x-nd-timestamp: 2026-10-31T06:23:00.835Z
+x-nd-nonce: a4df53607960432fb68effcd71344805
 
 {}
 ```
@@ -244,12 +426,12 @@ x-nd-nonce: 7b9b78af8efc4ec69cbf0d1de84ada43
 }
 ```
 
-## 11. Missing nonce is rejected — as expected (401, expected 401)
+## 16. Missing nonce is rejected — as expected (401, expected 401)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:45.221Z
+x-nd-timestamp: 2026-10-31T06:33:00.976Z
 x-nd-nonce: 
 
 {}
@@ -263,13 +445,13 @@ x-nd-nonce:
 }
 ```
 
-## 12. Unknown credential is rejected — as expected (401, expected 401)
+## 17. Unknown credential is rejected — as expected (401, expected 401)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:45.226Z
-x-nd-nonce: ba8d216acfcf4e9f80794421d9ee0ca6
+x-nd-timestamp: 2026-10-31T06:33:00.978Z
+x-nd-nonce: 71846a2b05584565866d9c712cbf8d84
 
 {}
 ```
@@ -282,13 +464,13 @@ x-nd-nonce: ba8d216acfcf4e9f80794421d9ee0ca6
 }
 ```
 
-## 13. Malformed JSON is rejected — as expected (400, expected 400)
+## 18. Malformed JSON is rejected — as expected (400, expected 400)
 ```http
 POST /inventory
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:45.357Z
-x-nd-nonce: cc20091cddad4122a39558b3172ca372
+x-nd-timestamp: 2026-10-31T06:33:01.103Z
+x-nd-nonce: 163d366720a1441aae8b3e3b42f48d89
 
 "<malformed>"
 ```
@@ -301,13 +483,13 @@ x-nd-nonce: cc20091cddad4122a39558b3172ca372
 }
 ```
 
-## 14. Schema violation is rejected — as expected (422, expected 422)
+## 19. Schema violation is rejected — as expected (422, expected 422)
 ```http
 POST /inventory
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:45.489Z
-x-nd-nonce: f4d5f051f6964a47af908a91f4ea6102
+x-nd-timestamp: 2026-10-31T06:33:01.235Z
+x-nd-nonce: c71b22c8d79e479cade1cda8c8b9e9b7
 
 {
   "system": {},
@@ -321,10 +503,6 @@ x-nd-nonce: f4d5f051f6964a47af908a91f4ea6102
     "message": "Request body failed validation",
     "issues": [
       {
-        "path": "system.serial",
-        "message": "Required"
-      },
-      {
         "path": "drives",
         "message": "Expected array, received string"
       }
@@ -333,13 +511,13 @@ x-nd-nonce: f4d5f051f6964a47af908a91f4ea6102
 }
 ```
 
-## 15. Event for a job not bound to this station — as expected (404, expected 404)
+## 20. Event for a job not bound to this station — as expected (404, expected 404)
 ```http
-POST /jobs/f0c0558e-71bb-45b2-b1f9-a77a3584cd14/events
+POST /jobs/c56f1c8b-b9f0-4ec4-af05-56ad3a93e387/events
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:45.627Z
-x-nd-nonce: 8a4b9aa9f8964139b7b13949a527e562
+x-nd-timestamp: 2026-10-31T06:33:01.399Z
+x-nd-nonce: 83435ac4d7004d5e95d5a5d380e2f12b
 
 {
   "seq": 1,
@@ -357,13 +535,13 @@ x-nd-nonce: 8a4b9aa9f8964139b7b13949a527e562
 }
 ```
 
-## 16. Heartbeat after revocation — as expected (401, expected 401)
+## 21. Heartbeat after revocation — as expected (401, expected 401)
 ```http
 POST /heartbeat
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:46.054Z
-x-nd-nonce: b28fdd841ce349b584318a70e2640b92
+x-nd-timestamp: 2026-10-31T06:33:01.882Z
+x-nd-nonce: a1cdfc3049f54227889f5152b33e4dbc
 
 {}
 ```
@@ -376,19 +554,25 @@ x-nd-nonce: b28fdd841ce349b584318a70e2640b92
 }
 ```
 
-## 17. Inventory after revocation — as expected (401, expected 401)
+## 22. Inventory after revocation — as expected (401, expected 401)
 ```http
 POST /inventory
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:46.186Z
-x-nd-nonce: 5dfeda9b68f64a0e8545c1a4d438c2e7
+x-nd-timestamp: 2026-10-31T06:33:02.057Z
+x-nd-nonce: f112fe890e144fde854812368de40e50
 
 {
+  "review_flags": [
+    {
+      "code": "drive_model_missing",
+      "target": "pci-0000:00:17.0-ata-2"
+    }
+  ],
   "system": {
     "manufacturer": "Dell Inc.",
     "model": "CONTRACT-TEST Latitude",
-    "serial": "CONTRACT-TEST-SYS-MVVYDC1R",
+    "serial": "CONTRACT-TEST-SYS-MVW0Y8A9",
     "cpu": "Test CPU",
     "ram_bytes": 17179869184,
     "bios_version": "1.0.0",
@@ -397,11 +581,12 @@ x-nd-nonce: 5dfeda9b68f64a0e8545c1a4d438c2e7
   },
   "station": {
     "agent_version": "contract-check",
-    "boot_medium_serial": "CONTRACT-TEST-USB-MVVYDC1R"
+    "boot_medium_serial": "CONTRACT-TEST-USB-MVW0Y8A9",
+    "mode": "read_only"
   },
   "drives": [
     {
-      "serial": "CONTRACT-TEST-NVME-MVVYDC1R",
+      "serial": "CONTRACT-TEST-NVME-MVW0Y8A9",
       "model": "Test NVMe 512GB",
       "interface": "nvme_ssd",
       "capacity_bytes": 512110190592,
@@ -412,7 +597,7 @@ x-nd-nonce: 5dfeda9b68f64a0e8545c1a4d438c2e7
       "is_boot_medium": false
     },
     {
-      "serial": "CONTRACT-TEST-USB-MVVYDC1R",
+      "serial": "CONTRACT-TEST-USB-MVW0Y8A9",
       "model": "Boot USB",
       "interface": "unsupported_other",
       "capacity_bytes": 32010928128,
@@ -432,13 +617,13 @@ x-nd-nonce: 5dfeda9b68f64a0e8545c1a4d438c2e7
 }
 ```
 
-## 18. Jobs after revocation — as expected (401, expected 401)
+## 23. Jobs after revocation — as expected (401, expected 401)
 ```http
 GET /jobs
 content-type: application/json
 authorization: Bearer ndagt_<redacted>
-x-nd-timestamp: 2026-10-31T05:20:46.345Z
-x-nd-nonce: 63b29bba6dde4b7b91b5617ff19b5874
+x-nd-timestamp: 2026-10-31T06:33:02.189Z
+x-nd-nonce: a9ecae5c1b244e44ae3dad60e46ef057
 ```
 ```json
 {

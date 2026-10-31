@@ -1,0 +1,3 @@
+#!/bin/sh
+# Convenience launcher (diagnostics): nd-station discover | headless --once | version
+PYTHONPATH=/opt/nextdrive exec /usr/bin/python3 -m nd_station "$@"

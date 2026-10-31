@@ -66,7 +66,7 @@ function AgentsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Agents & stations"
-        description="Each erasure station enrolls once with a single-use token and receives its own credential. The NextDrive bootable agent is a separate deliverable and is not built yet; only the labelled simulator connects today."
+        description="Each station enrolls once with a single-use token and receives its own credential. Physical stations enrolled today are read-only test stations: they report hardware but can never be authorized to run erasure jobs. The erasure agent itself is a separate deliverable and is not built yet."
         actions={canManage && <Button onClick={() => { setToken(null); setOpen(true); }}><Plus /> Enrollment token</Button>}
       />
       {agents.isLoading ? <LoadingBlock /> : agents.error ? <ErrorBlock error={agents.error} /> : agents.data!.length === 0 ? (
@@ -90,7 +90,7 @@ function AgentsPage() {
                 const hb = heartbeatState(a.last_heartbeat_at);
                 return (
                   <tr key={a.id}>
-                    <td className="px-4 py-2.5"><p className="font-medium text-foreground">{a.name}</p>{a.is_simulated && <SimulatedBadge className="mt-1" />}</td>
+                    <td className="px-4 py-2.5"><p className="font-medium text-foreground">{a.name}</p>{a.is_simulated && <SimulatedBadge className="mt-1" />}{a.read_only && <ToneBadge tone="info" className="mt-1">Read-only test station</ToneBadge>}</td>
                     <td className="px-4 py-2.5">{a.status === "active" ? <ToneBadge tone="success">Active</ToneBadge> : <ToneBadge tone="danger">Revoked</ToneBadge>}</td>
                     <td className="px-4 py-2.5">{a.status === "active" ? <ToneBadge tone={HB_TONE[hb]}>{relativeTime(a.last_heartbeat_at)}</ToneBadge> : <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-4 py-2.5 text-muted-foreground">{a.agent_version ?? "—"}</td>
@@ -150,7 +150,7 @@ function AgentsPage() {
           ) : (
             <form id="new-token" onSubmit={onCreate} className="space-y-4">
               <div className="space-y-1.5"><Label htmlFor="label">Station label *</Label><Input id="label" name="label" required maxLength={120} placeholder="e.g. Bench 3, Warehouse A" /></div>
-              <div className="space-y-1.5"><Label htmlFor="ttl">Valid for (hours)</Label><Input id="ttl" name="ttl" type="number" min={1} max={168} defaultValue={24} /></div>
+              <div className="space-y-1.5"><Label htmlFor="ttl">Valid for (hours)</Label><Input id="ttl" name="ttl" type="number" min={1} max={168} defaultValue={1} /><p className="text-xs text-muted-foreground">Keep it short: type the token on the station soon after creating it. The station it enrolls is read-only (hardware reporting only).</p></div>
             </form>
           )}
           <DialogFooter>
