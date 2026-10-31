@@ -20,6 +20,7 @@ from __future__ import annotations
 import gzip
 import json
 import lzma
+import os
 import re
 import struct
 import subprocess
@@ -175,8 +176,11 @@ def check_kernel(path: str) -> dict:
     lacks += [r for r in REQUIRED_INITRAMFS_ANY if not any(re.match(r, n) for n in initramfs)]
     if lacks:
         raise Fail("kernel: built-in initramfs lacks startup components: " + ", ".join(lacks))
-    mod_dirs = {n.split("/")[2] for n in initramfs if re.match(r"^(usr/)?lib/modules/[^/]+/", n.replace("usr/lib", "lib"))
-                for n in [n.replace("usr/lib", "lib")]}
+    mod_dirs = set()
+    for n in initramfs:
+        m = re.match(r"^(?:usr/)?lib/modules/([^/]+)/", n)
+        if m:
+            mod_dirs.add(m.group(1))
     if krel not in mod_dirs:
         raise Fail(f"kernel: initramfs modules are for {sorted(mod_dirs) or 'no kernel'}, not {krel}")
     return {"kernel_release": krel, "initramfs_entries": len(initramfs), "boot_protocol": f"{proto:#x}"}
@@ -184,7 +188,7 @@ def check_kernel(path: str) -> dict:
 
 def check_rootfs(path: str, krel: str) -> dict:
     head = open(path, "rb").read(4)
-    size = __import__("os").path.getsize(path)
+    size = os.path.getsize(path)
     if head != b"hsqs":
         raise Fail("rootfs: not a squashfs image")
     if size < MIN_SQUASHFS:
