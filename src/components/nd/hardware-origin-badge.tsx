@@ -7,7 +7,7 @@ export function HardwareOriginBadge({ record, showExplanation = false }: { recor
   const icon = record.hardware_origin === "synthetic" ? FlaskConical : record.hardware_origin === "station_reported" ? RadioTower : undefined;
   return (
     <span title={l.explanation} className="inline-flex flex-col gap-1">
-      <ToneBadge tone={l.tone} icon={icon}>{l.label}</ToneBadge>
+      {icon ? <ToneBadge tone={l.tone} icon={icon}>{l.label}</ToneBadge> : <ToneBadge tone={l.tone}>{l.label}</ToneBadge>}
       {showExplanation && <span className="max-w-md text-xs text-muted-foreground">{l.explanation}</span>}
     </span>
   );
