@@ -157,14 +157,14 @@ export const RESEARCH_SOURCE =
   "MrChromebox.tech supported-devices list (community firmware project, third-party) — retrieved 2026-10-31. Not a Google source; confirm the board on each device (chrome://version or the recovery screen) before relying on it.";
 
 export const MODEL_RESEARCH: ModelResearch[] = [
-  { model: "HP Chromebook 11 G5", board: "SETZER", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Listed as end-of-life on the source. Not tested by NexWipe." },
-  { model: "HP Chromebook 11 G5 EE", board: "RELM", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Different board from the 11 G5. Not tested by NexWipe." },
-  { model: "HP Chromebook 14 G5", board: "SNAPPY", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Shares the SNAPPY board with other models. Not tested by NexWipe." },
-  { model: "Lenovo 300e Chromebook (1st gen)", board: "Unconfirmed", boardStatus: "unconfirmed", arch: "arm", storage: "eMMC (typical; confirm per unit)", note: "Believed to be an ARM (MediaTek) model; not on the x86 list. Board must be read from a unit." },
-  { model: "Lenovo 300e Chromebook 2nd Gen (Intel)", board: "PHASER360", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Not tested by NexWipe." },
-  { model: "Lenovo 300e Chromebook Gen 2 AMD", board: "TREEYA360", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Not tested by NexWipe." },
-  { model: "Lenovo 300e Chromebook Gen 3", board: "VILBOZ360", boardStatus: "identified", arch: "x86_64", storage: "eMMC (typical; confirm per unit)", note: "Not tested by NexWipe." },
-  { model: "ASUS Chromebook C203 (C203XA)", board: "Unconfirmed", boardStatus: "unconfirmed", arch: "arm", storage: "eMMC (typical; confirm per unit)", note: "Believed to be an ARM (MediaTek) model; not on the x86 list. Board must be read from a unit." },
+  { model: "HP Chromebook 11 G5", board: "SETZER", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Listed as end-of-life on the source. Not tested by NexWipe." },
+  { model: "HP Chromebook 11 G5 EE", board: "RELM", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Different board from the 11 G5. Not tested by NexWipe." },
+  { model: "HP Chromebook 14 G5", board: "SNAPPY", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Shares the SNAPPY board with other models. Not tested by NexWipe." },
+  { model: "Lenovo 300e Chromebook (1st gen)", board: "Unconfirmed", boardStatus: "unconfirmed", arch: "arm", storage: "Not identified — record per unit", note: "Believed to be an ARM (MediaTek) model; not on the x86 list. Board must be read from a unit." },
+  { model: "Lenovo 300e Chromebook 2nd Gen (Intel)", board: "PHASER360", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Not tested by NexWipe." },
+  { model: "Lenovo 300e Chromebook Gen 2 AMD", board: "TREEYA360", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Not tested by NexWipe." },
+  { model: "Lenovo 300e Chromebook Gen 3", board: "VILBOZ360", boardStatus: "identified", arch: "x86_64", storage: "Not identified — record per unit", note: "Not tested by NexWipe." },
+  { model: "ASUS Chromebook C203 (C203XA)", board: "Unconfirmed", boardStatus: "unconfirmed", arch: "arm", storage: "Not identified — record per unit", note: "Believed to be an ARM (MediaTek) model; not on the x86 list. Board must be read from a unit." },
 ];
 
 export type Feasibility = "available_now" | "design_only" | "needs_agent_engineering" | "not_planned";

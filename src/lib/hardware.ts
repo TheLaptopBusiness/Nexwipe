@@ -25,7 +25,7 @@ export const PLATFORM_SCOPE: HardwareScopeEntry[] = [
   { name: "x86-64 Dell, HP and Lenovo laptops", level: "in_scope", detail: "Initial target platforms. Qualification pending per model." },
   { name: "Other x86-64 laptop brands", level: "manual_assessment", detail: "Refer for manual assessment." },
   { name: "Apple Mac (Intel or Apple silicon)", level: "blocked", detail: "Future work. Not supported." },
-  { name: "Chromebooks", level: "blocked", detail: "Future work. Not supported." },
+  { name: "Chromebooks", level: "manual_assessment", detail: "Priority track: guided ChromeOS processing records (management check, official reset, online setup check, diagnostics). No drive-erasure jobs; no model compatibility claimed yet." },
   { name: "Phones and tablets", level: "blocked", detail: "Future work. Not supported." },
 ];
 
