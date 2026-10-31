@@ -109,7 +109,7 @@ function Chromebooks() {
               {rows.map((r) => {
                 const m = MANAGEMENT_LABEL[r.management_status as ManagementStatus];
                 const rs = RESET_LABEL[r.reset_status as ResetStatus];
-                const rel = RELEASE[r.release_decision] ?? RELEASE.pending!;
+                const rel = RELEASE[r.release_decision] ?? RELEASE["pending"]!;
                 return (
                   <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                     <td className="px-3 py-2">
@@ -166,11 +166,14 @@ function RegisterDialog({ initialSerial, onClose }: { initialSerial: string; onC
       _manufacturer: v("manufacturer"),
       _model: v("model"),
       _serial: v("serial"),
-      _project: project === ALL ? undefined : project,
-      _batch: batch === ALL || project === ALL ? undefined : batch,
+      ...(project === ALL ? {} : { _project: project }),
+      ...(batch === ALL || project === ALL ? {} : { _batch: batch }),
     });
     setBusy(false);
-    if (error) return toast.error(errorMessage(error));
+    if (error) {
+      toast.error(errorMessage(error));
+      return;
+    }
     sessionStorage.setItem("nd.cb.project", project);
     sessionStorage.setItem("nd.cb.batch", batch);
     await qc.invalidateQueries({ queryKey: ["chromebooks", orgId] });

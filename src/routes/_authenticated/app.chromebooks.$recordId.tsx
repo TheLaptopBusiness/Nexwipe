@@ -396,7 +396,7 @@ function Diagnostics({ r, canEdit }: { r: Rec; canEdit: boolean }) {
         {DIAGNOSTIC_CHECKS.map((c) => (
           <div key={c.key} className="flex items-center justify-between gap-2">
             <span className="text-sm">{c.label}</span>
-            <Select value={vals[c.key]} onValueChange={(v) => setVals((s) => ({ ...s, [c.key]: v as DiagnosticResult }))} disabled={!canEdit}>
+            <Select value={vals[c.key] ?? "not_tested"} onValueChange={(v) => setVals((s) => ({ ...s, [c.key]: v as DiagnosticResult }))} disabled={!canEdit}>
               <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
               <SelectContent>{(Object.keys(DIAG_LABEL) as DiagnosticResult[]).map((k) => <SelectItem key={k} value={k}>{DIAG_LABEL[k]}</SelectItem>)}</SelectContent>
             </Select>
