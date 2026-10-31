@@ -136,14 +136,16 @@ async function evidence(ctx: Ctx, job: Ctx["jobs"][number]) {
     "verification=full_read (simulated)",
     `generated_at=${new Date().toISOString()}`,
   ].join("\n");
-  return ctx.agent.call("Upload evidence", "POST", `/jobs/${job.id}/evidence`, {
+  const body = {
     idempotency_key: idemKey("evi"),
     kind: "verification_log",
     filename: `SIMULATED-${job.serial}-verification.log`,
     content_type: "text/plain",
     content,
     sha256: await sha256Hex(content),
-  });
+  };
+  const res = await ctx.agent.call("Upload evidence", "POST", `/jobs/${job.id}/evidence`, body);
+  return { ...res, sent: body };
 }
 
 async function verifyResult(ctx: Ctx, job: Ctx["jobs"][number], ok: boolean) {
@@ -220,10 +222,12 @@ export async function runScenario(scenario: ScenarioId, ops: TechnicianOps, tran
         { seq: agent.nextSeq(j.id), idempotency_key: idemKey("prg"), type: "progress", phase: "Sanitize in progress", measured: true, progress_pct: 80, message: `${SIM}: buffered while offline` },
       ];
       agent.note("Network", `${SIM}: connection dropped. Events seq ${lost[0]!.seq} and ${lost[1]!.seq} were buffered on the station and never reached the server.`);
+      const localSeq = agent.nextSeq(j.id);
       const intr = await agent.call("Report interruption after reconnecting", "POST", `/jobs/${j.id}/events`, {
-        seq: lost[0]!.seq, idempotency_key: idemKey("int"), type: "interrupted", reason: `${SIM}: station lost network for 95 s; local state must be reconciled`,
+        seq: localSeq, idempotency_key: idemKey("int"), type: "interrupted", reason: `${SIM}: station lost network for 95 s; local state must be reconciled`,
       }, { note: "The station reconnects and first tries to report the outage with its next local sequence number." });
       check(ctx, "Out-of-order event rejected with expected_seq", intr.status === 409 && (intr.body["error"] as Record<string, unknown>)?.["expected_seq"] === 3);
+      agent.setSeq(j.id, localSeq - 1);
       const rec = await agent.call("Reconcile", "POST", "/reconcile", { jobs: [{ job_id: j.id, agent_last_seq: lost[1]!.seq }] });
       const info = ((rec.body["jobs"] as Record<string, unknown>[]) ?? []).find((x) => x["job_id"] === j.id);
       check(ctx, "Server reports its last accepted sequence", info?.["server_last_seq"] === 2 && info?.["instruction"] === "replay_from_server_seq");
@@ -266,9 +270,8 @@ export async function runScenario(scenario: ScenarioId, ops: TechnicianOps, tran
       agent.setSeq(j.id, agent.peekSeq(j.id) - 1);
       await execResult(ctx, j, true);
       const ev = await evidence(ctx, j);
-      const evAgain = await agent.call("Upload the same evidence again", "POST", `/jobs/${j.id}/evidence`, (agent.steps.at(-1)?.request ?? {}) as Record<string, unknown>);
-      void ev;
-      check(ctx, "Duplicate evidence upload rejected or idempotent", evAgain.status === 200 || evAgain.status === 409);
+      const evAgain = await agent.call("Upload the same evidence again", "POST", `/jobs/${j.id}/evidence`, ev.sent);
+      check(ctx, "Duplicate evidence upload is idempotent", evAgain.status === 200 && evAgain.body["duplicate"] === true);
       await verifyResult(ctx, j, true);
       expectStatus[j.id] = "awaiting_validation";
       break;
