@@ -55,19 +55,29 @@ const SYS = `CONTRACT-TEST-SYS-${suffix}`;
 
 await call("Health (no auth)", "GET", "/health", { expect: 200 });
 const enr = await call("Enroll with single-use token", "POST", "/enroll", { body: { enrollment_token: enrollToken, name: "CONTRACT-TEST station", agent_version: "contract-check", platform: "x86_64 test", hostname: "contract-test" }, expect: 201 });
-const cred = enr.body?.credential as string;
+let cred = enr.body?.credential as string;
 const agentId = enr.body?.agent_id as string;
 await call("Enrollment token reuse is rejected", "POST", "/enroll", { body: { enrollment_token: enrollToken, name: "again" }, expect: 401 });
-await call("Heartbeat", "POST", "/heartbeat", { cred, body: { state: "idle", agent_version: "contract-check" }, expect: 200 });
+const hb = await call("Heartbeat (read-only station, credential expiry reported)", "POST", "/heartbeat", { cred, body: { state: "idle", agent_version: "contract-check" }, expect: 200 });
+if (hb.body?.mode !== "read_only" || !hb.body?.credential_expires_at) steps[steps.length - 1]!.ok = false;
+const rot = await call("Rotate credential", "POST", "/credentials/rotate", { cred, body: {}, expect: 200 });
+const oldCred = cred;
+cred = rot.body?.credential as string;
+await call("New credential works", "POST", "/heartbeat", { cred, body: {}, expect: 200 });
+await call("Old credential still works during 10-minute grace", "POST", "/heartbeat", { cred: oldCred, body: {}, expect: 200 });
+await call("Old credential cannot rotate again", "POST", "/credentials/rotate", { cred: oldCred, body: {}, expect: 409 });
 const inventoryBody = {
+  review_flags: [{ code: "drive_model_missing", target: "pci-0000:00:17.0-ata-2" }],
   system: { manufacturer: "Dell Inc.", model: "CONTRACT-TEST Latitude", serial: SYS, cpu: "Test CPU", ram_bytes: 17179869184, bios_version: "1.0.0", boot_mode: "uefi", secure_boot: true },
-  station: { agent_version: "contract-check", boot_medium_serial: `CONTRACT-TEST-USB-${suffix}` },
+  station: { agent_version: "contract-check", boot_medium_serial: `CONTRACT-TEST-USB-${suffix}`, mode: "read_only" },
   drives: [
     { serial: `CONTRACT-TEST-NVME-${suffix}`, model: "Test NVMe 512GB", interface: "nvme_ssd", capacity_bytes: 512110190592, firmware: "T1", transport: "nvme", bus_path: "pci-0000:02:00.0-nvme-1", removable: false, is_boot_medium: false },
     { serial: `CONTRACT-TEST-USB-${suffix}`, model: "Boot USB", interface: "unsupported_other", capacity_bytes: 32010928128, transport: "usb", removable: true, is_boot_medium: true },
   ],
 };
 await call("Inventory discovery (read-only)", "POST", "/inventory", { cred, body: inventoryBody, expect: 200 });
+const again = await call("Repeat report updates the same record (no duplicate)", "POST", "/inventory", { cred, body: inventoryBody, expect: 200 });
+if (again.body?.report_count !== 2) steps[steps.length - 1]!.ok = false;
 await call("Authorized jobs (none expected)", "GET", "/jobs", { cred, expect: 200 });
 await call("Reconcile after restart", "POST", "/reconcile", { cred, body: { jobs: [] }, expect: 200 });
 
