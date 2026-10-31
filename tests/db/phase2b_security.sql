@@ -87,7 +87,7 @@ BEGIN
   BEGIN
     PERFORM public.agent_job_event(ag_b, j1, 'ack', 1, 'ack-b-000001', jsonb_build_object('authorization_id', auth1,
       'observed', jsonb_build_object('drive_serial','DRV-A1','system_serial','SYS-A1'),
-      'local_confirmation', jsonb_build_object('confirmed', true, 'typed_serial_suffix', '-A1')), now());
+      'local_confirmation', jsonb_build_object('confirmed', true, 'typed_serial_suffix', 'V-A1')), now());
     r := r || ' [other_station_cannot_ack FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [other_station_cannot_ack PASS]'; END;
   BEGIN
@@ -95,14 +95,14 @@ BEGIN
     r := r || ' [other_station_cannot_upload_evidence FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [other_station_cannot_upload_evidence PASS]'; END;
   res := public.agent_reconcile(ag_b, jsonb_build_array(jsonb_build_object('job_id', j1, 'agent_last_seq', 0)));
-  r := r || ' [other_station_reconcile_reveals_nothing ' || CASE WHEN coalesce(res->'jobs'->0->>'instruction','stop') IN ('stop','unknown') OR jsonb_array_length(coalesce(res->'jobs','[]'::jsonb)) = 0 THEN 'PASS' ELSE 'FAIL:' || res::text END || ']';
+  r := r || ' [other_station_reconcile_reveals_nothing ' || CASE WHEN jsonb_array_length(coalesce(res->'jobs','[]'::jsonb)) = 0 THEN 'PASS' ELSE 'FAIL:' || res::text END || ']';
   res := public.agent_report_inventory(ag_b, '{"system":{"serial":"SYS-A1"},"drives":[{"serial":"DRV-A1","interface":"nvme_ssd"}]}');
   r := r || ' [other_org_inventory_does_not_match ' || CASE WHEN res->>'device_id' IS NULL AND res->'drives'->0->>'drive_id' IS NULL THEN 'PASS' ELSE 'FAIL' END || ']';
 
   -- Station A acks and uploads evidence; org B user cannot read any of it
   PERFORM public.agent_job_event(ag_a, j1, 'ack', 1, 'ack-a-000001', jsonb_build_object('authorization_id', auth1,
     'observed', jsonb_build_object('drive_serial','DRV-A1','system_serial','SYS-A1'),
-    'local_confirmation', jsonb_build_object('confirmed', true, 'typed_serial_suffix', '-A1')), now());
+    'local_confirmation', jsonb_build_object('confirmed', true, 'typed_serial_suffix', 'V-A1')), now());
   PERFORM public.agent_upload_evidence(ag_a, j1, 'evi-a-000001', 'execution_log', 'x.log', 'text/plain', 'log', ev_sha);
   res := public.agent_upload_evidence(ag_a, j1, 'evi-a-000001', 'execution_log', 'x.log', 'text/plain', 'log', ev_sha);
   SELECT count(*) INTO n FROM public.evidence_objects WHERE job_id = j1;
