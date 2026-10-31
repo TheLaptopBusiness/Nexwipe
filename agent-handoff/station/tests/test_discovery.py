@@ -183,6 +183,23 @@ class Discovery(unittest.TestCase):
             builtins.open = real_open
         self.assertFalse([p for p in opened if p.startswith("/dev/") or "/dev/" in p.replace(self.root, "")])
 
+    def test_test_tree_is_declared_synthetic(self):
+        build(self.root)
+        st = discovery.upload_payload(discovery.discover(self.root, fake_run))["station"]
+        self.assertEqual(st["hardware_source"], "synthetic")
+
+    def test_virtual_machine_detected(self):
+        build(self.root)
+        s = discovery.Sys(self.root, fake_run)
+        self.assertEqual(discovery.hardware_source(s, fixture=False)[0], "physical")
+        w(self.root, "/sys/class/dmi/id/sys_vendor", "QEMU")
+        self.assertEqual(discovery.hardware_source(s, fixture=False)[0], "virtual")
+
+    def test_hypervisor_cpu_flag_detected(self):
+        build(self.root)
+        w(self.root, "/proc/cpuinfo", "model name\t: Intel(R) Core(TM) i5\nflags\t\t: fpu vme sse2 hypervisor\n")
+        self.assertEqual(discovery.hardware_source(discovery.Sys(self.root, fake_run), fixture=False)[0], "virtual")
+
     def test_upload_payload_strips_local_fields(self):
         build(self.root)
         p = discovery.upload_payload(discovery.discover(self.root, fake_run))
