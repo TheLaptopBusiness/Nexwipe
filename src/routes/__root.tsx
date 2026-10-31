@@ -12,6 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { BOOT_RECOVERY_SCRIPT } from "../lib/boot-recovery-script";
 import {
   buildDiagnostics,
   decideRecovery,
@@ -177,7 +178,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
     ],
-    scripts: [{ children: themeScript }],
+    // Boot recovery must run before any app code so a failed start-up load never leaves a blank page.
+    scripts: [{ children: BOOT_RECOVERY_SCRIPT }, { children: themeScript }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -212,7 +214,11 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
-  useEffect(() => installUnsavedWorkTracker(document), []);
+  useEffect(() => {
+    (window as Window & { __ndAppMounted?: boolean }).__ndAppMounted = true;
+    document.getElementById("nd-boot-fallback")?.remove();
+    return installUnsavedWorkTracker(document);
+  }, []);
 
   useEffect(() => {
     // Production builds report failed code preloads here; same rules as the error screen.
