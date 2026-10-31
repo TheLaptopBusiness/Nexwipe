@@ -45,6 +45,30 @@ export function useProjects() {
   });
 }
 
+export function useProjectCounts() {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["project-counts", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("project_device_counts").select("*").eq("org_id", orgId);
+      if (error) throw error;
+      return new Map(data.map((r) => [r.project_id!, r]));
+    },
+  });
+}
+
+export function useBatchCounts() {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["batch-counts", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("batch_device_counts").select("*").eq("org_id", orgId);
+      if (error) throw error;
+      return new Map(data.map((r) => [r.batch_id!, r]));
+    },
+  });
+}
+
 export function useBatches(projectId?: string) {
   const { orgId } = useOrg();
   return useQuery({

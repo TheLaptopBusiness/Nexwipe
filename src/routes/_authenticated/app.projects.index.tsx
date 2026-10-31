@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { FolderKanban, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -14,23 +14,11 @@ import { EmptyState, ErrorBlock, LoadingBlock, PageHeader, errorMessage } from "
 import { PROJECT_STATUS, StatusBadge } from "@/components/nd/status-badge";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
-import { formatDate, useClients, useProjects, useSites } from "@/lib/queries";
+import { formatDate, useClients, useProjectCounts, useProjects, useSites } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/projects/")({
   component: Projects,
 });
-
-export function useProjectCounts() {
-  const { orgId } = useOrg();
-  return useQuery({
-    queryKey: ["project-counts", orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("project_device_counts").select("*").eq("org_id", orgId);
-      if (error) throw error;
-      return new Map(data.map((r) => [r.project_id!, r]));
-    },
-  });
-}
 
 function Projects() {
   const { role } = useOrg();
