@@ -33,3 +33,18 @@ describe("signup form rules", () => {
     expect(looksAutomated("", 0, 10_000)).toBe(false);
   });
 });
+
+import { landingAction } from "./landing-hash";
+describe("verification link landing", () => {
+  it("continues sign-up for a verified-email link", () => {
+    expect(landingAction("#access_token=abc&type=signup").kind).toBe("continue_signup");
+  });
+  it("reports an expired link instead of signing in", () => {
+    const a = landingAction("#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid");
+    expect(a.kind).toBe("link_error");
+  });
+  it("ignores ordinary anchors and password-recovery links", () => {
+    expect(landingAction("#pricing").kind).toBe("none");
+    expect(landingAction("#access_token=abc&type=recovery").kind).toBe("none");
+  });
+});

@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { LANDING_HASH, landingAction } from "@/lib/landing-hash";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
