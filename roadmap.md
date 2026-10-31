@@ -25,4 +25,8 @@
 - [ ] Owner/admin browser tests with two-step code — waiting on the owner (docs/chromebook/OWNER_ADMIN_BROWSER_TESTS.md)
 - [ ] Physically identify board/arch/storage on real HP 11 G5, HP 14 G5, Lenovo 300e, ASUS C203 units — needs hardware
 - [ ] Google Admin integration (read-only first) — design only; needs a school's consent and a Google Cloud project/OAuth client
-- [ ] Chromebook erasure C0–C5 for HP 11 G5 / SETZER (docs/chromebook/ERASURE_ENGINEERING_PLAN.md) — needs lab units, an external build environment and an independent method review; ARM later
+- [x] Erasure plan revision 2: Developer Mode = destructive, pre-transition identity/authorization/baseline, ChromeOS vs NexWipe operations separated, SETZER candidate only, storage-specific reviewed procedure, no Purge from command + read-back
+- [x] Chromebook discovery build kit (read-only, 0.1.0-cb-discovery): program + 9 synthetic tests, packaging + checker (packaging-tested only)
+- [ ] G0 build the final discovery image (kernel with built-in initramfs) — needs an external Debian build host
+- [ ] G1–G5 on one authorized lab unit: identify, boot, storage identification, boot-USB exclusion, evidence upload, restore to stock — needs the unit (agent-handoff/chromebook-discovery/LAB_UNIT_CHECKLIST.md)
+- [ ] G6–G8 storage procedure review, method review, enable for one board — after G1–G5; erasure stays disabled

@@ -74,8 +74,9 @@ _Last updated: invitee first-password + hardware-origin correction (2026-10-31, 
 
 ## 5. External development required
 
-- **Chromebook erasure**: not started; plan in `docs/chromebook/ERASURE_ENGINEERING_PLAN.md` (first target HP Chromebook 11 G5 / SETZER, Developer Mode + developer-signed USB, no firmware writes). The processing tracker is not an erasure engine.
-- **Chromebook agent research** (feasibility matrix in the app): external USB/PXE boot, ARM builds, eMMC/SATA/NVMe sanitization and restoring stock ChromeOS all need separate agent engineering and physical Chromebooks. Developer Mode and firmware flashing are not enabled.
+- **Chromebook erasure**: not started. Plan revision 2 in `docs/chromebook/ERASURE_ENGINEERING_PLAN.md`: HP Chromebook 11 G5 / SETZER is a **candidate** only; Developer Mode entry/exit are destructive ChromeOS operations recorded separately from NexWipe operations; any storage procedure is storage-part-specific and needs engineering review; command success plus read-back is never called Purge. No destructive testing before gates G1–G6. The processing tracker is not an erasure engine.
+- **Chromebook discovery build** (`agent-handoff/chromebook-discovery/`, 0.1.0-cb-discovery, read-only): source, tests (9 PASS on a synthetic tree), packaging script and checker exist; packaging tested only with a stock Debian kernel and dummy files. **Final image not built** (needs an external build host for the kernel with built-in initramfs) and **not booted on any Chromebook**. Compatibility unverified.
+- **Chromebook agent research** (feasibility matrix in the app): ARM builds, eMMC/SATA/NVMe sanitization and restoring stock ChromeOS need physical Chromebooks. Developer Mode is never automatic; firmware flashing is not enabled.
 - **Google Admin integration**: needs a Google Cloud project, OAuth client, a school willing to authorize, and validation of current Admin SDK scopes/licensing (`docs/chromebook/GOOGLE_ADMIN_INTEGRATION.md`).
 
 - **Boot the USB image on one Dell, one HP and one Lenovo laptop** and fill in `agent-handoff/PHYSICAL_TEST_CHECKLIST.md`.

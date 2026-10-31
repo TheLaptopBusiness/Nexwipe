@@ -207,12 +207,12 @@ export const FEASIBILITY: { path: string; status: Feasibility; detail: string }[
   { path: "Post-reset online setup check", status: "available_now", detail: "Technician observation recorded. An offline setup screen is refused as evidence." },
   { path: "Authorized Google Admin integration (inventory/status read)", status: "design_only", detail: "Requires the owning organization's consent, OAuth, verified scopes and licensing. Not connected; no simulated results." },
   { path: "Google Admin deprovision / remote powerwash commands", status: "design_only", detail: "Only after read access works and API behaviour is validated. An accepted command is not proof of completion." },
-  { path: "External USB/PXE boot of a NexWipe agent", status: "needs_agent_engineering", detail: "Stock firmware will not boot third-party media. Would need Developer Mode or firmware changes per board — not enabled, not promised." },
-  { path: "x86-64 vs ARM agent builds", status: "needs_agent_engineering", detail: "The existing station image is x86-64 only and is not assumed to work on any Chromebook. ARM would need a separate build." },
-  { path: "eMMC / SATA / NVMe sanitization on Chromebooks", status: "needs_agent_engineering", detail: "Requires on-device agent access to storage. Not possible from a web page; method validation per board needed." },
-  { path: "Developer Mode workflows", status: "not_planned", detail: "Wipes the device, weakens verified boot and changes the security state. Not enabled automatically." },
+  { path: "External USB boot of a NexWipe agent (discovery only)", status: "needs_agent_engineering", detail: "A read-only Chromebook discovery USB build kit exists (developer-signed, x86-64). It has not been built with its final kernel or booted on any Chromebook. Booting it needs Developer Mode on an authorized lab unit. No PXE on stock firmware." },
+  { path: "x86-64 vs ARM agent builds", status: "needs_agent_engineering", detail: "The laptop station image is not assumed to work on any Chromebook. The discovery kit targets x86-64 only; ARM would need a separate build." },
+  { path: "eMMC / SATA / NVMe sanitization on Chromebooks", status: "needs_agent_engineering", detail: "No erasure commands exist. A storage-specific procedure needs engineering review first; command success and read-back alone never make a result Purge." },
+  { path: "Developer Mode transitions", status: "not_planned", detail: "Entering and leaving Developer Mode are destructive (ChromeOS wipes local data). Only a technician does them, manually, on an authorized lab unit after identity and baseline are recorded. Never automatic." },
   { path: "Firmware flashing", status: "not_planned", detail: "Not part of this product. Risk of bricking; changes the device's security model." },
-  { path: "Restoring stock operation after any agent path", status: "needs_agent_engineering", detail: "Would require ChromeOS recovery afterwards and verification on physical hardware." },
+  { path: "Restoring stock operation after any agent path", status: "needs_agent_engineering", detail: "Official ChromeOS recovery, then leaving Developer Mode; must be demonstrated on the physical unit before any destructive testing." },
 ];
 
 export const FEASIBILITY_LABEL: Record<Feasibility, { label: string; tone: Tone }> = {
