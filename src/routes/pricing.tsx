@@ -7,57 +7,102 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — NexWipe" },
-      { name: "description", content: "NexWipe plans: a subscription plus prepaid per-drive credits, billed only on approved drive jobs." },
+      { name: "description", content: "NexWipe plans from $99/month: Starter, Business and Warehouse, with included drive wipes and low per-wipe overage." },
       { property: "og:title", content: "Pricing — NexWipe" },
-      { property: "og:description", content: "Subscription plus prepaid per-drive credits, billed only on approved drive jobs." },
+      { property: "og:description", content: "Simple pricing built to grow with you: Starter $99, Business $249, Warehouse $599 per month." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PricingPage,
 });
 
-// Editable placeholders. Final prices are not set.
-const PLANS = [
-  { name: "Pilot", price: "TBD", unit: "during pilot", features: ["1 site", "Up to 5 users", "Per-drive credits", "Email support"] },
-  { name: "Operations", price: "TBD", unit: "per month", features: ["Up to 5 sites", "Unlimited users", "Per-drive credits", "Client viewer access"], featured: true },
-  { name: "Enterprise", price: "Contact us", unit: "", features: ["Unlimited sites", "Custom retention", "Volume credit pricing", "Onboarding support"] },
-];
+export const PLANS = [
+  { name: "Starter", price: 99, included: 100, extra: "$1.00", bestFor: "Small resellers" },
+  { name: "Business", price: 249, included: 500, extra: "$0.50", bestFor: "Growing refurbishers", featured: true },
+  { name: "Warehouse", price: 599, included: 2000, extra: "$0.25", bestFor: "High-volume operations" },
+] as const;
+
+const INCLUDED = ["Asset tracking", "Wipe reports", "Team access"];
 
 function PricingPage() {
   return (
     <PublicLayout>
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <h1 className="text-4xl font-semibold text-foreground">Pricing</h1>
+        <h1 className="text-4xl font-semibold text-foreground">Simple pricing. Built to grow with you.</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
-          One billable unit is one uniquely identified drive job that reaches final approval. Failed, unsupported or
-          unresolved jobs are not charged. Prices below are placeholders until launch.
+          Every plan includes asset tracking, wipe reports, and team access.
         </p>
+
         <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {PLANS.map((p) => (
-            <div
-              key={p.name}
-              className={
-                p.featured
-                  ? "rounded-xl border-2 border-success bg-card p-7 shadow-card"
-                  : "rounded-xl border border-border bg-card p-7 shadow-card"
-              }
-            >
-              <h2 className="text-lg font-semibold text-foreground">{p.name}</h2>
-              <p className="mt-4 font-display text-3xl font-semibold text-foreground">{p.price}</p>
-              <p className="text-sm text-muted-foreground">{p.unit || "\u00a0"}</p>
-              <ul className="mt-6 space-y-2 text-sm">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-foreground">
-                    <Check className="size-4 text-success" aria-hidden /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild className="mt-8 w-full" variant={p.featured ? "default" : "outline"}>
-                <Link to="/pilot">Request pilot access</Link>
-              </Button>
-            </div>
-          ))}
+          {PLANS.map((p) => {
+            const featured = "featured" in p && p.featured;
+            return (
+              <div
+                key={p.name}
+                className={
+                  featured
+                    ? "relative rounded-xl border-2 border-success bg-card p-7 shadow-card"
+                    : "relative rounded-xl border border-border bg-card p-7 shadow-card"
+                }
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-lg font-semibold text-foreground">{p.name}</h2>
+                  {featured && (
+                    <span className="rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-medium text-success">
+                      Most Popular
+                    </span>
+                  )}
+                </div>
+                <p className="mt-4 font-display text-4xl font-semibold text-foreground">
+                  ${p.price}
+                  <span className="ml-1 text-base font-normal text-muted-foreground">/month</span>
+                </p>
+                <dl className="mt-6 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4 border-b border-border pb-3">
+                    <dt className="text-muted-foreground">Successful drive wipes</dt>
+                    <dd className="font-medium text-foreground">{p.included.toLocaleString("en-US")}/month</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-b border-border pb-3">
+                    <dt className="text-muted-foreground">Additional wipes</dt>
+                    <dd className="font-medium text-foreground">{p.extra} each</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted-foreground">Best for</dt>
+                    <dd className="text-right font-medium text-foreground">{p.bestFor}</dd>
+                  </div>
+                </dl>
+                <ul className="mt-6 space-y-2 text-sm">
+                  {INCLUDED.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-foreground">
+                      <Check className="size-4 text-success" aria-hidden /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild className="mt-8 w-full" variant={featured ? "default" : "outline"}>
+                  <Link to="/pilot">Choose {p.name}</Link>
+                </Button>
+              </div>
+            );
+          })}
         </div>
-        <p className="mt-8 text-sm text-muted-foreground">Billing is not live yet. No payments are taken during the pilot.</p>
+
+        <p className="mt-8 max-w-3xl text-sm text-muted-foreground">
+          One wipe credit covers one physical drive. Failed attempts and verification retries don’t consume additional
+          credits. Included wipes reset each month.
+        </p>
+
+        <div className="mt-10 flex flex-col items-start gap-4 rounded-xl border border-border bg-card p-6 shadow-card sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-lg font-medium text-foreground">Try NexWipe with 10 free wipes. No credit card required.</p>
+          <Button asChild>
+            <Link to="/pilot">Start free</Link>
+          </Button>
+        </div>
+
+        <p className="mt-6 text-sm text-muted-foreground">
+          NexWipe is in a read-only pilot: billing and production drive wiping are not live yet, and no payments are
+          taken. Choosing a plan requests pilot access.
+        </p>
       </section>
     </PublicLayout>
   );
