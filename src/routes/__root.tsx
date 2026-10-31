@@ -37,12 +37,31 @@ function NotFoundComponent() {
   );
 }
 
+// After an app update the browser may still reference code files that no longer exist.
+// Reload once to fetch the current version instead of showing a blank/error screen.
+const STALE_CHUNK_RE = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module/i;
+const RELOAD_KEY = "nd.staleChunkReloadAt";
+
+function reloadOnceForStaleCode(): boolean {
+  try {
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+    if (Date.now() - last < 30_000) return false; // avoid reload loops
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  } catch {
+    /* storage unavailable: still try once */
+  }
+  window.location.reload();
+  return true;
+}
+
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const stale = STALE_CHUNK_RE.test(String((error as Error)?.message ?? error));
   useEffect(() => {
+    if (stale && reloadOnceForStaleCode()) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, stale]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -138,6 +157,14 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  useEffect(() => {
+    const onPreloadError = (e: Event) => {
+      if (reloadOnceForStaleCode()) e.preventDefault();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

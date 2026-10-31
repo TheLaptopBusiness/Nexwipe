@@ -2,7 +2,7 @@
 
 This package is for the team building the **NextDrive Agent**: the bootable x86-64 Linux environment that runs on a laptop, identifies its drives, and — later, after qualification — performs sanitization and collects evidence. It is a **separate deliverable** from NextDrive Cloud (this web application). Nothing in the web application can erase a drive.
 
-**Current state:** not built. The only executable code here is a *read-only* reference client (`reference/nd_agent_readonly.py`) that implements Milestone 1. It contains no erasure commands and must not be extended with them inside this repository.
+**Current state:** the erasure agent is not built. What exists is the **Milestone 1 read-only station**: a station program (`station/`) and a bootable USB build package (`usb-image/`). Both were built and booted in a virtual machine only; neither has been booted on a physical laptop. They contain no erasure commands and must not be extended with them inside this repository.
 
 ## Contents
 
@@ -13,7 +13,9 @@ This package is for the team building the **NextDrive Agent**: the bootable x86-
 | [SAFETY_EXECUTION_EVIDENCE.md](./SAFETY_EXECUTION_EVIDENCE.md) | Local technician confirmation, execution, verification, evidence |
 | [CREDENTIALS_UPDATES_RECOVERY.md](./CREDENTIALS_UPDATES_RECOVERY.md) | Credential storage, revocation, signed updates, network interruption and restart recovery |
 | [MILESTONES.md](./MILESTONES.md) | Milestone 1 (read-only), Stage 2 (controlled destructive testing on disposable drives), method-qualification evidence |
-| [reference/](./reference/) | Read-only reference client for Milestone 1 |
+| [station/](./station/) | Read-only station program `nd_station` (discovery, enrollment, console, heartbeat, rotation) + tests |
+| [usb-image/](./usb-image/) | Reproducible bootable USB build, pinned versions, checksums, USB creation instructions |
+| [PHYSICAL_TEST_CHECKLIST.md](./PHYSICAL_TEST_CHECKLIST.md) | Dell / HP / Lenovo read-only test checklist (with the VM results) |
 
 API contract: `../docs/agent-api/CONTRACT.md` (+ `openapi.yaml`, `transcript.md`, `station-auth.md`).
 

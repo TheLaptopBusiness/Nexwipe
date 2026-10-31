@@ -55,6 +55,13 @@ Integrity rules enforced in the database:
 - Invitation emails: server function `src/lib/invitations.functions.ts` creates the invitation as the caller, then sends an auth invite (new user) or sign-in link (existing user) whose redirect is the one-time invitation URL.
 - Agent contract: `docs/agent-api/CONTRACT.md`; bootable agent handoff: `agent-handoff/`.
 
+## Phase 2c additions
+
+- `enrollment_tokens.read_only` / `agents.read_only` (default true for real stations, false for simulator); triggers block authorizations, job events and evidence for read-only stations.
+- `agent_credentials.expires_at` (90 days), `replaced_by`; `agent_rotate_credential` with 10-minute grace; `/credentials/rotate` endpoint.
+- `agent_discoveries`: one row per station + laptop (`report_count`, `last_reported_at`, `payload_sha256`), `review_flags`, `is_read_only_test`.
+- `my_pending_invitations()` / `accept_invitation_by_id()` for email-bound acceptance without the link token.
+
 ## Planned schema (Phases 3–4)
 
 | Table | Purpose |

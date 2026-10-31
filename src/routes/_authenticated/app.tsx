@@ -45,6 +45,7 @@ import { useSignOut } from "@/lib/session";
 import { can, isPrivileged, ROLE_LABELS, type Capability } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { MfaGate } from "@/components/nd/mfa-gate";
+import { PendingInvitations } from "@/components/nd/pending-invitations";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -304,6 +305,7 @@ function Shell() {
         </header>
         <main className={cn("flex-1 px-4 py-6 md:px-8 md:py-8")}>
           <div className="mx-auto max-w-[1600px]">
+            <PendingInvitations compact />
             <MfaGate role={role} orgName={current.org.name}>
               <Outlet />
             </MfaGate>
