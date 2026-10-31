@@ -19,24 +19,30 @@ export type Database = {
           agent_id: string
           created_at: string
           credential_hash: string
+          expires_at: string | null
           id: string
           org_id: string
+          replaced_by: string | null
           revoked_at: string | null
         }
         Insert: {
           agent_id: string
           created_at?: string
           credential_hash: string
+          expires_at?: string | null
           id?: string
           org_id: string
+          replaced_by?: string | null
           revoked_at?: string | null
         }
         Update: {
           agent_id?: string
           created_at?: string
           credential_hash?: string
+          expires_at?: string | null
           id?: string
           org_id?: string
+          replaced_by?: string | null
           revoked_at?: string | null
         }
         Relationships: [
@@ -61,30 +67,45 @@ export type Database = {
           agent_id: string
           device_id: string | null
           id: string
+          is_read_only_test: boolean
           is_simulated: boolean
+          last_reported_at: string
           org_id: string
           payload: Json
+          payload_sha256: string | null
+          report_count: number
           reported_at: string
+          review_flags: Json
           system_serial: string | null
         }
         Insert: {
           agent_id: string
           device_id?: string | null
           id?: string
+          is_read_only_test?: boolean
           is_simulated?: boolean
+          last_reported_at?: string
           org_id: string
           payload: Json
+          payload_sha256?: string | null
+          report_count?: number
           reported_at?: string
+          review_flags?: Json
           system_serial?: string | null
         }
         Update: {
           agent_id?: string
           device_id?: string | null
           id?: string
+          is_read_only_test?: boolean
           is_simulated?: boolean
+          last_reported_at?: string
           org_id?: string
           payload?: Json
+          payload_sha256?: string | null
+          report_count?: number
           reported_at?: string
+          review_flags?: Json
           system_serial?: string | null
         }
         Relationships: [
@@ -145,6 +166,7 @@ export type Database = {
           name: string
           org_id: string
           platform: string | null
+          read_only: boolean
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -166,6 +188,7 @@ export type Database = {
           name: string
           org_id: string
           platform?: string | null
+          read_only?: boolean
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -187,6 +210,7 @@ export type Database = {
           name?: string
           org_id?: string
           platform?: string | null
+          read_only?: boolean
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -697,6 +721,7 @@ export type Database = {
           is_simulated: boolean
           label: string
           org_id: string
+          read_only: boolean
           revoked_at: string | null
           site_id: string | null
           token_hash: string
@@ -711,6 +736,7 @@ export type Database = {
           is_simulated?: boolean
           label: string
           org_id: string
+          read_only?: boolean
           revoked_at?: string | null
           site_id?: string | null
           token_hash: string
@@ -725,6 +751,7 @@ export type Database = {
           is_simulated?: boolean
           label?: string
           org_id?: string
+          read_only?: boolean
           revoked_at?: string | null
           site_id?: string | null
           token_hash?: string
@@ -1754,6 +1781,10 @@ export type Database = {
       agent_reconcile: { Args: { _agent: string; _jobs: Json }; Returns: Json }
       agent_report_inventory: {
         Args: { _agent: string; _payload: Json }
+        Returns: Json
+      }
+      agent_rotate_credential: {
+        Args: { _agent: string; _credential_id: string }
         Returns: Json
       }
       agent_upload_evidence: {
