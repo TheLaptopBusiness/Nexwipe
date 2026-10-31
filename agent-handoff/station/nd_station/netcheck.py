@@ -37,6 +37,8 @@ def interfaces(sysroot: str = "/") -> list:
             addrs[i.get("ifname")] = [a["local"] for a in i.get("addr_info", []) if a.get("family") == "inet"]
     except (json.JSONDecodeError, KeyError, TypeError):
         pass
+    if not names:  # no sysfs net class (containers): fall back to what iproute2 reports
+        names = sorted(k for k in addrs if k)
     for n in names:
         if n == "lo":
             continue
@@ -49,7 +51,7 @@ def interfaces(sysroot: str = "/") -> list:
         out.append({
             "name": n,
             "kind": "wifi" if os.path.isdir(os.path.join(base, n, "wireless")) else "ethernet",
-            "link": rd("carrier") == "1",
+            "link": rd("carrier") == "1" or bool(addrs.get(n)),
             "state": rd("operstate"),
             "ipv4": addrs.get(n, []),
         })
