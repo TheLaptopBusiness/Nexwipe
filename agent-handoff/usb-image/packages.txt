@@ -1,4 +1,24 @@
 # Top-level packages and exact versions (Debian 13 "trixie", snapshot 20260913T000000Z).
-# Generated from an actual install; see build/installed-packages.txt after a build for the full closure.
+# Captured from an actual install by build.sh; build/installed-packages.txt lists the full closure.
 # package version
-PLACEHOLDER-REGENERATED-BY-BUILD
+linux-image-amd64 6.12.107-1
+live-boot 1:20250815~deb13u1
+systemd-sysv 257.13-1~deb13u1
+udev 257.13-1~deb13u1
+kmod 34.2-2
+python3 3.13.5-1
+python3-cryptography 43.0.0-3+deb13u1
+dmidecode 3.6-2
+smartmontools 7.4-3
+network-manager 1.52.1-1
+iproute2 6.15.0-1
+iputils-ping 3:20240905-3
+kbd 2.7.1-2
+shim-signed 1.51~1+deb13u1+16.1-2~deb13u1
+grub-efi-amd64-signed 1+2.12+9+deb13u2
+firmware-iwlwifi 20250410-2
+firmware-realtek 20250410-2
+firmware-misc-nonfree 20250410-2
+firmware-intel-misc 20250410-2
+wireless-regdb 2026.05.30-1~deb13u1
+ca-certificates 20250419
