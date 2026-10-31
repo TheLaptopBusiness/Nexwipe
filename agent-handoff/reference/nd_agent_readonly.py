@@ -122,6 +122,10 @@ def sata_details(name: str) -> dict:
 
 
 def discover() -> dict:
+    fake = os.environ.get("ND_FAKE_DISCOVERY")  # test hook: replay a captured payload on non-laptop machines
+    if fake:
+        with open(fake) as f:
+            return json.load(f)
     boot = boot_medium_name()
     raw = run_ro(["lsblk", "-J", "-b", "-d", "-o", "NAME,TRAN,ROTA,RM,SIZE,MODEL,SERIAL,TYPE"])
     devices = (json.loads(raw).get("blockdevices") if raw else []) or []
