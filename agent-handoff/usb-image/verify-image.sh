@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fails if the station root filesystem contains storage-destructive tools or the station program
-# contains destructive command strings. Usage: verify-image.sh <rootfs-dir>
+# contains destructive command strings (safety.py is excluded: it is the deny-list itself). Usage: verify-image.sh <rootfs-dir>
 set -euo pipefail
 ROOT="${1:?rootfs directory}"
 fail=0
@@ -11,7 +11,7 @@ for t in blkdiscard blkzone fstrim wipefs mkfs mkswap fdisk sfdisk cfdisk sgdisk
   done
 done
 if compgen -G "$ROOT/usr/sbin/mkfs.*" >/dev/null || compgen -G "$ROOT/sbin/mkfs.*" >/dev/null; then echo "FORBIDDEN: mkfs.* present"; fail=1; fi
-if grep -rEn --include='*.py' '"(sanitize|format|secure-erase|security-erase|write-zeroes|write_same)"|O_DIRECT|blkdiscard|BLKDISCARD|BLKSECDISCARD' "$ROOT/opt/nextdrive" ; then
+if grep -rEn --include='*.py' --exclude=safety.py '"(sanitize|format|secure-erase|security-erase|write-zeroes|write_same)"|O_DIRECT|blkdiscard|BLKDISCARD|BLKSECDISCARD' "$ROOT/opt/nextdrive" ; then
   echo "FORBIDDEN: destructive strings in station program"; fail=1
 fi
 # The station must not mount block devices or run a shell for the user.
