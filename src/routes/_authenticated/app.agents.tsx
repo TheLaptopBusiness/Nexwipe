@@ -150,7 +150,7 @@ function AgentsPage() {
           ) : (
             <form id="new-token" onSubmit={onCreate} className="space-y-4">
               <div className="space-y-1.5"><Label htmlFor="label">Station label *</Label><Input id="label" name="label" required maxLength={120} placeholder="e.g. Bench 3, Warehouse A" /></div>
-              <div className="space-y-1.5"><Label htmlFor="ttl">Valid for (hours)</Label><Input id="ttl" name="ttl" type="number" min={1} max={168} defaultValue={24} /></div>
+              <div className="space-y-1.5"><Label htmlFor="ttl">Valid for (hours)</Label><Input id="ttl" name="ttl" type="number" min={1} max={168} defaultValue={1} /><p className="text-xs text-muted-foreground">Keep it short: type the token on the station soon after creating it. The station it enrolls is read-only (hardware reporting only).</p></div>
             </form>
           )}
           <DialogFooter>
