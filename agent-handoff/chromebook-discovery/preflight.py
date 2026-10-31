@@ -37,6 +37,7 @@ REQUIRED_KCONFIG = {
     "CONFIG_GOOGLE_VPD": "y",
     "CONFIG_MMC_BLOCK": "y",
     "CONFIG_MMC_SDHCI_PCI": "y",
+    "CONFIG_USB": "y",
     "CONFIG_USB_XHCI_PCI": "y",
     "CONFIG_USB_STORAGE": "y",
     "CONFIG_BLK_DEV_SD": "y",
@@ -45,6 +46,8 @@ REQUIRED_KCONFIG = {
     "CONFIG_OVERLAY_FS": None,
     "CONFIG_VFAT_FS": None,
 }
+# Only meaningful once INITRAMFS_SOURCE is set (kernel pass 2).
+PASS2_ONLY = {"CONFIG_INITRAMFS_COMPRESSION_XZ"}
 # Paths that must exist inside the built-in initramfs (initramfs-tools + live-boot).
 REQUIRED_INITRAMFS = ["init", "dev/console", "scripts/live", "conf/initramfs.conf", "conf/conf.d/zz-nexwipe.conf"]
 REQUIRED_INITRAMFS_ANY = [r"^(usr/)?bin/live-boot$", r"^(usr/)?lib/live/boot/9990-main\.sh$",

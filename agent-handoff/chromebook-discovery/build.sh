@@ -129,15 +129,19 @@ tar -xaf "$BUILDER"/usr/src/linux-source-"${KSERIES}".tar.* -C "$BUILDER/build/l
 cp "$ROOT/boot/config-$DEB_KVER" "$BUILDER/build/linux/.config"
 cp "$HERE/kernel/nexwipe-cb.config" "$BUILDER/build/nexwipe-cb.config"
 in_builder sh -c 'cd /build/linux && scripts/kconfig/merge_config.sh -m .config /build/nexwipe-cb.config >/dev/null && make olddefconfig >/dev/null'
-python3 - "$BUILDER/build/linux/.config" "$HERE/preflight.py" <<'PY'
+check_kconfig() {  # $1 = 1 (pass 1) or 2 (pass 2)
+python3 - "$BUILDER/build/linux/.config" "$HERE/preflight.py" "$1" <<'PY'
 import re, sys, importlib.util
 cfg = dict(re.findall(r"^(CONFIG_\w+)=(.*)$", open(sys.argv[1]).read(), re.M))
 spec = importlib.util.spec_from_file_location("preflight", sys.argv[2]); pf = importlib.util.module_from_spec(spec); spec.loader.exec_module(pf)
-bad = [f"{k}={cfg.get(k, 'unset')}" for k, want in pf.REQUIRED_KCONFIG.items() if (cfg.get(k) not in ("y", "m") if want is None else cfg.get(k) != want)]
+req = {k: v for k, v in pf.REQUIRED_KCONFIG.items() if sys.argv[3] == "2" or k not in pf.PASS2_ONLY}
+bad = [f"{k}={cfg.get(k, 'unset')}" for k, want in req.items() if (cfg.get(k) not in ("y", "m") if want is None else cfg.get(k) != want)]
 if bad:
-    sys.exit("kernel config: required options lost after olddefconfig: " + ", ".join(bad))
-print("kernel config: all required options present")
+    sys.exit(f"kernel config (pass {sys.argv[3]}): required options lost after olddefconfig: " + ", ".join(bad))
+print(f"kernel config (pass {sys.argv[3]}): all required options present")
 PY
+}
+check_kconfig 1
 KREL="$(in_builder sh -c 'cd /build/linux && make -s kernelrelease')"
 log "Pass 1: kernel ${KREL} + modules (log: logs/kernel-pass1-$TS.log)"
 in_builder sh -c "cd /build/linux && make -j$JOBS bzImage modules" > "$OUT/logs/kernel-pass1-$TS.log" 2>&1 \
@@ -162,11 +166,13 @@ printf 'dir /dev 0755 0 0\nnod /dev/console 0600 0 0 c 5 1\n' > "$BUILDER/build/
 
 STAGE="B-kernel-pass2"
 log "Pass 2: built-in initramfs (log: logs/kernel-pass2-$TS.log)"
-in_builder sh -c "cd /build/linux && scripts/config --set-str INITRAMFS_SOURCE '/build/initramfs /build/initramfs-extra.list' && make olddefconfig >/dev/null && make -j$JOBS bzImage" \
-  > "$OUT/logs/kernel-pass2-$TS.log" 2>&1 || { tail -40 "$OUT/logs/kernel-pass2-$TS.log"; die "kernel pass 2 failed"; }
+in_builder sh -c "cd /build/linux && scripts/config --set-str INITRAMFS_SOURCE '/build/initramfs /build/initramfs-extra.list' --enable INITRAMFS_COMPRESSION_XZ && make olddefconfig >/dev/null" \
+  > "$OUT/logs/kernel-pass2-$TS.log" 2>&1 || die "kernel pass 2 config failed"
+check_kconfig 2
+in_builder sh -c "cd /build/linux && make -j$JOBS bzImage" \
+  >> "$OUT/logs/kernel-pass2-$TS.log" 2>&1 || { tail -40 "$OUT/logs/kernel-pass2-$TS.log"; die "kernel pass 2 failed"; }
 cp "$BUILDER/build/linux/arch/x86/boot/bzImage" "$OUT/bzImage-$KREL"
 cp "$BUILDER/build/linux/.config" "$OUT/kernel-config-$KREL"
-for m in "${mounted[@]}"; do :; done
 cleanup; mounted=()
 
 # ------------------------------------------------------------------ C: image
