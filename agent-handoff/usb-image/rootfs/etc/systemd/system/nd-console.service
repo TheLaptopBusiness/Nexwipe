@@ -1,0 +1,38 @@
+[Unit]
+Description=NextDrive read-only station console (tty1)
+After=systemd-user-sessions.service NetworkManager.service var-lib-nextdrive.mount
+Wants=NetworkManager.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+Environment=PYTHONPATH=/opt/nextdrive
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=ND_CONSOLE=1
+Environment=TERM=linux
+EnvironmentFile=-/etc/nextdrive/image-release
+ExecStartPre=/bin/sh -c 'mkdir -p /var/lib/nextdrive && chmod 700 /var/lib/nextdrive'
+ExecStart=/usr/bin/python3 -m nd_station
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+Restart=always
+RestartSec=2
+# Hardening: the station only needs to read sysfs/udev, run allow-listed identity tools and use the network.
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/nextdrive
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+
+[Install]
+WantedBy=multi-user.target
