@@ -235,11 +235,11 @@ function RootComponent() {
     const onPreloadError = (e: Event) => {
       const err = (e as Event & { payload?: unknown }).payload ?? new Error("Failed to fetch dynamically imported module");
       const d = decideRecovery(err, { storage: safeSessionStorage(), now: Date.now(), hasUnsavedWork: hasUnsavedWork() });
-      if (d.action === "reload") {
-        e.preventDefault();
-        window.location.reload();
-      }
-      // Otherwise let the error reach the route error screen, which explains it.
+      // Never call e.preventDefault(): Vite then resolves the failed import with `undefined`, and the
+      // lazy page crashes with "undefined is not an object (evaluating 'e[t??`default`]')" before
+      // the reload happens. The error is left to propagate; the reload replaces the page anyway.
+      if (d.action === "reload") window.location.reload();
+      // Otherwise the error reaches the route error screen, which explains it.
     };
     window.addEventListener("vite:preloadError", onPreloadError);
     return () => window.removeEventListener("vite:preloadError", onPreloadError);

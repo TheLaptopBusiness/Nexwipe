@@ -10,7 +10,7 @@
 export const BOOT_RECOVERY_SCRIPT = `(function(){
 var KEY='nd.staleCodeReloadAt',DKEY='nd.lastErrorDiagnostics',WIN=300000;
 try{var P=Storage.prototype,g=P.getItem;P.getItem=function(k){return typeof k==='string'&&k.indexOf('tanstack_router_reload:')===0?'1':g.call(this,k);};}catch(e){}
-var RE=/Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS/i;
+var RE=/Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS|undefined is not an object \\(evaluating '[^']*default[^']*'\\)|Cannot read properties of undefined \\(reading 'default'\\)/i;
 function red(s){return String(s||'').replace(/eyJ[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}/g,'[redacted-jwt]').replace(/\\b(ndagt|ndenr)_[A-Za-z0-9]{8,}/g,'$1_[redacted]').replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g,'[redacted-email]').replace(/([?&](?:access_token|refresh_token|token|code|apikey)=)[^&\\s]+/gi,'$1[redacted]').slice(0,400);}
 function done(){return !!window.__ndAppMounted;}
 function fallback(msg){
