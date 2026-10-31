@@ -31,6 +31,7 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ErrorBlock, LoadingBlock, Mono, errorMessage } from "@/components/nd/page";
 import { DEVICE_STATUS, SimulatedBadge, StatusBadge, ToneBadge } from "@/components/nd/status-badge";
+import { HardwareOriginBadge } from "@/components/nd/hardware-origin-badge";
 import { DeviceEvidence, DeviceJobs } from "@/components/nd/device-jobs";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
@@ -93,7 +94,7 @@ function DeviceDetail() {
           <div className="mt-2 flex flex-wrap gap-2">
             <StatusBadge map={DEVICE_STATUS} value={d.status} />
             {d.is_simulated && <SimulatedBadge />}
-            {d.hardware_verified ? <ToneBadge tone="success">Agent verified identity</ToneBadge> : <ToneBadge tone="neutral">Identity unverified ({d.source.replace("_", " ")})</ToneBadge>}
+            <HardwareOriginBadge record={d} />
             {d.manufacturer && !manufacturerInScope(d.manufacturer) && <ToneBadge tone="warning">Manufacturer outside initial scope</ToneBadge>}
           </div>
         </div>
@@ -273,7 +274,7 @@ function Drives({ deviceId }: { deviceId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_drive_associations")
-        .select("id, slot, attached_at, detached_at, drives(id, serial, manufacturer, model, interface, capacity_bytes, hardware_verified, source)")
+        .select("id, slot, attached_at, detached_at, drives(id, serial, manufacturer, model, interface, capacity_bytes, hardware_verified, hardware_origin, source)")
         .eq("device_id", deviceId)
         .order("attached_at", { ascending: false });
       if (error) throw error;
@@ -344,7 +345,7 @@ function Drives({ deviceId }: { deviceId: string }) {
       </td>
       <td className="px-4 py-2.5 text-muted-foreground tabular">{formatBytes(a.drives?.capacity_bytes)}</td>
       <td className="px-4 py-2.5 text-muted-foreground">{a.slot ?? "—"}</td>
-      <td className="px-4 py-2.5">{a.drives?.hardware_verified ? <ToneBadge tone="success">Agent verified</ToneBadge> : <ToneBadge tone="neutral">Unverified</ToneBadge>}</td>
+      <td className="px-4 py-2.5">{a.drives && <HardwareOriginBadge record={a.drives} />}</td>
       <td className="px-4 py-2.5 text-xs text-muted-foreground tabular">
         {formatDateTime(a.attached_at)}
         {a.detached_at && <> → {formatDateTime(a.detached_at)}</>}

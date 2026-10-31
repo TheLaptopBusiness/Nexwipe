@@ -33,7 +33,7 @@ function useActiveDrives(deviceId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_drive_associations")
-        .select("id, slot, attached_at, detached_at, drives(id, serial, manufacturer, model, interface, capacity_bytes, hardware_verified, source)")
+        .select("id, slot, attached_at, detached_at, drives(id, serial, manufacturer, model, interface, capacity_bytes, hardware_verified, hardware_origin, source)")
         .eq("device_id", deviceId)
         .order("attached_at", { ascending: false });
       if (error) throw error;
