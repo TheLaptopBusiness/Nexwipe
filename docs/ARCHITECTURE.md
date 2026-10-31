@@ -40,6 +40,7 @@ A browser cannot erase a remote laptop's drive. No dashboard action performs a w
 
 Integrity rules enforced in the database:
 - Browser users can never set `hardware_verified` or `source = agent_reported` (only trusted server code can).
+- `hardware_origin` (devices, drives, agent_discoveries): `not_station_reported` | `station_reported` | `synthetic`. Classified server-side in `_classify_hardware` from the station's declared `hardware_source` plus VM/test-data heuristics; undeclared = synthetic. Synthetic is permanent, never verified, and blocks job creation. `station_reported` means an authenticated station reported it — not proof the hardware physically exists.
 - Device client must match its project's client; batch must belong to the device's project.
 - `is_demo` on devices is copied from the organization, never from input.
 - An organization always keeps at least one active owner; nobody can change their own role.
@@ -76,4 +77,4 @@ Job state machine: `draft → awaiting_authorization → queued → running → 
 
 ## Migrations
 
-Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`.
+Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`, `phase2b_security.sql`, `phase2c_readonly_stations.sql`, `phase2d_hardware_origin.sql`.

@@ -16,7 +16,9 @@
 - Access rules live in RLS + `SECURITY DEFINER` RPCs (`has_org_role`, `is_org_staff`, `has_project_grant`); `src/lib/permissions.ts` only mirrors them for UI and must not be the security boundary.
 - Membership/role/invitation changes go only through RPCs (`create_organization`, `create_invitation`, `accept_invitation`, `update_member_role`, `revoke_member`) — no direct table writes for authenticated users.
 - Custody and audit history are written by database triggers and are append-only for app users; never add UPDATE/DELETE grants on them.
-- Browser-originated writes can never set `hardware_verified`, `source = agent_reported`, or `is_demo`; triggers enforce this via `is_untrusted_caller()`.
+- Browser-originated writes can never set `hardware_verified`, `source = agent_reported`, `is_demo`, or a non-synthetic `hardware_origin`; triggers enforce this via `is_untrusted_caller()`.
+- `hardware_origin = 'synthetic'` is permanent and implies `hardware_verified = false` (CHECK + triggers); station authentication only proves which station reported, so UI never says hardware is "verified" — use `src/lib/hardware-origin.ts` labels.
+- Invited accounts must choose a password before using the app: `src/lib/first-password.ts` + the root-level redirect to `/welcome`, because invitation emails can land on any app address.
 - Never present simulated or unbuilt functionality as real; unbuilt areas are shown as "Planned" with their phase.
 - Database acceptance checks live in `tests/db/*.sql` (self-rolling-back DO blocks); re-run after any RLS/RPC change.
 - Signed-in app lives under `src/routes/_authenticated/app.*`; data reads use react-query hooks in `src/lib/queries.ts` keyed by org id.
