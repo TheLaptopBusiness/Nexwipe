@@ -126,7 +126,7 @@ def _cpu(s: Sys) -> Optional[str]:
 
 def _ram_bytes(s: Sys) -> Optional[int]:
     # Installed DIMM sizes (needs root); fall back to kernel-visible memory.
-    out = s.run(["dmidecode", "-t", "17"]) if s.root == "/" else (s.read("/fixtures/dmidecode-t17.txt") or "")
+    out = s.run(["dmidecode", "-t", "17"]) or ""
     total = 0
     for m in re.finditer(r"^\s*Size:\s*(\d+)\s*(MB|GB|TB)\s*$", out, re.M):
         total += int(m.group(1)) * {"MB": 2**20, "GB": 2**30, "TB": 2**40}[m.group(2)]
@@ -225,7 +225,7 @@ def _vpd80_serial(s: Sys, disk: str) -> Optional[str]:
 def _clean(v: Optional[str], n: int = 120) -> Optional[str]:
     if v is None:
         return None
-    v = re.sub(r"\s+", " ", v.replace("_", " ") if False else v).strip()
+    v = re.sub(r"\s+", " ", v).strip()
     return None if _is_placeholder(v) else v[:n]
 
 
@@ -244,10 +244,7 @@ def _transport(devpath: str, disk: str) -> str:
 
 
 def _smartctl(s: Sys, disk: str) -> dict:
-    if s.root != "/":
-        raw = s.read(f"/fixtures/smartctl-{disk}.json")
-    else:
-        raw = s.run(["smartctl", "-i", "-j", f"/dev/{disk}"])
+    raw = s.run(["smartctl", "-i", "-j", f"/dev/{disk}"])
     try:
         return json.loads(raw) if raw else {}
     except json.JSONDecodeError:
@@ -283,7 +280,9 @@ def discover_drives(s: Sys, boot: dict) -> tuple[list, list]:
             if len(namespaces) > 1:
                 flags.append(flag("multiple_nvme_namespaces", target=disk))
         else:
-            model = _clean(udev.get("ID_MODEL_ENC", "").encode().decode("unicode_escape") if udev.get("ID_MODEL_ENC") else udev.get("ID_MODEL")) or _clean(s.read("/sys/block", disk, "device", "model"))
+            enc = udev.get("ID_MODEL_ENC")
+            decoded = re.sub(r"\\x([0-9a-fA-F]{2})", lambda m: chr(int(m.group(1), 16)), enc) if enc else udev.get("ID_MODEL")
+            model = _clean(decoded) or _clean(s.read("/sys/block", disk, "device", "model"))
             serial = _clean(udev.get("ID_SERIAL_SHORT")) or _vpd80_serial(s, disk)
             firmware = _clean(udev.get("ID_REVISION"), 60) or _clean(s.read("/sys/block", disk, "device", "rev"), 60)
             if udev.get("ID_WWN"):
