@@ -162,7 +162,7 @@ class Station:
             with self.lock:
                 self.v.net = NetStatus(False, "No server address set. Press S to enter it.")
             return
-        net = check(srv, self.sysroot)
+        net = check(srv)  # network state always comes from the real system
         with self.lock:
             self.v.net = net
         if not net.ok or not self.api:
