@@ -14,6 +14,7 @@ import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatDateTime, useAgents } from "@/lib/queries";
 import { heartbeatState, relativeTime } from "@/lib/jobs";
+import { StationDiscoveries } from "@/components/nd/station-discoveries";
 
 export const Route = createFileRoute("/_authenticated/app/agents")({
   head: () => ({ meta: [{ title: "Agents & stations · NextDrive" }] }),
@@ -129,6 +130,8 @@ function AgentsPage() {
           </div>
         </section>
       )}
+
+      <StationDiscoveries />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
