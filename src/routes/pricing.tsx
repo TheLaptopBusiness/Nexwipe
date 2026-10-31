@@ -49,7 +49,7 @@ function PricingPage() {
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-lg font-semibold text-foreground">{p.name}</h2>
                   {featured && (
-                    <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-medium text-success-foreground">
+                    <span className="rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-medium text-success">
                       Most Popular
                     </span>
                   )}
