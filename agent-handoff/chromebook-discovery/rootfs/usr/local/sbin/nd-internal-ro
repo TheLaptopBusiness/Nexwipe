@@ -10,12 +10,15 @@
 # its credential, which is the safe failure).
 set -u
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+# Test hooks (unset on the station): ND_SYSROOT prefixes /sys and /proc; ND_BLOCKDEV replaces blockdev.
+R="${ND_SYSROOT:-}"
+BLOCKDEV="${ND_BLOCKDEV:-blockdev}"
 
 boot_disk() {
-  src=$(awk '$5=="/run/live/medium" {print $(NF-1)}' /proc/self/mountinfo 2>/dev/null | head -1)
+  src=$(awk '$5=="/run/live/medium" {print $(NF-1)}' $R/proc/self/mountinfo 2>/dev/null | head -1)
   [ -n "$src" ] || return 0
-  part=$(basename "$(readlink -f "$src")")
-  parent=$(basename "$(dirname "$(readlink -f "/sys/class/block/$part")")")
+  part=$(basename "$(readlink -f "$R$src")")
+  parent=$(basename "$(dirname "$(readlink -f "$R/sys/class/block/$part")")")
   if [ "$parent" = "block" ]; then echo "$part"; else echo "$parent"; fi
 }
 
@@ -23,24 +26,24 @@ skip() { case "$1" in loop*|ram*|zram*|dm-*|sr*|md*|nbd*) return 0;; esac; retur
 
 setro() {
   dev="/dev/$1"
-  [ -b "$dev" ] || return 0
-  if blockdev --setro "$dev" 2>/dev/null; then echo "nexwipe: $1 read-only"; else echo "nexwipe: FAILED to set $1 read-only" >&2; fi
+  [ -n "$R" ] || [ -b "$dev" ] || return 0
+  if $BLOCKDEV --setro "$dev" 2>/dev/null; then echo "nexwipe: $1 read-only"; else echo "nexwipe: FAILED to set $1 read-only" >&2; fi
 }
 
 BOOT=$(boot_disk)
 if [ "${1:-}" = "--device" ]; then
   d="${2:?device}"; skip "$d" && exit 0
-  disk=$(basename "$(dirname "$(readlink -f "/sys/class/block/$d")")"); [ "$disk" = "block" ] && disk="$d"
+  disk=$(basename "$(dirname "$(readlink -f "$R/sys/class/block/$d")")"); [ "$disk" = "block" ] && disk="$d"
   [ -n "$BOOT" ] && [ "$disk" = "$BOOT" ] && exit 0
   setro "$d"; exit 0
 fi
 
 [ -n "$BOOT" ] && echo "nexwipe: boot disk is $BOOT (left writable for its ND-STATE partition)" || echo "nexwipe: boot disk NOT identified - setting every disk read-only" >&2
-for sys in /sys/block/*; do
+for sys in "$R"/sys/block/*; do
   d=$(basename "$sys"); skip "$d" && continue
   [ -n "$BOOT" ] && [ "$d" = "$BOOT" ] && continue
   setro "$d"
   for p in "$sys"/"$d"*; do [ -d "$p" ] && setro "$(basename "$p")"; done
-  for hw in "$d"boot0 "$d"boot1; do [ -e "/sys/block/$hw" ] && setro "$hw"; done
+  for hw in "$d"boot0 "$d"boot1; do [ -e "$R/sys/block/$hw" ] && setro "$hw"; done
 done
 exit 0
