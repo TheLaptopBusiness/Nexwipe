@@ -15,8 +15,9 @@ Use lab-owned laptops only. Leave drives in place as they are; do not use custom
 ## 1. What you need
 
 - Image: `nexwipe-station-readonly-0.2.2-readonly-production.img.xz` (station program `nd_station 0.2.2-readonly`).
-  - SHA-256 of the `.img.xz` download: `8a25e9d0e5205f5cea17bbe1a35b71e7e7eb2ac1f2d3939299e05fd6988ba856`
-  - SHA-256 of the unpacked `.img`: `18e98b597f1faf09223b92fd900a2e23068c2f93c33037a10bbc9945aca9f5a4`
+  - SHA-256 of the `.img.xz` download: `42dbe011bc7beb31bca24709c378b35604b4d02b3154fe960ddef6c93b20fcab`
+  - SHA-256 of the unpacked `.img`: `a60c7b84ce3f088759cf25aa19f0e2781be180918d0678323d5c6c966ad6cda2`
+  - Both re-computed from the downloadable file on 2026-10-31 and matching `usb-image/CHECKSUMS.txt`. (An earlier copy of this checklist listed the superseded 0.2.0 values; do not use 0.2.0 or 0.2.1 images.)
 - A dedicated USB stick, 4 GB or larger, physically labelled "NexWipe station #…".
 - Server address: the **published** NexWipe address, `https://…` (the private preview address does not work for stations; plain `http://` is refused by this image).
 - An Ethernet cable on a network with internet access (Wi-Fi is possible with **W**, but test cable first).
