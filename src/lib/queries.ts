@@ -126,3 +126,43 @@ export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 }
+
+// ----- Phase 2: policies, agents, jobs -----
+
+export function usePolicies() {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["policies", orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("*, policy_versions(*)")
+        .eq("org_id", orgId)
+        .order("name");
+      if (error) throw error;
+      return data.map((p) => {
+        const versions = [...p.policy_versions].sort((a, b) => b.version - a.version);
+        return { ...p, policy_versions: versions, latest: versions[0] ?? null };
+      });
+    },
+  });
+}
+
+export const AGENT_COLUMNS =
+  "id, org_id, site_id, name, status, is_simulated, agent_version, platform, hostname, credential_prefix, enrolled_at, last_heartbeat_at, last_state, revoked_at, revoke_reason";
+
+export function useAgents(opts: { refetchMs?: number } = {}) {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["agents", orgId],
+    refetchInterval: opts.refetchMs ?? false,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("agents").select(AGENT_COLUMNS).eq("org_id", orgId).order("enrolled_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export const JOB_LIST_COLUMNS =
+  "id, job_number, status, is_simulated, device_id, drive_id, association_id, target_asset_tag, target_drive_serial, target_drive_interface, execution_outcome, verification_outcome, current_phase, progress_pct, progress_measured, exception_code, created_at, updated_at, last_event_at, agent_id, policy_version_id, policy_versions(version, policies(name))";

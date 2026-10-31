@@ -35,6 +35,7 @@ import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
 import { Route as AuthenticatedAppProjectsIndexRouteImport } from './routes/_authenticated/app.projects.index'
 import { Route as AuthenticatedAppProjectsProjectIdRouteImport } from './routes/_authenticated/app.projects.$projectId'
+import { Route as ApiPublicAgentV1SplatRouteImport } from './routes/api/public/agent/v1/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -171,6 +172,11 @@ const AuthenticatedAppProjectsProjectIdRoute =
     path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const ApiPublicAgentV1SplatRoute = ApiPublicAgentV1SplatRouteImport.update({
+  id: '/api/public/agent/v1/$',
+  path: '/api/public/agent/v1/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
   '/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
+  '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/app/inventory': typeof AuthenticatedAppInventoryIndexRoute
   '/app/projects': typeof AuthenticatedAppProjectsIndexRoute
+  '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/_authenticated/app/projects/$projectId': typeof AuthenticatedAppProjectsProjectIdRoute
   '/_authenticated/app/inventory/': typeof AuthenticatedAppInventoryIndexRoute
   '/_authenticated/app/projects/': typeof AuthenticatedAppProjectsIndexRoute
+  '/api/public/agent/v1/$': typeof ApiPublicAgentV1SplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/app/projects/$projectId'
     | '/app/inventory/'
     | '/app/projects/'
+    | '/api/public/agent/v1/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/app/projects/$projectId'
     | '/app/inventory'
     | '/app/projects'
+    | '/api/public/agent/v1/$'
   id:
     | '__root__'
     | '/'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/projects/$projectId'
     | '/_authenticated/app/inventory/'
     | '/_authenticated/app/projects/'
+    | '/api/public/agent/v1/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -351,6 +363,7 @@ export interface RootRouteChildren {
   WorkflowRoute: typeof WorkflowRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicAgentV1SplatRoute: typeof ApiPublicAgentV1SplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -537,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/api/public/agent/v1/$': {
+      id: '/api/public/agent/v1/$'
+      path: '/api/public/agent/v1/$'
+      fullPath: '/api/public/agent/v1/$'
+      preLoaderRoute: typeof ApiPublicAgentV1SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -601,6 +621,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowRoute: WorkflowRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicAgentV1SplatRoute: ApiPublicAgentV1SplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

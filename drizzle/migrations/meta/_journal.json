@@ -29,6 +29,27 @@
       "when": 1793419913771,
       "tag": "0003_harden_privileges_and_trusted_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793421329796,
+      "tag": "0004_phase2_policies_jobs_agents_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793421675851,
+      "tag": "0005_phase2_job_and_agent_rpcs",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793421944818,
+      "tag": "0006_phase2_least_privilege_grants",
+      "breakpoints": true
     }
   ]
 }
