@@ -94,7 +94,7 @@ function DeviceDetail() {
           <div className="mt-2 flex flex-wrap gap-2">
             <StatusBadge map={DEVICE_STATUS} value={d.status} />
             {d.is_simulated && <SimulatedBadge />}
-            <HardwareOriginBadge record={d} />
+            <HardwareOriginBadge record={d} showExplanation />
             {d.manufacturer && !manufacturerInScope(d.manufacturer) && <ToneBadge tone="warning">Manufacturer outside initial scope</ToneBadge>}
           </div>
         </div>
