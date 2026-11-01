@@ -72,6 +72,7 @@ export function summarizeCapabilities(raw: unknown): CapabilitySummary | null {
 }
 
 export const REVIEW_FLAG_LABELS: Record<string, string> = {
+  synthetic_hardware: "Synthetic or virtual test hardware (never station-reported)",
   drive_capabilities_unknown: "Drive erase capabilities could not be read",
   ata_security_frozen: "Drive security commands are frozen by the laptop firmware",
   ata_security_locked: "Drive is password-locked",

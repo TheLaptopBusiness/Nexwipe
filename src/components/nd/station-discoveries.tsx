@@ -108,11 +108,14 @@ export function StationDiscoveries() {
                         {!dr.ignored && dr.capabilities && (
                           <p className="mt-0.5 pl-5" aria-label="Drive-advertised erase features">
                             {dr.capabilities.unknown ?? (
-                              <>
-                                <span className="text-foreground">Drive advertises:</span>{" "}
-                                {dr.capabilities.advertised.join(" · ") || "—"}
-                                {dr.capabilities.notes.length > 0 && <> · {dr.capabilities.notes.join(" · ")}</>}
-                              </>
+                              dr.capabilities.advertised.length === 0 ? (
+                                dr.capabilities.notes.join(" · ")
+                              ) : (
+                                <>
+                                  <span className="text-foreground">Drive advertises:</span> {dr.capabilities.advertised.join(" · ")}
+                                  {dr.capabilities.notes.length > 0 && <> · {dr.capabilities.notes.join(" · ")}</>}
+                                </>
+                              )
                             )}
                           </p>
                         )}
