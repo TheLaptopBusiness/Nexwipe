@@ -98,11 +98,24 @@ export function StationDiscoveries() {
                 {s.drives.length > 0 && (
                   <ul className="mt-2 grid gap-1 pl-6 text-xs text-muted-foreground sm:grid-cols-2">
                     {s.drives.map((dr, i) => (
-                      <li key={`${dr.serial}-${i}`} className="flex items-center gap-1.5">
-                        <HardDrive className="size-3.5" aria-hidden />
-                        <Mono className="text-foreground">{dr.serial ?? "no serial"}</Mono>
-                        <span>· {dr.model ?? "unknown model"} · {dr.interfaceLabel}{dr.capacity ? ` · ${formatBytes(dr.capacity)}` : ""}</span>
-                        {dr.ignored && <ToneBadge tone="neutral">Station boot medium · not recorded</ToneBadge>}
+                      <li key={`${dr.serial}-${i}`}>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <HardDrive className="size-3.5" aria-hidden />
+                          <Mono className="text-foreground">{dr.serial ?? "no serial"}</Mono>
+                          <span>· {dr.model ?? "unknown model"} · {dr.interfaceLabel}{dr.capacity ? ` · ${formatBytes(dr.capacity)}` : ""}</span>
+                          {dr.ignored && <ToneBadge tone="neutral">Station boot medium · not recorded</ToneBadge>}
+                        </div>
+                        {!dr.ignored && dr.capabilities && (
+                          <p className="mt-0.5 pl-5" aria-label="Drive-advertised erase features">
+                            {dr.capabilities.unknown ?? (
+                              <>
+                                <span className="text-foreground">Drive advertises:</span>{" "}
+                                {dr.capabilities.advertised.join(" · ") || "—"}
+                                {dr.capabilities.notes.length > 0 && <> · {dr.capabilities.notes.join(" · ")}</>}
+                              </>
+                            )}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>
