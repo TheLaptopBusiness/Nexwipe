@@ -5,7 +5,8 @@ Sources: sysfs (/sys), the udev database (/run/udev/data), /proc and, optionally
 tools (dmidecode for installed memory, smartctl -i for full drive identity strings).
 
 It never opens a block device for reading or writing data, never mounts anything and never reads
-file contents. Every path is relative to a configurable root so tests can use a fake sysfs tree.
+file contents. The single device node it opens is an NVMe controller (/dev/nvmeN, read-only) to send
+one Identify Controller command; see capabilities.py. Every path is relative to a configurable root so tests can use a fake sysfs tree.
 """
 from __future__ import annotations
 
