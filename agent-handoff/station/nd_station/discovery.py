@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from .safety import run_read_only
+from . import capabilities as caps
 
 PLACEHOLDERS = {
     "", "to be filled by o.e.m.", "to be filled by oem", "default string", "system serial number",
@@ -39,6 +40,17 @@ class Sys:
 
     root: str = "/"
     run: Runner = run_read_only
+
+    def nvme_identify(self):
+        """Identify reader: the real ioctl on a live system; a fixture file under a test root."""
+        if os.path.realpath(self.root) == "/":
+            return None
+        def read_fixture(char_dev: str) -> bytes:
+            b = self.read_bytes(char_dev + ".identify")
+            if b is None:
+                raise FileNotFoundError(2, "no identify fixture")
+            return b
+        return read_fixture
 
     def p(self, *parts: str) -> str:
         return os.path.join(self.root, *[x.lstrip("/") for x in parts])
@@ -298,6 +310,7 @@ def discover_drives(s: Sys, boot: dict) -> tuple[list, list]:
         interface = {"nvme": "nvme_ssd", "sata": "sata_hdd" if rotational else "sata_ssd"}.get(tran, "unsupported_other")
         internal = tran in ("nvme", "sata", "mmc", "virtio", "other", "thunderbolt") and not removable and not is_boot and tran != "usb"
         bus_path = _clean(udev.get("ID_PATH"), 200)
+        capabilities = caps.drive_capabilities(s, disk, "nvme" if tran == "nvme" else tran, s.nvme_identify()) if internal else None
         d = {
             "serial": serial,
             "model": model,
@@ -308,6 +321,7 @@ def discover_drives(s: Sys, boot: dict) -> tuple[list, list]:
             "bus_path": bus_path,
             "removable": removable or tran == "usb",
             "is_boot_medium": is_boot,
+            "capabilities": capabilities,
             **extra,
         }
         drives.append({k: v for k, v in d.items() if v is not None and v != ""})
@@ -319,6 +333,12 @@ def discover_drives(s: Sys, boot: dict) -> tuple[list, list]:
                 flags.append(flag("drive_model_missing", target=label))
             if tran in ("mmc", "virtio", "other", "thunderbolt"):
                 flags.append(flag("unsupported_storage", target=label, detail=f"transport {tran}"))
+            elif capabilities and capabilities.get("source") == "unavailable":
+                flags.append(flag("drive_capabilities_unknown", target=label, detail=capabilities.get("reason")))
+            elif (capabilities or {}).get("ata_security", {}).get("frozen"):
+                flags.append(flag("ata_security_frozen", target=label, detail="Firmware froze the drive's security commands at boot (common on laptops)"))
+            elif (capabilities or {}).get("ata_security", {}).get("locked"):
+                flags.append(flag("ata_security_locked", target=label, detail="Drive is password-locked"))
     serials = [d["serial"].upper() for d in drives if d.get("serial") and not d.get("is_boot_medium")]
     for sn in sorted({x for x in serials if serials.count(x) > 1}):
         flags.append(flag("duplicate_drive_serial", target=sn))

@@ -119,11 +119,11 @@ def _identify_controller_ioctl(char_dev: str) -> bytes:
     ))
     fd = os.open(char_dev, os.O_RDONLY)
     try:
-        fcntl.ioctl(fd, NVME_IOCTL_ADMIN_CMD, cmd)
+        rc = fcntl.ioctl(fd, NVME_IOCTL_ADMIN_CMD, cmd, True)
     finally:
         os.close(fd)
-    status = struct.unpack_from("<I", cmd, _ADMIN_CMD.size - 4)  # result dword (not status)
-    del status
+    if rc != 0:
+        raise OSError(0, f"NVMe status 0x{rc:x}")
     return bytes(buf.raw)
 
 
