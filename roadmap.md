@@ -9,7 +9,7 @@
 - [ ] Agent Milestone 1 (read-only) on real Dell/HP/Lenovo laptops — needs physical hardware (agent-handoff/PHYSICAL_TEST_CHECKLIST.md)
 - [x] New-invitee invitation email → set password → accept → password sign-in (preview build; technician role)
 - [x] Hardware origin: synthetic test hardware stays synthetic; "verified" labels replaced by "station-reported"; PUBCHECK records corrected; station 0.2.1 declares hardware source
-- [ ] Publish the invitee password step and re-test on the published address — needs the owner to publish
+- [x] Publish the invitee password step and re-test on the published address (nexwipe.co, 2026-11-01)
 - [ ] Existing account Google sign-in on the published address — needs the Google account owner
 - [ ] Agent Stage 2 destructive testing on disposable drives — external team, after Milestone 1
 - [ ] Phase 3: realtime live jobs, binary evidence storage, demo-watermarked PDF records, QR verification
@@ -37,4 +37,5 @@
 - [x] Post-verification onboarding: create organization → first site → first-device setup checklist; invitations keep working
 - [x] Signup abuse protection (leaked-password check, rate limits, bot honeypot); no platform-admin grants; no free credits/paid plans until built
 - [x] Verify signup → email verification → login → onboarding end-to-end
-- [ ] Publish so the live site gets public signup (verification links land on the live address)
+- [x] Published; live check on nexwipe.co: Start Now → signup → verification email (+ resend) → company → two-step → dashboard; invitation acceptance; password reset with two-step code; existing-user sign-in (2026-11-01)
+- [ ] Owner: set auth Site URL to https://nexwipe.co (Auth settings → Advanced)
