@@ -84,6 +84,8 @@ def draw(scr, st: Station) -> None:
         attr = Y if d.get("is_boot_medium") or d.get("removable") else 0
         put(y, 2, f"{tag:<19} {d.get('interface', '?'):<17} {(d.get('model') or 'model ?')[:28]:<28} {_gb(d.get('capacity_bytes')):>7}  S/N {d.get('serial', 'MISSING')}  FW {d.get('firmware', '?')}", attr)
         y += 1
+        if d.get("capabilities"):
+            put(y, 22, "advertises: " + caps_line(d["capabilities"]), 0); y += 1
     flags = v.discovery.get("review_flags", [])
     if flags:
         y += 1
@@ -97,6 +99,27 @@ def draw(scr, st: Station) -> None:
         put(y, 0, v.message); y += 1
     put(h - 1, 0, " [E] Enroll  [S] Server  [R] Re-scan & upload  [W] Wi-Fi  [L] Log  [P] Power off ".ljust(w - 1), curses.A_REVERSE)
     scr.refresh()
+
+
+def caps_line(c: dict) -> str:
+    """One-line summary of what the drive ADVERTISES (nothing has been run)."""
+    if c.get("source") == "unavailable":
+        return f"unknown ({c.get('reason', '')})"
+    parts = []
+    on = lambda o, *ks: [k.split("_")[0] for k in ks if (o or {}).get(k)]  # noqa: E731
+    sec, asan = c.get("ata_security") or {}, c.get("ata_sanitize_feature") or {}
+    if asan.get("supported"):
+        parts.append("ATA Sanitize(" + ",".join(on(asan, "crypto_scramble", "block_erase", "overwrite")) + ")")
+    if sec.get("supported"):
+        parts.append("Security Erase" + ("+enhanced" if sec.get("enhanced_erase_supported") else "") + (" FROZEN" if sec.get("frozen") else "") + (" LOCKED" if sec.get("locked") else ""))
+    fmt, nsan = c.get("nvme_format_nvm") or {}, c.get("nvme_sanitize_feature") or {}
+    if nsan.get("supported"):
+        parts.append("NVMe Sanitize(" + ",".join(on(nsan, "crypto_erase", "block_erase", "overwrite")) + ")")
+    if fmt.get("supported"):
+        parts.append("NVMe Format" + ("(crypto)" if fmt.get("crypto_erase") else ""))
+    if c.get("nvme_namespace_count", 0) > 1:
+        parts.append(f"{c['nvme_namespace_count']} namespaces")
+    return " ".join(parts) or "no erase features"
 
 
 def main(scr, st: Station) -> None:
