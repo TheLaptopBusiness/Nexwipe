@@ -63,7 +63,7 @@ export function summarizeCapabilities(raw: unknown): CapabilitySummary | null {
     }
     if (yes(fmt, "supported")) advertised.push(yes(fmt, "crypto_erase") ? "NVMe Format (user-data erase + crypto erase)" : "NVMe Format (user-data erase)");
     const n = typeof c["nvme_namespace_count"] === "number" ? c["nvme_namespace_count"] : null;
-    if (n !== null && n > 1) notes.push(`${n} namespaces supported`);
+    if (n !== null && n > 1) notes.push(`Controller supports up to ${n} namespaces`);
   } else {
     return null;
   }

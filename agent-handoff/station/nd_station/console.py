@@ -118,7 +118,7 @@ def caps_line(c: dict) -> str:
     if fmt.get("supported"):
         parts.append("NVMe Format" + ("(crypto)" if fmt.get("crypto_erase") else ""))
     if c.get("nvme_namespace_count", 0) > 1:
-        parts.append(f"{c['nvme_namespace_count']} namespaces")
+        parts.append(f"(controller supports up to {c['nvme_namespace_count']} namespaces)")
     return " ".join(parts) or "no erase features"
 
 
