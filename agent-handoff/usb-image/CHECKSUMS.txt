@@ -1,3 +1,13 @@
+dc0a91d23f2d80a5c4814b2a04be80f89d332601511fc1b4100dd3ae5e55fb5f  nexwipe-station-readonly-0.2.3-readonly-production.img
+b112f9b4339c8d82a5864effe069f3cf196154222520f3f5f1674d41ed8091f9  nexwipe-station-readonly-0.2.3-readonly-production.img.xz
+# production components (0.2.3) — kernel and initrd unchanged from 0.2.2 (same signed Debian files)
+248525ca0df91bede7ea1928404437fcd73a17f5a66034fbef4014ecbbf563e5  live/filesystem.squashfs
+2b2358b37674d2505350528875bb17afae2a36522a9e8a9417eaca65a7da0e08  live/vmlinuz
+33999812185b46cc7f692944fd42ae230f9f1d5e5d1232b5c97c654f99d3ef13  live/initrd.img
+# 0.2.3 was built with ROOTFS_READY=1 from the 0.2.2 root filesystem (unpacked from the 0.2.2 image, same package set) plus the
+# 0.2.3 station program. The VM boot test used an image with this same filesystem.squashfs; the outer .img hash differs between
+# rebuilds because FAT timestamps are not pinned.
+# superseded 0.2.2:
 a60c7b84ce3f088759cf25aa19f0e2781be180918d0678323d5c6c966ad6cda2  nexwipe-station-readonly-0.2.2-readonly-production.img
 42dbe011bc7beb31bca24709c378b35604b4d02b3154fe960ddef6c93b20fcab  nexwipe-station-readonly-0.2.2-readonly-production.img.xz
 # production components (0.2.2)
