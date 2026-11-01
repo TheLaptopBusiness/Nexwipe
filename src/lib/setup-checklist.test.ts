@@ -52,7 +52,7 @@ describe("verification link landing", () => {
   });
 });
 
-import { isAllowedAppOrigin } from "./invitations.functions";
+import { isAllowedAppOrigin } from "./app-origins";
 describe("invitation link addresses", () => {
   it("allows the live NexWipe domains", () => {
     expect(isAllowedAppOrigin("https://nexwipe.co")).toBe(true);
