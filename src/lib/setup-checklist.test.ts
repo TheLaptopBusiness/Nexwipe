@@ -3,14 +3,17 @@ import { setupProgress } from "./setup-checklist";
 import { looksAutomated, signupSchema } from "@/routes/signup";
 
 describe("setup checklist", () => {
-  it("a new organization has 2 of 4 steps done", () => {
-    expect(setupProgress({ sites: 0, realStations: 0, devices: 0 })).toMatchObject({ done: 2, total: 4, complete: false });
+  it("a new organization with two-step on has 2 of 4 steps done", () => {
+    expect(setupProgress({ sites: 0, realStations: 0, devices: 0, twoStep: true })).toMatchObject({ done: 2, total: 4, complete: false });
+  });
+  it("two-step verification is not marked done until the session is verified", () => {
+    expect(setupProgress({ sites: 1, realStations: 1, devices: 1, twoStep: false })).toMatchObject({ twoStep: false, done: 3, complete: false });
   });
   it("adding a site and a real device completes setup", () => {
-    expect(setupProgress({ sites: 1, realStations: 1, devices: 1 }).complete).toBe(true);
+    expect(setupProgress({ sites: 1, realStations: 1, devices: 1, twoStep: true }).complete).toBe(true);
   });
   it("a station alone does not complete the device step", () => {
-    expect(setupProgress({ sites: 1, realStations: 1, devices: 0 })).toMatchObject({ station: true, device: false, complete: false });
+    expect(setupProgress({ sites: 1, realStations: 1, devices: 0, twoStep: true })).toMatchObject({ station: true, device: false, complete: false });
   });
 });
 
@@ -46,5 +49,19 @@ describe("verification link landing", () => {
   it("ignores ordinary anchors and password-recovery links", () => {
     expect(landingAction("#pricing").kind).toBe("none");
     expect(landingAction("#access_token=abc&type=recovery").kind).toBe("none");
+  });
+});
+
+import { isAllowedAppOrigin } from "./invitations.functions";
+describe("invitation link addresses", () => {
+  it("allows the live NexWipe domains", () => {
+    expect(isAllowedAppOrigin("https://nexwipe.co")).toBe(true);
+    expect(isAllowedAppOrigin("https://www.nexwipe.co")).toBe(true);
+    expect(isAllowedAppOrigin("https://nexwipe.lovable.app")).toBe(true);
+  });
+  it("refuses look-alike or unknown addresses", () => {
+    expect(isAllowedAppOrigin("https://nexwipe.co.evil.com")).toBe(false);
+    expect(isAllowedAppOrigin("https://evil.com")).toBe(false);
+    expect(isAllowedAppOrigin("not a url")).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import { ErrorBlock, LoadingBlock, PageHeader, errorMessage } from "@/components
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { useAgents, useSites } from "@/lib/queries";
+import { useAssurance } from "@/components/nd/mfa-gate";
 import { setupProgress } from "@/lib/setup-checklist";
 
 export const Route = createFileRoute("/_authenticated/app/setup")({
@@ -47,13 +48,15 @@ function Setup() {
   const sites = useSites();
   const agents = useAgents();
   const devices = useDeviceCount();
-  if (sites.isLoading || agents.isLoading || devices.isLoading) return <LoadingBlock />;
+  const aal = useAssurance();
+  if (sites.isLoading || agents.isLoading || devices.isLoading || aal.isLoading) return <LoadingBlock />;
   const err = sites.error ?? agents.error ?? devices.error;
   if (err) return <ErrorBlock error={err} />;
   const p = setupProgress({
     sites: sites.data!.length,
     realStations: agents.data!.filter((a) => !a.is_simulated && a.status === "active").length,
     devices: devices.data!,
+    twoStep: aal.data?.current === "aal2",
   });
 
   return (
@@ -64,10 +67,13 @@ function Setup() {
       />
       <ol className="space-y-4">
         <Step n={1} done title="Create your organization">
-          {current.org.name} is ready. You’re its owner.
+          {current.org.name} is ready.
         </Step>
-        <Step n={2} done title="Turn on two-step verification">
-          Done — owner and administrator permissions require it.
+        <Step n={2} done={p.twoStep} title="Turn on two-step verification">
+          {p.twoStep
+            ? "Done — this session is verified with your authenticator app. Owner and administrator permissions require it."
+            : "Not yet verified in this session. Set it up from your account page; owners and administrators can’t manage the organization without it."}{" "}
+          {!p.twoStep && <Link to="/app/account" className="underline underline-offset-4">Account</Link>}
         </Step>
         <Step n={3} done={p.site} title="Add your first site">
           {p.site ? (
@@ -112,7 +118,9 @@ function Setup() {
       </ol>
       {p.complete && (
         <div className="rounded-lg border border-success bg-success-soft p-4 text-sm text-foreground">
-          Setup complete. <Link to="/app" className="font-medium underline underline-offset-4">Go to the dashboard</Link>
+          Setup steps complete. This means your account, site and first device are recorded — it does not mean
+          drive erasure is available.{" "}
+          <Link to="/app" className="font-medium underline underline-offset-4">Go to the dashboard</Link>
         </div>
       )}
     </div>

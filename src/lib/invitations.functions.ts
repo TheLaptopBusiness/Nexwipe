@@ -11,18 +11,26 @@ const Input = z.object({
 
 export type InvitationEmailStatus = "sent_new_account" | "sent_existing_account" | "not_sent";
 
+/** Production addresses of the app; invitation links from these are allowed. */
+export const PRODUCTION_ORIGINS = ["https://nexwipe.co", "https://www.nexwipe.co", "https://nexwipe.lovable.app"];
+
 /** Allowed app origins for the link inside the email (never trust an arbitrary header). */
+export function isAllowedAppOrigin(origin: string, extra: string[] = []): boolean {
+  try {
+    const u = new URL(origin);
+    if (PRODUCTION_ORIGINS.includes(u.origin) || extra.includes(u.origin)) return true;
+    if (u.hostname === "localhost") return true;
+    return u.protocol === "https:" && (u.hostname.endsWith(".lovable.app") || u.hostname.endsWith(".lovableproject.com"));
+  } catch {
+    return false;
+  }
+}
+
 function appOrigin(): string {
   const req = getRequest();
   const candidate = req?.headers.get("origin") ?? (req ? new URL(req.url).origin : "");
-  try {
-    const u = new URL(candidate);
-    const okHost = u.hostname === "localhost" || u.hostname.endsWith(".lovable.app") || u.hostname.endsWith(".lovableproject.com");
-    const extra = (process.env["APP_ALLOWED_ORIGINS"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-    if (okHost || extra.includes(u.origin)) return u.origin;
-  } catch {
-    /* fall through */
-  }
+  const extra = (process.env["APP_ALLOWED_ORIGINS"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (isAllowedAppOrigin(candidate, extra)) return new URL(candidate).origin;
   throw new Error("Unrecognized app address; cannot build the invitation link");
 }
 
