@@ -2,7 +2,7 @@
 
 export interface DiscoveryPayload {
   system?: { manufacturer?: string; model?: string; serial?: string; cpu?: string };
-  drives?: Array<{ serial?: string; model?: string; interface?: string; capacity_bytes?: number; removable?: boolean; is_boot_medium?: boolean }>;
+  drives?: Array<{ serial?: string; model?: string; interface?: string; capacity_bytes?: number; removable?: boolean; is_boot_medium?: boolean; capabilities?: unknown }>;
 }
 
 const IFACE: Record<string, string> = {
@@ -21,11 +21,60 @@ export function summarizeDiscovery(p: DiscoveryPayload | null | undefined) {
     capacity: typeof d?.capacity_bytes === "number" && d.capacity_bytes > 0 ? d.capacity_bytes : null,
     // Mirrors create_device_from_discovery: boot media and removable media never become laptop drives.
     ignored: d?.is_boot_medium === true || d?.removable === true,
+    capabilities: summarizeCapabilities(d?.capabilities),
   }));
   return { title, drives };
 }
 
+export interface CapabilitySummary {
+  /** Features the drive advertises. Never a statement that an erase was run or would succeed. */
+  advertised: string[];
+  notes: string[];
+  unknown: string | null;
+}
+
+const yes = (o: unknown, k: string) => !!o && typeof o === "object" && (o as Record<string, unknown>)[k] === true;
+
+/** Plain-language summary of a station-reported capability block (untrusted input). */
+export function summarizeCapabilities(raw: unknown): CapabilitySummary | null {
+  if (!raw || typeof raw !== "object") return null;
+  const c = raw as Record<string, unknown>;
+  const advertised: string[] = [];
+  const notes: string[] = [];
+  if (c.source === "unavailable") {
+    const reason = typeof c.reason === "string" ? c.reason.slice(0, 160) : "not reported";
+    return { advertised, notes, unknown: `Capabilities unknown (${reason})` };
+  }
+  if (c.source === "ata_identify_sysfs") {
+    const sec = c.ata_security, san = c.ata_sanitize_feature;
+    if (yes(san, "supported")) {
+      const m = ["crypto_scramble", "block_erase", "overwrite"].filter((k) => yes(san, k)).map((k) => k.replace("_", " "));
+      advertised.push(`ATA Sanitize${m.length ? ` (${m.join(", ")})` : ""}`);
+    }
+    if (yes(sec, "supported")) advertised.push(yes(sec, "enhanced_erase_supported") ? "ATA Security Erase (normal + enhanced)" : "ATA Security Erase (normal)");
+    if (yes(sec, "frozen")) notes.push("Security commands frozen by firmware at boot");
+    if (yes(sec, "locked")) notes.push("Drive is password-locked");
+    if (yes(sec, "enabled")) notes.push("A drive password is set");
+  } else if (c.source === "nvme_identify_controller") {
+    const fmt = c.nvme_format_nvm, san = c.nvme_sanitize_feature;
+    if (yes(san, "supported")) {
+      const m = ["crypto_erase", "block_erase", "overwrite"].filter((k) => yes(san, k)).map((k) => k.replace("_", " "));
+      advertised.push(`NVMe Sanitize (${m.join(", ")})`);
+    }
+    if (yes(fmt, "supported")) advertised.push(yes(fmt, "crypto_erase") ? "NVMe Format (user-data erase + crypto erase)" : "NVMe Format (user-data erase)");
+    const n = typeof c.nvme_namespace_count === "number" ? c.nvme_namespace_count : null;
+    if (n !== null && n > 1) notes.push(`${n} namespaces supported`);
+  } else {
+    return null;
+  }
+  if (advertised.length === 0) notes.unshift("No erase features advertised");
+  return { advertised, notes, unknown: null };
+}
+
 export const REVIEW_FLAG_LABELS: Record<string, string> = {
+  drive_capabilities_unknown: "Drive erase capabilities could not be read",
+  ata_security_frozen: "Drive security commands are frozen by the laptop firmware",
+  ata_security_locked: "Drive is password-locked",
   system_serial_missing: "Laptop serial number missing",
   system_serial_placeholder: "Laptop serial number is a placeholder value",
   system_serial_matches_multiple_devices: "Laptop serial matches more than one inventory record",
