@@ -11,6 +11,8 @@
 
 # NexWipe engineering rules
 
+- New contributors: start with `docs/HOW_IT_WORKS.md` (system guide), then `docs/STATUS.md`.
+
 - Read `docs/ARCHITECTURE.md` and `docs/STATUS.md` before changing schema or features; update STATUS when a feature's status changes.
 - Tenant tables carry `org_id` with `UNIQUE (org_id, id)` and child rows use composite FKs `(org_id, parent_id)` — prevents cross-company references even with forged ids.
 - Access rules live in RLS + `SECURITY DEFINER` RPCs (`has_org_role`, `is_org_staff`, `has_project_grant`); `src/lib/permissions.ts` only mirrors them for UI and must not be the security boundary.

@@ -44,8 +44,9 @@
 - [x] Station 0.2.3 reports drive-advertised erase features (ATA via sysfs IDENTIFY, NVMe via one Identify Controller); no erase command
 - [x] Server keeps the station's hardware-source declaration (was silently dropped → every HTTP report classified synthetic)
 - [x] USB image 0.2.3 built and VM-tested (NVMe + SATA, enrolled, uploaded, disks unchanged)
-- [ ] Publish + live enrollment check of the 0.2.3 production image
+- [x] 0.2.3 production image built, VM-booted, saved to Files with checksums + updated checklist
+- [ ] Publish (owner declined this time) — until then the live server drops the station's hardware-source declaration; then a live enrollment check of 0.2.3
 - [ ] First physical laptop boot with 0.2.3 — needs a physical laptop (checklist)
 
 ## Onboarding docs
-- [ ] docs/HOW_IT_WORKS.md — full guide for new team members (requested by Ripudaman)
+- [x] docs/HOW_IT_WORKS.md — full guide for new team members (requested by Ripudaman)
