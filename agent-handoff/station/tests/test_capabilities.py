@@ -23,7 +23,7 @@ def nvme_idc(oacs=0, fna=0, sanicap=0, nn=1):
 
 class AtaDecode(unittest.TestCase):
     def test_frozen_security_and_sanitize(self):
-        words = caps.parse_ata_identify_text(ata_text(w82=0x0002, w128=0b101001, w89=0x0002, w90=0x8010, w59=0b1011 << 12, w169=1))
+        words = caps.parse_ata_identify_text(ata_text(w82=0x0002, w128=0b101001, w89=0x0002, w90=0x8010, w59=(1 << 12) | (1 << 14) | (1 << 15), w169=1))
         c = caps.ata_capabilities(words)
         self.assertEqual(c["ata_security"], {"supported": True, "enabled": False, "locked": False, "frozen": True,
                                              "enhanced_erase_supported": True, "normal_erase_minutes": 4, "enhanced_erase_minutes": 32})
