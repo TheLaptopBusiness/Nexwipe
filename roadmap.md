@@ -39,3 +39,13 @@
 - [x] Verify signup → email verification → login → onboarding end-to-end
 - [x] Published; live check on nexwipe.co: Start Now → signup → verification email (+ resend) → company → two-step → dashboard; invitation acceptance; password reset with two-step code; existing-user sign-in (2026-11-01)
 - [ ] Owner: set auth Site URL to https://nexwipe.co (Auth settings → Advanced)
+
+## Windows laptop: read-only drive capabilities (2026-11-01)
+- [x] Station 0.2.3 reports drive-advertised erase features (ATA via sysfs IDENTIFY, NVMe via one Identify Controller); no erase command
+- [x] Server keeps the station's hardware-source declaration (was silently dropped → every HTTP report classified synthetic)
+- [x] USB image 0.2.3 built and VM-tested (NVMe + SATA, enrolled, uploaded, disks unchanged)
+- [ ] Publish + live enrollment check of the 0.2.3 production image
+- [ ] First physical laptop boot with 0.2.3 — needs a physical laptop (checklist)
+
+## Onboarding docs
+- [ ] docs/HOW_IT_WORKS.md — full guide for new team members (requested by Ripudaman)
