@@ -34,6 +34,13 @@ Multi-namespace NVMe: v1 supports single-namespace drives only; multiple namespa
 
 ## Capability detection (report in `drives[].capabilities`)
 
+**Implemented in the read-only station 0.2.3 (`nd_station/capabilities.py`)** without `nvme-cli` or `hdparm`, which stay
+removed from the image: SATA reads the kernel's cached IDENTIFY DEVICE words from sysfs (no command is sent); NVMe sends one
+Identify Controller (opcode 0x06, CNS 1) on a read-only `/dev/nvmeN` handle. Reported: ATA security (supported/enabled/locked/
+frozen/enhanced, erase-time estimates), ATA sanitize (crypto/block/overwrite), TRIM; NVMe Format (supported, crypto erase,
+all-namespace attributes from FNA), NVMe sanitize (SANICAP), namespace count. Not yet reported: sanitize-log progress, LBA
+format, SED/Opal, SMART health, unfreeze. The original target list for the future erasure engine follows.
+
 NVMe (`nvme id-ctrl -H`):
 - `sanicap`: crypto erase / block erase / overwrite support bits; `nodmmas`; `sanitize_in_progress` from `nvme sanitize-log`.
 - `fna` (format attributes: crypto erase supported, applies to all namespaces).

@@ -129,6 +129,8 @@ paths:
                     kernel: { type: string }
                     mode: { type: string, enum: [read_only] }
                     image_version: { type: string }
+                    hardware_source: { type: string, enum: [physical, virtual, synthetic], description: "Station's declaration. Missing or not 'physical' = classified synthetic. 'physical' is still only a claim." }
+                    hardware_source_reason: { type: string, maxLength: 200 }
                 drives:
                   type: array
                   maxItems: 16
@@ -147,7 +149,20 @@ paths:
                       wwn: { type: string }
                       nvme_eui64: { type: string }
                       nvme_nguid: { type: string }
-                      capabilities: { type: object, additionalProperties: true, description: "Detected sanitize/secure-erase/crypto capabilities (see agent handoff)" }
+                      capabilities:
+                        type: object
+                        description: "Erase features the drive ADVERTISES in its identify data (read-only; nothing run or tested). Unknown keys are dropped."
+                        required: [source]
+                        properties:
+                          source: { type: string, enum: [ata_identify_sysfs, nvme_identify_controller, unavailable] }
+                          reason: { type: string, maxLength: 160 }
+                          ata_security: { type: object, properties: { supported: { type: [boolean, "null"] }, enabled: { type: boolean }, locked: { type: boolean }, frozen: { type: boolean }, enhanced_erase_supported: { type: boolean }, normal_erase_minutes: { type: [integer, "null"] }, enhanced_erase_minutes: { type: [integer, "null"] } } }
+                          ata_sanitize_feature: { type: object, properties: { supported: { type: boolean }, crypto_scramble: { type: boolean }, overwrite: { type: boolean }, block_erase: { type: boolean } } }
+                          trim_supported: { type: boolean }
+                          nvme_format_nvm: { type: object, properties: { supported: { type: boolean }, crypto_erase: { type: boolean }, applies_to_all_namespaces: { type: boolean }, erase_applies_to_all_namespaces: { type: boolean } } }
+                          nvme_sanitize_feature: { type: object, properties: { supported: { type: boolean }, crypto_erase: { type: boolean }, block_erase: { type: boolean }, overwrite: { type: boolean } } }
+                          nvme_namespace_count: { type: integer }
+                          nvme_namespace_management: { type: boolean }
       responses:
         "200": { description: Match result, content: { application/json: { schema: { type: object, properties: { discovery_id: { type: string, format: uuid }, report_count: { type: integer }, review_flags: { type: array, items: { type: object } }, device_id: { type: [string, "null"] }, asset_tag: { type: [string, "null"] }, drives: { type: array, items: { type: object, properties: { serial: { type: string }, drive_id: { type: [string, "null"] }, attached_to_device: { type: boolean } } } } } } } } }
   /jobs:
