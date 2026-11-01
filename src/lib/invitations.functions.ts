@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isAllowedAppOrigin } from "@/lib/app-origins";
 
 const Input = z.object({
   orgId: z.string().uuid(),
@@ -11,18 +12,11 @@ const Input = z.object({
 
 export type InvitationEmailStatus = "sent_new_account" | "sent_existing_account" | "not_sent";
 
-/** Allowed app origins for the link inside the email (never trust an arbitrary header). */
 function appOrigin(): string {
   const req = getRequest();
   const candidate = req?.headers.get("origin") ?? (req ? new URL(req.url).origin : "");
-  try {
-    const u = new URL(candidate);
-    const okHost = u.hostname === "localhost" || u.hostname.endsWith(".lovable.app") || u.hostname.endsWith(".lovableproject.com");
-    const extra = (process.env["APP_ALLOWED_ORIGINS"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-    if (okHost || extra.includes(u.origin)) return u.origin;
-  } catch {
-    /* fall through */
-  }
+  const extra = (process.env["APP_ALLOWED_ORIGINS"] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (isAllowedAppOrigin(candidate, extra)) return new URL(candidate).origin;
   throw new Error("Unrecognized app address; cannot build the invitation link");
 }
 

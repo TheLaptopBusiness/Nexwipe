@@ -2,18 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Activity,
-  AlertOctagon,
   Boxes,
   CheckCircle2,
   CircleHelp,
-  ClipboardList,
-  Coins,
   FolderKanban,
   Inbox,
-  Server,
   ShieldAlert,
-  XCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -22,6 +16,7 @@ import { EmptyState, ErrorBlock, LoadingBlock, PageHeader, StatCard } from "@/co
 import { ALL, FilterSelect } from "@/components/nd/filter-select";
 import { PROJECT_STATUS, StatusBadge } from "@/components/nd/status-badge";
 import { useOrg } from "@/lib/org-context";
+import { AvailabilityPanel } from "@/components/nd/availability-panel";
 import { can } from "@/lib/permissions";
 import { formatDateTime, memberName, useClients, useMembers, useProjects, useSites } from "@/lib/queries";
 
@@ -111,6 +106,8 @@ function StaffDashboard() {
         }
       />
 
+      <AvailabilityPanel />
+
       <div className="flex flex-wrap gap-2">
         <FilterSelect label="Site" value={site} onChange={setSite} options={(sites.data ?? []).map((s) => ({ value: s.id, label: s.name }))} />
         <FilterSelect label="Client" value={client} onChange={setClient} options={(clients.data ?? []).map((c) => ({ value: c.id, label: c.name }))} />
@@ -139,23 +136,6 @@ function StaffDashboard() {
               <StatCard label="Quarantined" value={counts.data?.quarantined ?? "…"} icon={ShieldAlert} />
               <StatCard label="Manual assessment" value={counts.data?.manual ?? "…"} icon={CircleHelp} />
               <StatCard label="Released" value={counts.data?.released ?? "…"} icon={CheckCircle2} />
-            </div>
-          </section>
-          <section>
-            <div className="mb-3 flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Erasure jobs</h2>
-              <span className="rounded border border-border px-1.5 text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
-                Available after Phase 2
-              </span>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard muted label="Active jobs" value="—" icon={Activity} hint="Job engine not built yet" />
-              <StatCard muted label="Completed & approved" value="—" icon={CheckCircle2} hint="Job engine not built yet" />
-              <StatCard muted label="Failed" value="—" icon={XCircle} hint="Job engine not built yet" />
-              <StatCard muted label="Interrupted / unverified" value="—" icon={AlertOctagon} hint="Job engine not built yet" />
-              <StatCard muted label="Awaiting review" value="—" icon={ClipboardList} hint="Review workflow: Phase 3" />
-              <StatCard muted label="Online agents" value="—" icon={Server} hint="Agent API: Phase 2" />
-              <StatCard muted label="Available credits" value="—" icon={Coins} hint="Billing: Phase 4" />
             </div>
           </section>
         </>
@@ -226,7 +206,7 @@ function ViewerHome() {
           ))}
         </div>
       )}
-      <p className="text-sm text-muted-foreground">Approved erasure records will appear here once reporting is available.</p>
+      <p className="text-sm text-muted-foreground">Real drive erasure isn’t available yet, so no erasure records or certificates are issued.</p>
     </div>
   );
 }
