@@ -41,12 +41,12 @@ export function summarizeCapabilities(raw: unknown): CapabilitySummary | null {
   const c = raw as Record<string, unknown>;
   const advertised: string[] = [];
   const notes: string[] = [];
-  if (c.source === "unavailable") {
-    const reason = typeof c.reason === "string" ? c.reason.slice(0, 160) : "not reported";
+  if (c["source"] === "unavailable") {
+    const reason = typeof c["reason"] === "string" ? c["reason"].slice(0, 160) : "not reported";
     return { advertised, notes, unknown: `Capabilities unknown (${reason})` };
   }
-  if (c.source === "ata_identify_sysfs") {
-    const sec = c.ata_security, san = c.ata_sanitize_feature;
+  if (c["source"] === "ata_identify_sysfs") {
+    const sec = c["ata_security"], san = c["ata_sanitize_feature"];
     if (yes(san, "supported")) {
       const m = ["crypto_scramble", "block_erase", "overwrite"].filter((k) => yes(san, k)).map((k) => k.replace("_", " "));
       advertised.push(`ATA Sanitize${m.length ? ` (${m.join(", ")})` : ""}`);
@@ -55,14 +55,14 @@ export function summarizeCapabilities(raw: unknown): CapabilitySummary | null {
     if (yes(sec, "frozen")) notes.push("Security commands frozen by firmware at boot");
     if (yes(sec, "locked")) notes.push("Drive is password-locked");
     if (yes(sec, "enabled")) notes.push("A drive password is set");
-  } else if (c.source === "nvme_identify_controller") {
-    const fmt = c.nvme_format_nvm, san = c.nvme_sanitize_feature;
+  } else if (c["source"] === "nvme_identify_controller") {
+    const fmt = c["nvme_format_nvm"], san = c["nvme_sanitize_feature"];
     if (yes(san, "supported")) {
       const m = ["crypto_erase", "block_erase", "overwrite"].filter((k) => yes(san, k)).map((k) => k.replace("_", " "));
       advertised.push(`NVMe Sanitize (${m.join(", ")})`);
     }
     if (yes(fmt, "supported")) advertised.push(yes(fmt, "crypto_erase") ? "NVMe Format (user-data erase + crypto erase)" : "NVMe Format (user-data erase)");
-    const n = typeof c.nvme_namespace_count === "number" ? c.nvme_namespace_count : null;
+    const n = typeof c["nvme_namespace_count"] === "number" ? c["nvme_namespace_count"] : null;
     if (n !== null && n > 1) notes.push(`${n} namespaces supported`);
   } else {
     return null;
