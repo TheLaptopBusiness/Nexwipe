@@ -54,7 +54,7 @@ export function StationDiscoveries() {
     <section className="space-y-3" aria-labelledby="disc-h">
       <div>
         <h2 id="disc-h" className="font-display text-lg font-semibold text-foreground">Hardware reported by stations</h2>
-        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure. A station’s sign-in proves which station sent a report, not that the hardware physically exists.</p>
+        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure. A station’s sign-in proves which station sent a report, not that the hardware physically exists. “Drive advertises” lists erase features from the drive’s own identify data; none have been run or tested.</p>
       </div>
       {q.isLoading ? <LoadingBlock /> : (q.data ?? []).length === 0 ? (
         <EmptyState icon={ScanSearch} title="No reports yet" description="When an enrolled station boots a laptop, the laptop and its drives appear here." />
