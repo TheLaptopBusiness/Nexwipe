@@ -54,7 +54,7 @@ export function StationDiscoveries() {
     <section className="space-y-3" aria-labelledby="disc-h">
       <div>
         <h2 id="disc-h" className="font-display text-lg font-semibold text-foreground">Hardware reported by stations</h2>
-        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure. A station’s sign-in proves which station sent a report, not that the hardware physically exists.</p>
+        <p className="text-sm text-muted-foreground">Read-only hardware discovery uploaded by enrolled stations. Reporting hardware never starts an erasure. A station’s sign-in proves which station sent a report, not that the hardware physically exists. “Drive advertises” lists erase features from the drive’s own identify data; none have been run or tested.</p>
       </div>
       {q.isLoading ? <LoadingBlock /> : (q.data ?? []).length === 0 ? (
         <EmptyState icon={ScanSearch} title="No reports yet" description="When an enrolled station boots a laptop, the laptop and its drives appear here." />
@@ -98,11 +98,27 @@ export function StationDiscoveries() {
                 {s.drives.length > 0 && (
                   <ul className="mt-2 grid gap-1 pl-6 text-xs text-muted-foreground sm:grid-cols-2">
                     {s.drives.map((dr, i) => (
-                      <li key={`${dr.serial}-${i}`} className="flex items-center gap-1.5">
-                        <HardDrive className="size-3.5" aria-hidden />
-                        <Mono className="text-foreground">{dr.serial ?? "no serial"}</Mono>
-                        <span>· {dr.model ?? "unknown model"} · {dr.interfaceLabel}{dr.capacity ? ` · ${formatBytes(dr.capacity)}` : ""}</span>
-                        {dr.ignored && <ToneBadge tone="neutral">Station boot medium · not recorded</ToneBadge>}
+                      <li key={`${dr.serial}-${i}`}>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <HardDrive className="size-3.5" aria-hidden />
+                          <Mono className="text-foreground">{dr.serial ?? "no serial"}</Mono>
+                          <span>· {dr.model ?? "unknown model"} · {dr.interfaceLabel}{dr.capacity ? ` · ${formatBytes(dr.capacity)}` : ""}</span>
+                          {dr.ignored && <ToneBadge tone="neutral">Station boot medium · not recorded</ToneBadge>}
+                        </div>
+                        {!dr.ignored && dr.capabilities && (
+                          <p className="mt-0.5 pl-5" aria-label="Drive-advertised erase features">
+                            {dr.capabilities.unknown ?? (
+                              dr.capabilities.advertised.length === 0 ? (
+                                dr.capabilities.notes.join(" · ")
+                              ) : (
+                                <>
+                                  <span className="text-foreground">Drive advertises:</span> {dr.capabilities.advertised.join(" · ")}
+                                  {dr.capabilities.notes.length > 0 && <> · {dr.capabilities.notes.join(" · ")}</>}
+                                </>
+                              )
+                            )}
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>

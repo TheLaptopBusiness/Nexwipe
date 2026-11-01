@@ -27,6 +27,25 @@ export const HeartbeatRequest = z.object({
 
 export const DriveInterface = z.enum(["sata_hdd", "sata_ssd", "nvme_ssd", "unsupported_other"]);
 
+// Erase-related features a drive ADVERTISES in its identify data (read-only discovery).
+// Not evidence that an erase works; unknown values stay absent. Unknown keys are dropped.
+const flagSet = <T extends z.ZodRawShape>(shape: T) => z.object(shape).partial();
+const minutes = z.number().int().min(0).max(65_536).nullable();
+export const DriveCapabilities = z.object({
+  source: z.enum(["ata_identify_sysfs", "nvme_identify_controller", "unavailable"]),
+  reason: shortText(160).optional(),
+  ata_security: flagSet({
+    supported: z.boolean().nullable(), enabled: z.boolean(), locked: z.boolean(), frozen: z.boolean(),
+    enhanced_erase_supported: z.boolean(), normal_erase_minutes: minutes, enhanced_erase_minutes: minutes,
+  }).optional(),
+  ata_sanitize_feature: flagSet({ supported: z.boolean(), crypto_scramble: z.boolean(), overwrite: z.boolean(), block_erase: z.boolean() }).optional(),
+  trim_supported: z.boolean().optional(),
+  nvme_format_nvm: flagSet({ supported: z.boolean(), crypto_erase: z.boolean(), applies_to_all_namespaces: z.boolean(), erase_applies_to_all_namespaces: z.boolean() }).optional(),
+  nvme_sanitize_feature: flagSet({ supported: z.boolean(), crypto_erase: z.boolean(), block_erase: z.boolean(), overwrite: z.boolean() }).optional(),
+  nvme_namespace_count: z.number().int().min(0).max(1_000_000).optional(),
+  nvme_namespace_management: z.boolean().optional(),
+});
+
 export const InventoryRequest = z.object({
   system: z.object({
     manufacturer: shortText(80).optional(),
@@ -47,6 +66,9 @@ export const InventoryRequest = z.object({
       kernel: shortText(120).optional(),
       mode: z.enum(["read_only"]).optional(),
       image_version: shortText(60).optional(),
+      // Station's own declaration; the server still classifies it (undeclared or virtual = synthetic).
+      hardware_source: z.enum(["physical", "virtual", "synthetic"]).optional(),
+      hardware_source_reason: shortText(200).optional(),
     })
     .optional(),
   review_flags: z
@@ -74,7 +96,7 @@ export const InventoryRequest = z.object({
         wwn: shortText(64).optional(),
         nvme_eui64: shortText(64).optional(),
         nvme_nguid: shortText(64).optional(),
-        capabilities: z.record(z.string(), z.unknown()).optional(),
+        capabilities: DriveCapabilities.optional(),
       }),
     )
     .max(16),

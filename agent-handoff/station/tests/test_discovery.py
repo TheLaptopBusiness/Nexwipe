@@ -181,7 +181,10 @@ class Discovery(unittest.TestCase):
             discovery.discover(self.root, fake_run)
         finally:
             builtins.open = real_open
-        self.assertFalse([p for p in opened if p.startswith("/dev/") or "/dev/" in p.replace(self.root, "")])
+        # Only the NVMe controller node (Identify, read-only) may be touched; never a block device.
+        import re as _re
+        devs = [p.replace(self.root, "") for p in opened if p.startswith("/dev/") or "/dev/" in p.replace(self.root, "")]
+        self.assertFalse([p for p in devs if not _re.fullmatch(r"/dev/nvme\d+\.identify", p)])
 
     def test_test_tree_is_declared_synthetic(self):
         build(self.root)

@@ -129,4 +129,9 @@ Expired credentials return 401 `"Agent credential has expired; rotate before exp
   `multiple_nvme_namespaces`, `unsupported_storage`.
 - One discovery record per station + laptop: repeat reports (restarts, reconnects) update it and increment `report_count`
   (returned in the response) instead of creating duplicates.
-- `station.mode: "read_only"` and `station.image_version` identify the build.
+- `station.mode: "read_only"` and `station.image_version` identify the build. `station.hardware_source`
+  (`physical` | `virtual` | `synthetic`) is the station's declaration; before 2026-11-01 the HTTP layer dropped this field, so
+  every report sent over HTTP was classified synthetic. Fixed; it is now part of the validated schema.
+- `drives[].capabilities` (station 0.2.3+): erase features the drive advertises, from ATA IDENTIFY (sysfs, nothing sent to the
+  drive) or one NVMe Identify Controller command. Read-only; never evidence that an erase works. `source: "unavailable"` with a
+  `reason` when unreadable. Station flags: `drive_capabilities_unknown`, `ata_security_frozen`, `ata_security_locked`.
