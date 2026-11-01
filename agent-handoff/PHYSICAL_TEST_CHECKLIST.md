@@ -14,10 +14,11 @@ Use lab-owned laptops only. Leave drives in place as they are; do not use custom
 
 ## 1. What you need
 
-- Image: `nexwipe-station-readonly-0.2.2-readonly-production.img.xz` (station program `nd_station 0.2.2-readonly`).
-  - SHA-256 of the `.img.xz` download: `42dbe011bc7beb31bca24709c378b35604b4d02b3154fe960ddef6c93b20fcab`
-  - SHA-256 of the unpacked `.img`: `a60c7b84ce3f088759cf25aa19f0e2781be180918d0678323d5c6c966ad6cda2`
-  - Both re-computed from the downloadable file on 2026-10-31 and matching `usb-image/CHECKSUMS.txt`. (An earlier copy of this checklist listed the superseded 0.2.0 values; do not use 0.2.0 or 0.2.1 images.)
+- Image: `nexwipe-station-readonly-0.2.3-readonly-production.img.xz` (station program `nd_station 0.2.3-readonly`).
+  - SHA-256 of the `.img.xz` download: `b112f9b4339c8d82a5864effe069f3cf196154222520f3f5f1674d41ed8091f9`
+  - SHA-256 of the unpacked `.img`: `dc0a91d23f2d80a5c4814b2a04be80f89d332601511fc1b4100dd3ae5e55fb5f`
+  - Matching `usb-image/CHECKSUMS.txt`. Do not use 0.2.0–0.2.2 for this test: they do not report drive erase capabilities.
+  - **The NexWipe app must be published with the 2026-11-01 changes first.** Before that, the live server drops the station's "Hardware source" declaration and records every laptop as synthetic test hardware.
 - A dedicated USB stick, 4 GB or larger, physically labelled "NexWipe station #…".
 - Server address: the **published** NexWipe address, `https://…` (the private preview address does not work for stations; plain `http://` is refused by this image).
 - An Ethernet cable on a network with internet access (Wi-Fi is possible with **W**, but test cable first).
@@ -63,6 +64,7 @@ Record for every change: setting name, original value, new value, time. **Restor
 | 1 | Boot | As in section 2 | Station screen within ~60 s; header says READ-ONLY TEST BUILD and the agent version |
 | 2 | Connect and enroll | Cable in. App: Agents & stations → Enrollment token (1 h). Station: **S** (published `https://` address), **E**, type token, give a name | Station shows the name and "mode read_only"; app lists the station as "Read-only test station" |
 | 3 | Compare identifiers | Station screen + app ("Hardware reported by stations") vs firmware screen, case sticker and drive label | Manufacturer, model, system serial, CPU, RAM match; each drive's model, serial, capacity, firmware match. Any "Needs review" flag explained. Station screen shows "Hardware source: PHYSICAL" (record the exact line) |
+| 3b | Drive capabilities | Station screen line "advertises: …" under each INTERNAL drive, and "Drive advertises" in the app | Each internal drive shows what it advertises (e.g. "NVMe Format(crypto) NVMe Sanitize(crypto,block)", "ATA Sanitize(…)", "Security Erase FROZEN") or "unknown (reason)". Record the exact line. Nothing is run; this only reads the drive's identify data. "FROZEN" on SATA laptops is normal at boot — record it, do nothing about it |
 | 4 | Boot USB excluded | Count drives on screen vs physically installed | Each internal drive listed as INTERNAL; the stick listed as "EXCLUDED boot USB"; the app never records the stick as a laptop drive |
 | 5 | Add to inventory | App: Add to inventory, enter asset tag; wait ≤ 1 min | Station uploads again; row shows the asset tag and "Station-reported identity"; laptop + drives in Inventory marked "Station-reported identity". The station screen must show **Hardware source: PHYSICAL**; if it shows VIRTUAL or SYNTHETIC, or the app shows "Synthetic test hardware", stop and record it |
 | 6 | Disconnect / reconnect | Unplug the cable 1 min, plug back | "Network cable not connected", then "Connected"; app's last-seen time updates |
@@ -95,6 +97,8 @@ A failure in step 3 or 4 (wrong identifier, missing internal drive, boot stick r
 | CPU / RAM | | | | |
 | Drive 1: model / serial / capacity / firmware | | | | |
 | Drive 2 (if any) | | | | |
+| Drive 1: advertised erase features (station line) | from vendor spec sheet if known | | | |
+| Drive 2: advertised erase features | | | | |
 
 **Results**
 
