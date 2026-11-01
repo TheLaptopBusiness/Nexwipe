@@ -24,6 +24,18 @@ function ResetPassword() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Accounts with an authenticator app must pass two-step verification before the password can change.
+  const [factorId, setFactorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+    void (async () => {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.nextLevel !== "aal2" || aal.currentLevel === "aal2") { setFactorId(null); return; }
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      setFactorId(factors?.totp.find((f) => f.status === "verified")?.id ?? null);
+    })();
+  }, [ready]);
 
   useEffect(() => {
     const isRecovery = window.location.hash.includes("type=recovery");
@@ -43,6 +55,12 @@ function ResetPassword() {
     const pw = String(f.get("password") ?? "");
     if (pw !== String(f.get("confirm") ?? "")) { toast.error("Passwords do not match"); return; }
     setBusy(true);
+    if (factorId) {
+      const code = String(f.get("code") ?? "").replace(/\s/g, "");
+      const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+      if (mfaError) { setBusy(false); toast.error(errorMessage(mfaError)); return; }
+      setFactorId(null);
+    }
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
     if (error) { toast.error(errorMessage(error)); return; }
@@ -72,6 +90,13 @@ function ResetPassword() {
               <Label htmlFor="confirm">Confirm password</Label>
               <Input id="confirm" name="confirm" type="password" minLength={10} required autoComplete="new-password" />
             </div>
+            {factorId && (
+              <div className="space-y-1.5">
+                <Label htmlFor="code">Authentication code</Label>
+                <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" required minLength={6} maxLength={8} className="font-mono tracking-widest" />
+                <p className="text-xs text-muted-foreground">Your account uses two-step verification. Enter the 6-digit code from your authenticator app.</p>
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={busy}>
               Update password
             </Button>
