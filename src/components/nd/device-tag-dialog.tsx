@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import JsBarcode from "jsbarcode";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, Tag } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { errorMessage } from "@/components/nd/page";
+import { useOrg } from "@/lib/org-context";
+import { can } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LABEL_SIZES, type TagFields } from "@/lib/device-tag";
+import { GRADES, LABEL_SIZES, type TagFields } from "@/lib/device-tag";
 
 const DPI = 300;
 const FONT = "Arial, Helvetica, sans-serif";
@@ -149,5 +154,32 @@ export function DeviceTagDialog({ fields, open, onOpenChange }: { fields: TagFie
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Grade picker + Print tag, shared by the connected-device page and the inventory page. */
+export function GradeAndTag({ deviceId, grade, tag, onSaved }: { deviceId: string; grade: string | null; tag: TagFields | null; onSaved: () => void }) {
+  const { orgId, role } = useOrg();
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  async function setGrade(g: string) {
+    setBusy(true);
+    const { error } = await supabase.from("devices").update({ grade: g }).eq("org_id", orgId).eq("id", deviceId);
+    setBusy(false);
+    if (error) { toast.error(errorMessage(error)); return; }
+    toast.success(`Grade ${g} saved. The change is recorded in the audit history.`);
+    onSaved();
+  }
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <Select value={grade ?? ""} onValueChange={setGrade} disabled={!can(role, "inventory.write") || busy}>
+        <SelectTrigger className="h-8 w-48" aria-label="Grade"><SelectValue placeholder="Grade: not set" /></SelectTrigger>
+        <SelectContent>{GRADES.map((g) => <SelectItem key={g.value} value={g.value}>Grade {g.label}</SelectItem>)}</SelectContent>
+      </Select>
+      {tag && <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Tag /> Print tag</Button>}
+      {tag && <DeviceTagDialog fields={tag} open={open} onOpenChange={setOpen} />}
+    </span>
   );
 }

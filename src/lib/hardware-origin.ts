@@ -8,6 +8,8 @@ export interface HardwareOriginInput {
   hardware_verified: boolean;
   source: string;
   is_simulated?: boolean;
+  /** True when the record was added from a station report (a linked discovery exists). */
+  from_station?: boolean;
 }
 
 export interface HardwareOriginLabel {
@@ -33,8 +35,8 @@ export function hardwareOriginLabel(r: HardwareOriginInput): HardwareOriginLabel
   if (r.hardware_origin === "station_reported" && r.hardware_verified) {
     return { label: "Station-reported identity", tone: "info", explanation: STATION_REPORT_CAVEAT };
   }
-  if (r.source === "agent_reported") {
-    return { label: "Awaiting station re-report", tone: "neutral", explanation: "Added from a station report; the station has not reported it again yet." };
+  if (r.source === "agent_reported" || r.from_station) {
+    return { label: "Needs re-scan", tone: "warning", explanation: "Added from a station report. The station must scan this laptop once more to confirm it: start NexWipe on the laptop (it re-scans automatically) or press Rescan." };
   }
   return {
     label: r.source === "csv_import" ? "CSV · not station-reported" : "Manual · not station-reported",

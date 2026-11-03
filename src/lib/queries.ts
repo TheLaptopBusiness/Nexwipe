@@ -240,6 +240,21 @@ export function useConnectedDevices() {
   });
 }
 
+/** Latest station report linked to an inventory device (null for devices entered by hand). */
+export function useDeviceDiscovery(deviceId: string) {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["device-discovery", orgId, deviceId],
+    retry: (n, err) => !needsDbUpdate(err) && n < 3,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId).eq("device_id", deviceId)
+        .order("last_reported_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useConnectedDevice(discoveryId: string) {
   const { orgId } = useOrg();
   return useQuery({

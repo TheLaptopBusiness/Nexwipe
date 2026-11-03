@@ -21,7 +21,7 @@ import { reviewFlags } from "@/lib/discovery";
 /** Connected devices: one card per laptop reported by a NexWipe stick. Click a card for full details and the barcode. */
 export function StationDiscoveries() {
   const { role } = useOrg();
-  const [target, setTarget] = useState<{ id: string; serial: string } | null>(null);
+  const [target, setTarget] = useState<AddTarget | null>(null);
   const q = useConnectedDevices();
 
   return (
@@ -83,7 +83,7 @@ export function StationDiscoveries() {
                         {d.is_simulated ? <ToneBadge tone="warning">Simulated record</ToneBadge> : d.devices ? <HardwareOriginBadge record={d.devices} /> : null}
                       </span>
                     ) : !d.is_simulated && can(role, "inventory.write") && d.system_serial ? (
-                      <Button size="sm" variant="outline" onClick={() => setTarget({ id: d.id, serial: d.system_serial! })}><Plus /> Add to inventory</Button>
+                      <Button size="sm" variant="outline" disabled={!online} title={online ? undefined : "Start NexWipe on the laptop first: adding re-scans it to confirm."} onClick={() => setTarget({ id: d.id, serial: d.system_serial!, code: d.device_code })}><Plus /> Add to inventory</Button>
                     ) : (
                       <ToneBadge tone="neutral">Not in inventory</ToneBadge>
                     )}
@@ -100,7 +100,9 @@ export function StationDiscoveries() {
 }
 
 /** Add a reported laptop to inventory (create_device_from_discovery). Shared with the device detail page. */
-export function AddToInventoryDialog({ target, onClose }: { target: { id: string; serial: string } | null; onClose: () => void }) {
+export type AddTarget = { id: string; serial: string; code: string };
+
+export function AddToInventoryDialog({ target, onClose }: { target: AddTarget | null; onClose: () => void }) {
   const { orgId } = useOrg();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -113,7 +115,7 @@ export function AddToInventoryDialog({ target, onClose }: { target: { id: string
     const { error } = await supabase.rpc("create_device_from_discovery", { _discovery: target.id, _asset_tag: tag });
     setBusy(false);
     if (error) { toast.error(errorMessage(error)); return; }
-    toast.success("Added to inventory. It is marked station-reported when the station reports again (synthetic test hardware stays marked synthetic).");
+    toast.success("Added to inventory. The laptop is re-scanning to confirm it; press Refresh in a few seconds.");
     onClose();
     qc.invalidateQueries({ queryKey: ["connected-devices", orgId] });
     qc.invalidateQueries({ queryKey: ["connected-device", orgId] });
@@ -125,11 +127,12 @@ export function AddToInventoryDialog({ target, onClose }: { target: { id: string
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add reported laptop to inventory</DialogTitle>
-          <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop and its reported drives are recorded; they are marked station-reported when the station reports them again. Synthetic test hardware stays marked synthetic.</DialogDescription>
+          <DialogDescription>System serial <span className="font-mono">{target?.serial}</span>. The laptop, its drives, RAM and battery health are recorded, and the laptop re-scans straight away to confirm it. Synthetic test hardware stays marked synthetic.</DialogDescription>
         </DialogHeader>
         <form id="disc-add" onSubmit={onAdd} className="space-y-1.5">
           <Label htmlFor="asset_tag">Asset tag *</Label>
-          <Input id="asset_tag" name="asset_tag" required maxLength={64} autoFocus />
+          <Input id="asset_tag" name="asset_tag" required maxLength={64} autoFocus defaultValue={target?.code} key={target?.id} />
+          <p className="text-xs text-muted-foreground">Pre-filled with the NexWipe code on the barcode. Change it if you use your own asset tags.</p>
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>

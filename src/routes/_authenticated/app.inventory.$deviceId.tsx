@@ -7,6 +7,8 @@ import {
   HardDrive,
   History,
   Plus,
+  RefreshCw,
+  RotateCw,
   Unplug,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,7 +37,11 @@ import { HardwareOriginBadge } from "@/components/nd/hardware-origin-badge";
 import { DeviceEvidence, DeviceJobs } from "@/components/nd/device-jobs";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
-import { formatBytes, formatDateTime, memberName, useMembers, useSites } from "@/lib/queries";
+import { formatBytes, formatDateTime, memberName, useDeviceDiscovery, useMembers, useSites } from "@/lib/queries";
+import { deviceSections, isOnline } from "@/lib/connected-device";
+import { tagFields } from "@/lib/device-tag";
+import { SectionCard } from "@/components/nd/connected-device";
+import { GradeAndTag } from "@/components/nd/device-tag-dialog";
 import { manufacturerInScope } from "@/lib/hardware";
 
 export const Route = createFileRoute("/_authenticated/app/inventory/$deviceId")({
@@ -53,7 +59,10 @@ const interfaceLabel = (v: string) => INTERFACES.find((i) => i.value === v)?.lab
 
 function DeviceDetail() {
   const { deviceId } = Route.useParams();
-  const { orgId } = useOrg();
+  const { orgId, role } = useOrg();
+  const qc = useQueryClient();
+  const disc = useDeviceDiscovery(deviceId);
+  const [rescanBusy, setRescanBusy] = useState(false);
 
   const device = useQuery({
     queryKey: ["device", deviceId],
@@ -82,6 +91,23 @@ function DeviceDetail() {
     );
 
   const d = device.data;
+  const r = disc.data ?? null;
+  const online = r?.agents?.status === "active" && isOnline(r?.agents?.last_heartbeat_at);
+  const needsRescan = !!r && !d.is_simulated && d.hardware_origin === "not_station_reported";
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["device", d.id] });
+    qc.invalidateQueries({ queryKey: ["device-discovery", orgId, d.id] });
+  };
+
+  async function rescan() {
+    if (!r) return;
+    setRescanBusy(true);
+    const { error } = await supabase.rpc("request_station_action", { _agent: r.agent_id, _action: "rescan" });
+    setRescanBusy(false);
+    if (error) { toast.error(errorMessage(error)); return; }
+    toast.success("Rescan requested. Press Refresh in a few seconds.");
+  }
+
   return (
     <div className="space-y-5">
       <Link to="/app/inventory" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -94,15 +120,36 @@ function DeviceDetail() {
           <div className="mt-2 flex flex-wrap items-start gap-2">
             <StatusBadge map={DEVICE_STATUS} value={d.status} />
             {d.is_simulated && <SimulatedBadge />}
-            <HardwareOriginBadge record={d} showExplanation />
+            <HardwareOriginBadge record={{ ...d, from_station: !!r }} showExplanation />
             {d.manufacturer && !manufacturerInScope(d.manufacturer) && <ToneBadge tone="warning">Manufacturer outside initial scope</ToneBadge>}
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <GradeAndTag deviceId={d.id} grade={d.grade} tag={r ? tagFields(r.payload, r.device_code, d.grade) : null} onSaved={refresh} />
+          <Button size="sm" variant="ghost" onClick={refresh}><RotateCw /> Refresh</Button>
+        </div>
       </div>
+
+      {needsRescan && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning-soft p-4 text-sm" aria-label="Needs re-scan">
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">Needs re-scan</p>
+            <p className="text-muted-foreground">
+              {online
+                ? "The laptop is connected. Press Rescan so its station confirms this record."
+                : "The laptop is not connected. Start NexWipe on it: it re-scans automatically when it starts, then press Refresh."}
+            </p>
+          </div>
+          {online && can(role, "stations.act") && (
+            <Button size="sm" disabled={rescanBusy} onClick={rescan}><RefreshCw /> Rescan</Button>
+          )}
+        </section>
+      )}
 
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          {r && <TabsTrigger value="hardware">Hardware report</TabsTrigger>}
           <TabsTrigger value="drives">Installed drives</TabsTrigger>
           <TabsTrigger value="jobs">Job history</TabsTrigger>
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
@@ -111,6 +158,15 @@ function DeviceDetail() {
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-5"><Overview device={d} /></TabsContent>
+        {r && (
+          <TabsContent value="hardware" className="mt-5 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Everything the NexWipe stick read from this laptop, last report {formatDateTime(r.last_reported_at)}.{" "}
+              <Link to="/app/connected/$discoveryId" params={{ discoveryId: r.id }} className="underline">Open the station view</Link> for Rescan and the barcode.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">{deviceSections(r.payload).map((s) => <SectionCard key={s.title} section={s} />)}</div>
+          </TabsContent>
+        )}
         <TabsContent value="drives" className="mt-5"><Drives deviceId={d.id} /></TabsContent>
         <TabsContent value="jobs" className="mt-5"><DeviceJobs deviceId={d.id} isSimulated={d.is_simulated} /></TabsContent>
         <TabsContent value="evidence" className="mt-5"><DeviceEvidence deviceId={d.id} /></TabsContent>

@@ -23,4 +23,9 @@ describe("hardware origin labels", () => {
     expect(hardwareOriginLabel({ hardware_origin: "not_station_reported", hardware_verified: false, source: "csv_import" }).label).toBe("CSV · not station-reported");
     expect(hardwareOriginLabel({ hardware_origin: "not_station_reported", hardware_verified: false, source: "manual" }).label).toBe("Manual · not station-reported");
   });
+  it("labels a record added from a station report as needing a re-scan, not manual", () => {
+    const l = hardwareOriginLabel({ hardware_origin: "not_station_reported", hardware_verified: false, source: "manual", from_station: true });
+    expect(l.label).toBe("Needs re-scan");
+    expect(l.tone).toBe("warning");
+  });
 });

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, DatabaseZap, Eraser, FlaskConical, Laptop, Plus, Power, RefreshCw, RotateCw, Tag } from "lucide-react";
+import { AlertTriangle, ArrowLeft, DatabaseZap, Eraser, FlaskConical, Laptop, Plus, Power, RefreshCw, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,15 @@ import {
 import { EmptyState, ErrorBlock, LoadingBlock, Mono, errorMessage } from "@/components/nd/page";
 import { SimulatedBadge, ToneBadge } from "@/components/nd/status-badge";
 import { HardwareOriginBadge } from "@/components/nd/hardware-origin-badge";
-import { DeviceBarcode, OnlineDot } from "@/components/nd/connected-device";
-import { AddToInventoryDialog } from "@/components/nd/station-discoveries";
+import { DeviceBarcode, OnlineDot, SectionCard } from "@/components/nd/connected-device";
+import { AddToInventoryDialog, type AddTarget } from "@/components/nd/station-discoveries";
 import { useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 import { formatDateTime, useConnectedDevice } from "@/lib/queries";
-import { canRebootToUsb, deviceSections, deviceSummary, isOnline, needsDbUpdate, stationContext, type Row, type Section } from "@/lib/connected-device";
+import { canRebootToUsb, deviceSections, deviceSummary, isOnline, needsDbUpdate, stationContext } from "@/lib/connected-device";
 import { reviewFlags } from "@/lib/discovery";
-import { GRADES, tagFields } from "@/lib/device-tag";
-import { DeviceTagDialog } from "@/components/nd/device-tag-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { tagFields } from "@/lib/device-tag";
+import { GradeAndTag } from "@/components/nd/device-tag-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/connected/$discoveryId")({
   component: ConnectedDevicePage,
@@ -41,8 +40,7 @@ function ConnectedDevicePage() {
   const q = useConnectedDevice(discoveryId);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmReboot, setConfirmReboot] = useState(false);
-  const [addTarget, setAddTarget] = useState<{ id: string; serial: string } | null>(null);
-  const [tagOpen, setTagOpen] = useState(false);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
 
   if (q.isLoading) return <LoadingBlock />;
   if (needsDbUpdate(q.error)) return <EmptyState icon={DatabaseZap} title="Waiting for a database update" description="Connected devices need database update 0018, which has not been applied to this database yet. The project owner applies it in Lovable; nothing is wrong with your data." />;
@@ -69,16 +67,6 @@ function ConnectedDevicePage() {
     setConfirmReboot(false);
     if (error) { toast.error(errorMessage(error)); return; }
     toast.success(action === "rescan" ? "Rescan requested. The laptop reports again on its next check-in." : "Reboot requested. The laptop shows a countdown that can be cancelled at the laptop.");
-    qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
-  }
-
-  async function setGrade(grade: string) {
-    if (!d.device_id) return;
-    setBusy("grade");
-    const { error } = await supabase.from("devices").update({ grade }).eq("org_id", orgId).eq("id", d.device_id);
-    setBusy(null);
-    if (error) { toast.error(errorMessage(error)); return; }
-    toast.success(`Grade ${grade} saved. The change is recorded in the audit history.`);
     qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
   }
 
@@ -132,14 +120,14 @@ function ConnectedDevicePage() {
               <span className="inline-flex items-center gap-2 text-sm">
                 In inventory as <Link to="/app/inventory/$deviceId" params={{ deviceId: d.device_id }} className="font-mono hover:underline">{d.devices?.asset_tag}</Link>
                 {d.devices && <HardwareOriginBadge record={d.devices} />}
-                <Select value={d.devices?.grade ?? ""} onValueChange={setGrade} disabled={!can(role, "inventory.write") || busy !== null}>
-                  <SelectTrigger className="h-8 w-44" aria-label="Grade"><SelectValue placeholder="Grade: not set" /></SelectTrigger>
-                  <SelectContent>{GRADES.map((g) => <SelectItem key={g.value} value={g.value}>Grade {g.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" onClick={() => setTagOpen(true)}><Tag /> Print tag</Button>
+                <GradeAndTag deviceId={d.device_id} grade={d.devices?.grade ?? null} tag={tagFields(d.payload, d.device_code, d.devices?.grade ?? null)}
+                  onSaved={() => { qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] }); qc.invalidateQueries({ queryKey: ["device", d.device_id] }); }} />
               </span>
             ) : !d.is_simulated && can(role, "inventory.write") && d.system_serial ? (
-              <Button size="sm" onClick={() => setAddTarget({ id: d.id, serial: d.system_serial! })}><Plus /> Add to inventory</Button>
+              <span className="inline-flex flex-col items-end gap-1">
+                <Button size="sm" disabled={!online} onClick={() => setAddTarget({ id: d.id, serial: d.system_serial!, code: d.device_code })}><Plus /> Add to inventory</Button>
+                {!online && <span className="text-xs text-muted-foreground">Start NexWipe on the laptop first: adding re-scans it to confirm.</span>}
+              </span>
             ) : (
               <ToneBadge tone="neutral">Not in inventory</ToneBadge>
             )}
@@ -191,40 +179,7 @@ function ConnectedDevicePage() {
         </AlertDialogContent>
       </AlertDialog>
       <AddToInventoryDialog target={addTarget} onClose={() => setAddTarget(null)} />
-      {d.device_id && <DeviceTagDialog fields={tagFields(d.payload, d.device_code, d.devices?.grade ?? null)} open={tagOpen} onOpenChange={setTagOpen} />}
     </div>
   );
 }
 
-function Rows({ rows }: { rows: Row[] }) {
-  return (
-    <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-3 gap-y-1 text-sm">
-      {rows.map((r) => (
-        <div key={r.label} className="contents">
-          <dt className="text-muted-foreground">{r.label}</dt>
-          <dd className="break-words text-foreground">{r.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function SectionCard({ section }: { section: Section }) {
-  const items = section.items ?? [];
-  const empty = section.rows.length === 0 && items.every((i) => i.length === 0);
-  return (
-    <section className="space-y-3 rounded-lg border border-border bg-card p-4 shadow-card">
-      <h2 className="font-medium text-foreground">{section.title}</h2>
-      {empty ? (
-        <p className="text-sm text-muted-foreground">{section.empty ?? "Not reported"}</p>
-      ) : (
-        <>
-          {section.rows.length > 0 && <Rows rows={section.rows} />}
-          {items.filter((i) => i.length > 0).map((item, i) => (
-            <div key={i} className="border-t border-border pt-2"><Rows rows={item} /></div>
-          ))}
-        </>
-      )}
-    </section>
-  );
-}
