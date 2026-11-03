@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { errorMessage } from "@/components/nd/page";
 import { useOrg } from "@/lib/org-context";
+import { zipFiles } from "@/lib/zip";
 import helperPs1 from "../../../agent-handoff/windows-helper/nexwipe.ps1?raw";
 import helperCmd from "../../../agent-handoff/windows-helper/Start NexWipe.cmd?raw";
 
@@ -19,11 +20,13 @@ const crlf = (s: string) => s.replace(/\r?\n/g, "\r\n");
 type DirHandle = { getFileHandle(n: string, o: { create: boolean }): Promise<{ createWritable(): Promise<{ write(d: string): Promise<void>; close(): Promise<void> }> }> };
 type PickerWindow = Window & { showDirectoryPicker?: (o: { mode: "readwrite" }) => Promise<DirHandle> };
 
-/** Writes onto the folder the technician picks (Chrome/Edge). Returns false when the browser cannot. */
+// Chrome/Edge only, and not inside an embedded frame (e.g. an editor preview), where browsers block it.
+const canPickFolder = () => typeof window !== "undefined" && !!(window as PickerWindow).showDirectoryPicker && window.self === window.top;
+
+/** Writes onto the folder the technician picks. Returns false when the browser cannot. */
 async function writeToFolder(files: StickFile[]): Promise<boolean> {
-  const picker = (window as PickerWindow).showDirectoryPicker;
-  if (!picker) return false;
-  const dir = await picker({ mode: "readwrite" }); // AbortError when cancelled: caller handles
+  if (!canPickFolder()) return false;
+  const dir = await (window as PickerWindow).showDirectoryPicker!({ mode: "readwrite" }); // AbortError when cancelled: caller handles
   for (const f of files) {
     const w = await (await dir.getFileHandle(f.name, { create: true })).createWritable();
     await w.write(f.text);
@@ -32,14 +35,13 @@ async function writeToFolder(files: StickFile[]): Promise<boolean> {
   return true;
 }
 
+// One zip, because browsers silently drop all but one of several downloads started together.
 function download(files: StickFile[]) {
-  for (const f of files) {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([f.text], { type: "application/octet-stream" }));
-    a.download = f.name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
-  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([zipFiles(files)], { type: "application/zip" }));
+  a.download = "NexWipe USB stick.zip";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
 export function PrepareUsbStick({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -86,7 +88,7 @@ export function PrepareUsbStick({ open, onOpenChange }: { open: boolean; onOpenC
       toast.error(`Could not write there (${errorMessage(err)}). Downloading the files instead.`);
     }
     download(files);
-    setDone("Downloaded. Copy all three files to the top folder of the USB stick.");
+    setDone("Downloaded \u201cNexWipe USB stick.zip\u201d. Open it and copy the three files inside to the top folder of the USB stick.");
   }
 
   return (
@@ -112,7 +114,11 @@ export function PrepareUsbStick({ open, onOpenChange }: { open: boolean; onOpenC
           </form>
         ) : (
           <div className="space-y-3 text-sm">
-            <p>Plug in the USB stick, then choose its top folder (for example <b>E:\</b>). Chrome and Edge write the three files straight onto it; other browsers download them for you to copy.</p>
+            {canPickFolder() ? (
+              <p>Plug in the USB stick, then choose its top folder (for example <b>E:\</b>). The three files are written straight onto it.</p>
+            ) : (
+              <p>This browser cannot write to a USB stick directly{typeof window !== "undefined" && window.self !== window.top ? " inside this preview" : ""}, so you get one zip file. Open it and copy the three files to the top folder of the USB stick. (Chrome or Edge in a normal tab can write to the stick directly.)</p>
+            )}
             <ul className="list-disc pl-5 text-muted-foreground">{files.map((f) => <li key={f.name} className="font-mono text-xs">{f.name}</li>)}</ul>
             {done && <p className="text-success">{done}</p>}
             <p className="text-xs text-warning">The token inside works once and was not shown anywhere else. If writing fails, close this and prepare the stick again.</p>
@@ -122,7 +128,7 @@ export function PrepareUsbStick({ open, onOpenChange }: { open: boolean; onOpenC
           {!files ? (
             <><Button variant="outline" onClick={() => close(false)}>Cancel</Button><Button type="submit" form="prepare-stick" disabled={busy}>Create files</Button></>
           ) : (
-            <><Button variant="outline" onClick={onWrite}>{done ? "Write again" : "Choose USB stick…"}</Button><Button onClick={() => close(false)}>Done</Button></>
+            <><Button variant="outline" onClick={onWrite}>{done ? (canPickFolder() ? "Write again" : "Download again") : canPickFolder() ? "Choose USB stick…" : "Download zip"}</Button><Button onClick={() => close(false)}>Done</Button></>
           )}
         </DialogFooter>
       </DialogContent>
