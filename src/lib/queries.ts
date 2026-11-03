@@ -224,7 +224,7 @@ export function useChromebookEvents(recordId: string) {
 // ----- Connected devices (station reports) -----
 
 const CONNECTED_COLUMNS =
-  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at), devices(asset_tag, hardware_verified, hardware_origin, source)";
+  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at), devices(asset_tag, grade, hardware_verified, hardware_origin, source)";
 
 export function useConnectedDevices() {
   const { orgId } = useOrg();

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, DatabaseZap, Eraser, FlaskConical, Laptop, Plus, Power, RefreshCw, RotateCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, DatabaseZap, Eraser, FlaskConical, Laptop, Plus, Power, RefreshCw, RotateCw, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import { can } from "@/lib/permissions";
 import { formatDateTime, useConnectedDevice } from "@/lib/queries";
 import { canRebootToUsb, deviceSections, deviceSummary, isOnline, needsDbUpdate, stationContext, type Row, type Section } from "@/lib/connected-device";
 import { reviewFlags } from "@/lib/discovery";
+import { GRADES, tagFields } from "@/lib/device-tag";
+import { DeviceTagDialog } from "@/components/nd/device-tag-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/app/connected/$discoveryId")({
   component: ConnectedDevicePage,
@@ -39,6 +42,7 @@ function ConnectedDevicePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmReboot, setConfirmReboot] = useState(false);
   const [addTarget, setAddTarget] = useState<{ id: string; serial: string } | null>(null);
+  const [tagOpen, setTagOpen] = useState(false);
 
   if (q.isLoading) return <LoadingBlock />;
   if (needsDbUpdate(q.error)) return <EmptyState icon={DatabaseZap} title="Waiting for a database update" description="Connected devices need database update 0018, which has not been applied to this database yet. The project owner applies it in Lovable; nothing is wrong with your data." />;
@@ -65,6 +69,16 @@ function ConnectedDevicePage() {
     setConfirmReboot(false);
     if (error) { toast.error(errorMessage(error)); return; }
     toast.success(action === "rescan" ? "Rescan requested. The laptop reports again on its next check-in." : "Reboot requested. The laptop shows a countdown that can be cancelled at the laptop.");
+    qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
+  }
+
+  async function setGrade(grade: string) {
+    if (!d.device_id) return;
+    setBusy("grade");
+    const { error } = await supabase.from("devices").update({ grade }).eq("org_id", orgId).eq("id", d.device_id);
+    setBusy(null);
+    if (error) { toast.error(errorMessage(error)); return; }
+    toast.success(`Grade ${grade} saved. The change is recorded in the audit history.`);
     qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
   }
 
@@ -118,6 +132,11 @@ function ConnectedDevicePage() {
               <span className="inline-flex items-center gap-2 text-sm">
                 In inventory as <Link to="/app/inventory/$deviceId" params={{ deviceId: d.device_id }} className="font-mono hover:underline">{d.devices?.asset_tag}</Link>
                 {d.devices && <HardwareOriginBadge record={d.devices} />}
+                <Select value={d.devices?.grade ?? ""} onValueChange={setGrade} disabled={!can(role, "inventory.write") || busy !== null}>
+                  <SelectTrigger className="h-8 w-44" aria-label="Grade"><SelectValue placeholder="Grade: not set" /></SelectTrigger>
+                  <SelectContent>{GRADES.map((g) => <SelectItem key={g.value} value={g.value}>Grade {g.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={() => setTagOpen(true)}><Tag /> Print tag</Button>
               </span>
             ) : !d.is_simulated && can(role, "inventory.write") && d.system_serial ? (
               <Button size="sm" onClick={() => setAddTarget({ id: d.id, serial: d.system_serial! })}><Plus /> Add to inventory</Button>
@@ -172,6 +191,7 @@ function ConnectedDevicePage() {
         </AlertDialogContent>
       </AlertDialog>
       <AddToInventoryDialog target={addTarget} onClose={() => setAddTarget(null)} />
+      {d.device_id && <DeviceTagDialog fields={tagFields(d.payload, d.device_code, d.devices?.grade ?? null)} open={tagOpen} onOpenChange={setTagOpen} />}
     </div>
   );
 }

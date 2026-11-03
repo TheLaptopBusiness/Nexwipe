@@ -141,6 +141,13 @@
       "when": 1793677911323,
       "tag": "0019_connected_devices_and_station_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793691931526,
+      "tag": "0020_device_grade",
+      "breakpoints": true
     }
   ]
 }
