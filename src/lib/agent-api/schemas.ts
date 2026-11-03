@@ -11,6 +11,7 @@ const idem = z.string().min(8).max(128).regex(/^[A-Za-z0-9._:-]+$/, "idempotency
 const seq = z.number().int().min(1).max(1_000_000);
 const occurredAt = z.string().datetime({ offset: true }).optional();
 const shortText = (max: number) => z.string().trim().max(max);
+const count = z.number().int().min(0).max(10_000_000);
 
 export const EnrollRequest = z.object({
   enrollment_token: z.string().min(10).max(200),
@@ -58,7 +59,32 @@ export const InventoryRequest = z.object({
     bios_version: shortText(80).optional(),
     boot_mode: z.enum(["uefi", "legacy", "unknown"]).optional(),
     secure_boot: z.boolean().optional(),
+    uuid: shortText(64).optional(),
+    asset_tag: shortText(120).optional(),
+    chassis: shortText(60).optional(),
+    cpu_cores: count.optional(),
+    cpu_threads: count.optional(),
+    bios_vendor: shortText(80).optional(),
+    bios_date: shortText(40).optional(),
+    board: shortText(120).optional(),
   }),
+  // Further detail shown on the Connected devices page. All optional, read-only identity data.
+  os: z.object({ name: shortText(120).optional(), version: shortText(60).optional(), build: shortText(60).optional(), architecture: shortText(40).optional() }).optional(),
+  memory_modules: z.array(z.object({
+    slot: shortText(60).optional(), size_bytes: z.number().int().nonnegative().optional(), speed_mhz: count.optional(),
+    type: shortText(40).optional(), manufacturer: shortText(80).optional(), part_number: shortText(80).optional(), serial: shortText(80).optional(),
+  })).max(32).optional(),
+  batteries: z.array(z.object({
+    name: shortText(80).optional(), manufacturer: shortText(80).optional(), serial: shortText(80).optional(), chemistry: shortText(40).optional(),
+    design_capacity_mwh: count.optional(), full_charge_capacity_mwh: count.optional(), cycle_count: count.optional(),
+    health_pct: z.number().min(0).max(200).optional(), status: shortText(40).optional(),
+  })).max(4).optional(),
+  gpus: z.array(z.object({ name: shortText(120).optional(), driver_version: shortText(60).optional(), vram_bytes: z.number().int().nonnegative().optional() })).max(8).optional(),
+  network_adapters: z.array(z.object({ name: shortText(120).optional(), mac: shortText(40).optional(), kind: z.enum(["wifi", "ethernet", "bluetooth", "other"]).optional() })).max(16).optional(),
+  security: z.object({
+    tpm_present: z.boolean().optional(), tpm_version: shortText(40).optional(),
+    bitlocker: z.array(z.object({ volume: shortText(20).optional(), protection: z.enum(["on", "off", "unknown"]).optional() })).max(16).optional(),
+  }).optional(),
   station: z
     .object({
       agent_version: shortText(40).optional(),
@@ -152,6 +178,13 @@ export const ResultRequest = z.object({
   sample_pct: z.number().int().min(1).max(100).optional(),
   detail: z.record(z.string(), z.unknown()).optional(),
   occurred_at: occurredAt,
+});
+
+// Result of a station action the heartbeat delivered (only Reboot into NexWipe reports one).
+export const ActionResultRequest = z.object({
+  action: z.enum(["reboot_to_usb"]),
+  ok: z.boolean(),
+  detail: shortText(300).optional(),
 });
 
 export const ReconcileRequest = z.object({

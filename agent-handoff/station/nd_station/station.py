@@ -176,8 +176,8 @@ class Station:
                 self.v.credential_expires_at = hb.get("credential_expires_at")
                 self.v.error = ""
             if hb.get("inventory_requested"):
-                self.note("Server asked for a fresh hardware report.")
-                self._want_inventory = True
+                self.note("Server asked for a fresh hardware report (Rescan).")
+                self.rescan()  # re-read the hardware, not just re-send the last snapshot
             if hb.get("rotate_recommended"):
                 rot = self.api.rotate()
                 how = state.save_credential(rot["credential"], self._binding)

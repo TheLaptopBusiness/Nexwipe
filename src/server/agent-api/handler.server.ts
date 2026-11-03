@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   AGENT_API_VERSION,
   AckRequest,
+  ActionResultRequest,
   EnrollRequest,
   EventRequest,
   EvidenceRequest,
@@ -173,6 +174,10 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
     if (method === "POST" && parts.length === 1 && parts[0] === "inventory") {
       const body = await readBody(request, InventoryRequest);
       return json(200, await rpc("agent_report_inventory", { _agent: a, _payload: body }));
+    }
+    if (method === "POST" && parts.length === 2 && parts[0] === "actions" && parts[1] === "result") {
+      const body = await readBody(request, ActionResultRequest);
+      return json(200, await rpc("agent_report_action", { _agent: a, _action: body.action, _ok: body.ok, _detail: body.detail ?? null }));
     }
     if (method === "GET" && parts.length === 1 && parts[0] === "jobs") {
       return json(200, { jobs: await rpc("agent_list_jobs", { _agent: a }) });

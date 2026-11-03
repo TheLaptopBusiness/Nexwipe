@@ -127,6 +127,13 @@
       "when": 1793487627248,
       "tag": "0017_public_signup_org_creation_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793600692804,
+      "tag": "0018_connected_devices_and_station_actions",
+      "breakpoints": true
     }
   ]
 }

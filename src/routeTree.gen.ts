@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppChromebooksIndexRouteImport } from './routes/_authenticated/app.chromebooks.index'
 import { Route as AuthenticatedAppChromebooksRecordIdRouteImport } from './routes/_authenticated/app.chromebooks.$recordId'
 import { Route as AuthenticatedAppChromebooksResearchRouteImport } from './routes/_authenticated/app.chromebooks.research'
+import { Route as AuthenticatedAppConnectedDiscoveryIdRouteImport } from './routes/_authenticated/app.connected.$discoveryId'
 import { Route as AuthenticatedAppInventoryIndexRouteImport } from './routes/_authenticated/app.inventory.index'
 import { Route as AuthenticatedAppInventoryDeviceIdRouteImport } from './routes/_authenticated/app.inventory.$deviceId'
 import { Route as AuthenticatedAppJobsIndexRouteImport } from './routes/_authenticated/app.jobs.index'
@@ -210,6 +211,12 @@ const AuthenticatedAppChromebooksResearchRoute =
     path: '/chromebooks/research',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppConnectedDiscoveryIdRoute =
+  AuthenticatedAppConnectedDiscoveryIdRouteImport.update({
+    id: '/connected/$discoveryId',
+    path: '/connected/$discoveryId',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppInventoryIndexRoute =
   AuthenticatedAppInventoryIndexRouteImport.update({
     id: '/inventory/',
@@ -294,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/chromebooks/$recordId': typeof AuthenticatedAppChromebooksRecordIdRoute
   '/app/chromebooks/research': typeof AuthenticatedAppChromebooksResearchRoute
+  '/app/connected/$discoveryId': typeof AuthenticatedAppConnectedDiscoveryIdRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
@@ -334,6 +342,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/chromebooks/$recordId': typeof AuthenticatedAppChromebooksRecordIdRoute
   '/app/chromebooks/research': typeof AuthenticatedAppChromebooksResearchRoute
+  '/app/connected/$discoveryId': typeof AuthenticatedAppConnectedDiscoveryIdRoute
   '/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
@@ -377,6 +386,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/chromebooks/$recordId': typeof AuthenticatedAppChromebooksRecordIdRoute
   '/_authenticated/app/chromebooks/research': typeof AuthenticatedAppChromebooksResearchRoute
+  '/_authenticated/app/connected/$discoveryId': typeof AuthenticatedAppConnectedDiscoveryIdRoute
   '/_authenticated/app/inventory/$deviceId': typeof AuthenticatedAppInventoryDeviceIdRoute
   '/_authenticated/app/jobs/$jobId': typeof AuthenticatedAppJobsJobIdRoute
   '/_authenticated/app/policies/$policyId': typeof AuthenticatedAppPoliciesPolicyIdRoute
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/chromebooks/$recordId'
     | '/app/chromebooks/research'
+    | '/app/connected/$discoveryId'
     | '/app/inventory/$deviceId'
     | '/app/jobs/$jobId'
     | '/app/policies/$policyId'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/chromebooks/$recordId'
     | '/app/chromebooks/research'
+    | '/app/connected/$discoveryId'
     | '/app/inventory/$deviceId'
     | '/app/jobs/$jobId'
     | '/app/policies/$policyId'
@@ -502,6 +514,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/chromebooks/$recordId'
     | '/_authenticated/app/chromebooks/research'
+    | '/_authenticated/app/connected/$discoveryId'
     | '/_authenticated/app/inventory/$deviceId'
     | '/_authenticated/app/jobs/$jobId'
     | '/_authenticated/app/policies/$policyId'
@@ -752,6 +765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppChromebooksResearchRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/connected/$discoveryId': {
+      id: '/_authenticated/app/connected/$discoveryId'
+      path: '/connected/$discoveryId'
+      fullPath: '/app/connected/$discoveryId'
+      preLoaderRoute: typeof AuthenticatedAppConnectedDiscoveryIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/inventory/': {
       id: '/_authenticated/app/inventory/'
       path: '/inventory'
@@ -832,6 +852,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppChromebooksRecordIdRoute: typeof AuthenticatedAppChromebooksRecordIdRoute
   AuthenticatedAppChromebooksResearchRoute: typeof AuthenticatedAppChromebooksResearchRoute
+  AuthenticatedAppConnectedDiscoveryIdRoute: typeof AuthenticatedAppConnectedDiscoveryIdRoute
   AuthenticatedAppInventoryDeviceIdRoute: typeof AuthenticatedAppInventoryDeviceIdRoute
   AuthenticatedAppJobsJobIdRoute: typeof AuthenticatedAppJobsJobIdRoute
   AuthenticatedAppPoliciesPolicyIdRoute: typeof AuthenticatedAppPoliciesPolicyIdRoute
@@ -859,6 +880,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
     AuthenticatedAppChromebooksRecordIdRoute,
   AuthenticatedAppChromebooksResearchRoute:
     AuthenticatedAppChromebooksResearchRoute,
+  AuthenticatedAppConnectedDiscoveryIdRoute:
+    AuthenticatedAppConnectedDiscoveryIdRoute,
   AuthenticatedAppInventoryDeviceIdRoute:
     AuthenticatedAppInventoryDeviceIdRoute,
   AuthenticatedAppJobsJobIdRoute: AuthenticatedAppJobsJobIdRoute,

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/lib/org-context";
+import { needsDbUpdate } from "@/lib/connected-device";
 
 // All reads pass the current org as a filter for UX only. Row-level security is
 // what actually restricts results to organizations the user belongs to.
@@ -214,6 +215,38 @@ export function useChromebookEvents(recordId: string) {
         .eq("org_id", orgId)
         .eq("record_id", recordId)
         .order("id", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ----- Connected devices (station reports) -----
+
+const CONNECTED_COLUMNS =
+  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at), devices(asset_tag, hardware_verified, hardware_origin, source)";
+
+export function useConnectedDevices() {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["connected-devices", orgId],
+    retry: (n, err) => !needsDbUpdate(err) && n < 3,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId)
+        .order("last_reported_at", { ascending: false }).limit(100);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useConnectedDevice(discoveryId: string) {
+  const { orgId } = useOrg();
+  return useQuery({
+    queryKey: ["connected-device", orgId, discoveryId],
+    retry: (n, err) => !needsDbUpdate(err) && n < 3,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId).eq("id", discoveryId).maybeSingle();
       if (error) throw error;
       return data;
     },

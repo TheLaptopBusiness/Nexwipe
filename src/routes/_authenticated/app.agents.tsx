@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Copy, KeyRound, Plus, Server, ShieldOff } from "lucide-react";
+import { Copy, KeyRound, Plus, RotateCw, Server, ShieldOff, Usb } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { can } from "@/lib/permissions";
 import { formatDateTime, useAgents } from "@/lib/queries";
 import { heartbeatState, relativeTime } from "@/lib/jobs";
 import { StationDiscoveries } from "@/components/nd/station-discoveries";
+import { PrepareUsbStick } from "@/components/nd/prepare-usb-stick";
 
 export const Route = createFileRoute("/_authenticated/app/agents")({
   head: () => ({ meta: [{ title: "Agents & stations · NexWipe" }] }),
@@ -26,7 +27,7 @@ const HB_TONE = { online: "success", stale: "warning", offline: "danger", never:
 function AgentsPage() {
   const { orgId, role } = useOrg();
   const qc = useQueryClient();
-  const agents = useAgents({ refetchMs: 10_000 });
+  const agents = useAgents();
   const canManage = can(role, "agents.manage");
   const tokens = useQuery({
     queryKey: ["enrollment-tokens", orgId],
@@ -41,6 +42,7 @@ function AgentsPage() {
   const [token, setToken] = useState<string | null>(null);
   const [revoke, setRevoke] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [stickOpen, setStickOpen] = useState(false);
 
   async function onCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -67,7 +69,7 @@ function AgentsPage() {
       <PageHeader
         title="Agents & stations"
         description="Each station enrolls once with a single-use token and receives its own credential. Physical stations enrolled today are read-only test stations: they report hardware but can never be authorized to run erasure jobs. The erasure agent itself is a separate deliverable and is not built yet."
-        actions={canManage && <Button onClick={() => { setToken(null); setOpen(true); }}><Plus /> Enrollment token</Button>}
+        actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => { qc.invalidateQueries({ queryKey: ["agents", orgId] }); qc.invalidateQueries({ queryKey: ["connected-devices", orgId] }); }}><RotateCw /> Refresh</Button>{canManage && <><Button variant="outline" onClick={() => setStickOpen(true)}><Usb /> Prepare USB stick</Button><Button onClick={() => { setToken(null); setOpen(true); }}><Plus /> Enrollment token</Button></>}</div>}
       />
       {agents.isLoading ? <LoadingBlock /> : agents.error ? <ErrorBlock error={agents.error} /> : agents.data!.length === 0 ? (
         <EmptyState icon={Server} title="No agents enrolled" description="Create an enrollment token for a station, or run the agent simulator." />
@@ -132,6 +134,7 @@ function AgentsPage() {
       )}
 
       <StationDiscoveries />
+      {canManage && <PrepareUsbStick open={stickOpen} onOpenChange={setStickOpen} />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

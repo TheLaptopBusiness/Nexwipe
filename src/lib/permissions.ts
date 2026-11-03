@@ -37,6 +37,7 @@ export type Capability =
   | "jobs.operate"
   | "agents.view"
   | "agents.manage"
+  | "stations.act"
   | "simulator.run"
   | "chromebooks.view"
   | "chromebooks.operate"
@@ -59,6 +60,8 @@ const MATRIX: Record<Capability, OrgRole[]> = {
   "jobs.operate": ["owner", "admin", "technician"],
   "agents.view": ["owner", "admin", "technician", "auditor"],
   "agents.manage": ["owner", "admin"],
+  // Mirrors request_station_action: Rescan / Reboot into NexWipe. Auditors only watch.
+  "stations.act": ["owner", "admin", "technician"],
   "simulator.run": ["owner", "admin", "technician"],
   // Mirrors chromebook_* RPCs: technicians run the workflow; reset authorization and release need owner/admin.
   "chromebooks.view": ["owner", "admin", "technician", "auditor"],

@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           agent_id: string
           device_id: string | null
+          device_code: string
           hardware_origin: string
           hardware_origin_reason: string | null
           id: string
@@ -83,6 +84,7 @@ export type Database = {
         Insert: {
           agent_id: string
           device_id?: string | null
+          device_code?: string
           hardware_origin?: string
           hardware_origin_reason?: string | null
           id?: string
@@ -100,6 +102,7 @@ export type Database = {
         Update: {
           agent_id?: string
           device_id?: string | null
+          device_code?: string
           hardware_origin?: string
           hardware_origin_reason?: string | null
           id?: string
@@ -173,6 +176,11 @@ export type Database = {
           org_id: string
           platform: string | null
           read_only: boolean
+          reboot_detail: string | null
+          reboot_requested_at: string | null
+          reboot_requested_by: string | null
+          reboot_status: string | null
+          reboot_status_at: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -195,6 +203,11 @@ export type Database = {
           org_id: string
           platform?: string | null
           read_only?: boolean
+          reboot_detail?: string | null
+          reboot_requested_at?: string | null
+          reboot_requested_by?: string | null
+          reboot_status?: string | null
+          reboot_status_at?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -217,6 +230,11 @@ export type Database = {
           org_id?: string
           platform?: string | null
           read_only?: boolean
+          reboot_detail?: string | null
+          reboot_requested_at?: string | null
+          reboot_requested_by?: string | null
+          reboot_status?: string | null
+          reboot_status_at?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -2187,6 +2205,10 @@ export type Database = {
       chromebook_update_identity: {
         Args: { _fields: Json; _record: string }
         Returns: undefined
+      }
+      request_station_action: {
+        Args: { _action: string; _agent: string }
+        Returns: Json
       }
       create_device_from_discovery: {
         Args: { _asset_tag: string; _discovery: string }
