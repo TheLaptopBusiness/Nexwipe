@@ -38,3 +38,4 @@
 - Public sign-up continues setup via `src/lib/landing-hash.ts` (fragment captured before the auth client consumes it), because verification links may land on the site root instead of `/auth/callback`. Company creation limits and email-verified checks live in `create_organization`, not the UI.
 - Production app addresses live in `src/lib/app-origins.ts`; server-built links (invitation emails) may only use an origin it allows, because the request Origin header is attacker-controlled.
 - The dashboard's "What you can use today" panel (`src/components/nd/availability-panel.tsx`) must match `docs/STATUS.md`; never list simulated or unbuilt work as available.
+- Every route sets `staticData.sitemap` (`src/lib/sitemap.ts` + `src/routes/sitemap[.]xml.ts`); only public marketing pages are `true` and `_authenticated` is `"exclude-subtree"`, so private app pages never reach search engines.
