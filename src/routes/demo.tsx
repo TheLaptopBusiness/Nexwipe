@@ -101,7 +101,7 @@ function DemoPage() {
                 <Label htmlFor="message">Anything else?</Label>
                 <Textarea id="message" name="message" rows={4} maxLength={2000} />
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <Button type="submit" className="w-full" loading={busy}>
                 {busy ? "Sending…" : "Book a Demo"}
               </Button>
             </form>

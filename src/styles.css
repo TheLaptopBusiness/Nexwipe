@@ -212,3 +212,12 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Top activity bar (src/components/nd/activity-bar.tsx). */
+@keyframes nd-activity {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[nd-activity_1\.1s_ease-in-out_infinite\] { animation: none; width: 100%; opacity: 0.6; }
+}

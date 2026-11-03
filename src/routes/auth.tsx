@@ -198,7 +198,7 @@ function AuthPage() {
                     )}
                   </>
                 )}
-                <Button type="submit" className="w-full" disabled={busy}>
+                <Button type="submit" className="w-full" loading={busy}>
                   {mode === "signin" && "Sign in"}
                   {mode === "forgot" && "Send reset link"}
                   {mode === "mfa" && (

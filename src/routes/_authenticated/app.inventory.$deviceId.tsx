@@ -309,7 +309,7 @@ function Overview({ device: d }: { device: DeviceRow }) {
       <div className="space-y-1.5"><Label htmlFor="notes">Notes</Label><Textarea id="notes" name="notes" rows={3} defaultValue={d.notes ?? ""} /></div>
       <p className="text-xs text-muted-foreground">Status, site and technician changes are recorded on the custody timeline automatically.</p>
       <div className="flex gap-2">
-        <Button type="submit" disabled={busy}>Save changes</Button>
+        <Button type="submit" loading={busy}>Save changes</Button>
         <Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
       </div>
     </form>
@@ -473,7 +473,7 @@ function Drives({ deviceId }: { deviceId: string }) {
           </form>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
-            <Button type="submit" form="attach-drive" disabled={busy}>Attach drive</Button>
+            <Button type="submit" form="attach-drive" loading={busy}>Attach drive</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -525,7 +525,7 @@ function Diagnostics({ device: d }: { device: DeviceRow }) {
         <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="battery_notes">Battery notes</Label><Input id="battery_notes" name="battery_notes" defaultValue={d.battery_notes ?? ""} disabled={!canWrite} /></div>
       </div>
       <div className="space-y-1.5"><Label htmlFor="diagnostic_notes">Diagnostic observations</Label><Textarea id="diagnostic_notes" name="diagnostic_notes" rows={4} defaultValue={d.diagnostic_notes ?? ""} disabled={!canWrite} /></div>
-      {canWrite && <Button type="submit" disabled={busy}>Save diagnostics</Button>}
+      {canWrite && <Button type="submit" loading={busy}>Save diagnostics</Button>}
     </form>
   );
 }

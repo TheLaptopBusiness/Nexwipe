@@ -113,7 +113,7 @@ function ClientDialog({ client, onClose }: { client: Client | null; onClose: () 
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="client-form" disabled={busy}>{client ? "Save" : "Add client"}</Button>
+          <Button type="submit" form="client-form" loading={busy}>{client ? "Save" : "Add client"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

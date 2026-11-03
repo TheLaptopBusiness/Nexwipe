@@ -48,6 +48,7 @@ import { can, isPrivileged, ROLE_LABELS, type Capability } from "@/lib/permissio
 import { cn } from "@/lib/utils";
 import { MfaGate } from "@/components/nd/mfa-gate";
 import { PendingInvitations } from "@/components/nd/pending-invitations";
+import { ActivityBar } from "@/components/nd/activity-bar";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -300,6 +301,7 @@ function Shell() {
         </SheetContent>
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
+        <ActivityBar />
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur md:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open navigation">
             <Menu />

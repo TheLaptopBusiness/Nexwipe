@@ -159,7 +159,7 @@ function SignupPage() {
                   <label htmlFor="website">Website</label>
                   <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
                 </div>
-                <Button type="submit" className="w-full" disabled={busy}>
+                <Button type="submit" className="w-full" loading={busy}>
                   {busy ? "Creating account…" : "Create account"}
                 </Button>
               </form>

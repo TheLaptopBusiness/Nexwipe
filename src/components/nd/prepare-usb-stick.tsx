@@ -126,7 +126,7 @@ export function PrepareUsbStick({ open, onOpenChange }: { open: boolean; onOpenC
         )}
         <DialogFooter>
           {!files ? (
-            <><Button variant="outline" onClick={() => close(false)}>Cancel</Button><Button type="submit" form="prepare-stick" disabled={busy}>Create files</Button></>
+            <><Button variant="outline" onClick={() => close(false)}>Cancel</Button><Button type="submit" form="prepare-stick" loading={busy}>Create files</Button></>
           ) : (
             <><Button variant="outline" onClick={onWrite}>{done ? (canPickFolder() ? "Write again" : "Download again") : canPickFolder() ? "Choose USB stick…" : "Download zip"}</Button><Button onClick={() => close(false)}>Done</Button></>
           )}

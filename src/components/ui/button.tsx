@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
+import { Loader2 } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -37,13 +38,44 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  /** Shows a spinner and disables the button (for form submit buttons whose work runs elsewhere). */
+  loading?: boolean;
 }
 
+// A click handler that returns a promise (an async action) shows the spinner until it settles,
+// so every button that saves or requests something gives feedback without per-page code.
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
+  ({ className, variant, size, asChild = false, loading = false, onClick, disabled, children, ...props }, ref) => {
+    const [pending, setPending] = React.useState(false);
+    const mounted = React.useRef(true);
+    React.useEffect(() => () => { mounted.current = false; }, []);
+    const busy = loading || pending;
+    const handleClick = onClick && ((e: React.MouseEvent<HTMLButtonElement>) => {
+      const r = onClick(e) as unknown;
+      if (r && typeof (r as Promise<unknown>).then === "function") {
+        setPending(true);
+        (r as Promise<unknown>).finally(() => { if (mounted.current) setPending(false); });
+      }
+    });
+    if (asChild) {
+      return (
+        <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} onClick={handleClick} {...props}>
+          {children}
+        </Slot>
+      );
+    }
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        onClick={handleClick}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
+        {...props}
+      >
+        {busy && <Loader2 className="animate-spin" aria-hidden />}
+        {children}
+      </button>
     );
   },
 );

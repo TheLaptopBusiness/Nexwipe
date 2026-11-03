@@ -264,7 +264,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           {link ? <Button onClick={onClose}>Done</Button> : (
             <>
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit" form="invite-form" disabled={busy}>Send invitation</Button>
+              <Button type="submit" form="invite-form" loading={busy}>Send invitation</Button>
             </>
           )}
         </DialogFooter>

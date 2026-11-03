@@ -347,7 +347,7 @@ function QuickIntake({ onClose }: { onClose: () => void }) {
         </div>
         <AssignmentFields state={assign} />
         <div className="flex items-end">
-          <Button type="submit" disabled={busy} className="w-full"><Inbox /> Receive</Button>
+          <Button type="submit" loading={busy} className="w-full"><Inbox /> Receive</Button>
         </div>
       </form>
       {received.length > 0 && (

@@ -100,7 +100,7 @@ function SiteDialog({ site, onClose }: { site: Site | null; onClose: () => void 
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="site-form" disabled={busy}>{site ? "Save" : "Add site"}</Button>
+          <Button type="submit" form="site-form" loading={busy}>{site ? "Save" : "Add site"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

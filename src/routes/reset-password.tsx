@@ -97,7 +97,7 @@ function ResetPassword() {
                 <p className="text-xs text-muted-foreground">Your account uses two-step verification. Enter the 6-digit code from your authenticator app.</p>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button type="submit" className="w-full" loading={busy}>
               Update password
             </Button>
           </form>

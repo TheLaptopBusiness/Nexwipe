@@ -190,7 +190,7 @@ function FirstSiteForm() {
         <Label htmlFor="site-address">Address (optional)</Label>
         <Input id="site-address" name="address" maxLength={300} />
       </div>
-      <Button type="submit" disabled={busy}><MapPin /> Add site</Button>
+      <Button type="submit" loading={busy}><MapPin /> Add site</Button>
     </form>
   );
 }

@@ -136,7 +136,7 @@ export function AddToInventoryDialog({ target, onClose }: { target: AddTarget | 
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="disc-add" disabled={busy}>Add to inventory</Button>
+          <Button type="submit" form="disc-add" loading={busy}>Add to inventory</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

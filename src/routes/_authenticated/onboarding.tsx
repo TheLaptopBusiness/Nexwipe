@@ -108,7 +108,7 @@ function Onboarding() {
                 />
                 <p className="text-xs text-muted-foreground">Lowercase letters, numbers and dashes.</p>
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <Button type="submit" className="w-full" loading={busy}>
                 Create organization
               </Button>
             </form>

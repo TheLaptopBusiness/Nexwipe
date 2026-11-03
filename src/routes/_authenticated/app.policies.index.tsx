@@ -103,7 +103,7 @@ function PoliciesPage() {
           </form>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" form="new-policy" disabled={busy}>Create version 1</Button>
+            <Button type="submit" form="new-policy" loading={busy}>Create version 1</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

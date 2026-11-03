@@ -44,7 +44,7 @@ export function SetPasswordForm({ email, onDone }: { email: string | undefined; 
         <Label htmlFor="confirm">Confirm password</Label>
         <Input id="confirm" name="confirm" type="password" minLength={10} required autoComplete="new-password" />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>Set password and continue</Button>
+      <Button type="submit" className="w-full" loading={busy}>Set password and continue</Button>
     </form>
   );
 }

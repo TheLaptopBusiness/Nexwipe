@@ -85,7 +85,7 @@ function Password() {
         <div className="space-y-1.5"><Label htmlFor="pw">New password</Label><Input id="pw" name="password" type="password" minLength={10} required autoComplete="new-password" /></div>
         <div className="space-y-1.5"><Label htmlFor="pw2">Confirm</Label><Input id="pw2" name="confirm" type="password" minLength={10} required autoComplete="new-password" /></div>
       </div>
-      <Button type="submit" disabled={busy}>Change password</Button>
+      <Button type="submit" loading={busy}>Change password</Button>
     </form>
   );
 }

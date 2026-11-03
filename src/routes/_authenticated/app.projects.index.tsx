@@ -184,7 +184,7 @@ function ProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          {!noClients && <Button type="submit" form="project-form" disabled={busy}>Create project</Button>}
+          {!noClients && <Button type="submit" form="project-form" loading={busy}>Create project</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -83,7 +83,7 @@ function OrgSettings() {
             </p>
           </div>
         </section>
-        <Button type="submit" disabled={busy}>Save settings</Button>
+        <Button type="submit" loading={busy}>Save settings</Button>
       </form>
       <section className="max-w-2xl rounded-lg border border-border bg-muted p-5 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">Not yet available</p>

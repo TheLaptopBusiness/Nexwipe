@@ -111,10 +111,19 @@ function AgentsPage() {
         </div>
       )}
 
+
+      <StationDiscoveries />
+      {canManage && <PrepareUsbStick open={stickOpen} onOpenChange={setStickOpen} />}
+
       {canManage && (tokens.data?.length ?? 0) > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-foreground">Recent enrollment tokens</h2>
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <details className="group rounded-lg border border-border bg-card">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-foreground marker:hidden">
+            <KeyRound className="mr-2 inline size-3.5 text-muted-foreground" />Enrollment tokens
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              {tokens.data!.filter((t) => !t.used_at && !t.revoked_at && new Date(t.expires_at) >= new Date()).length} unused · last {tokens.data!.length} · click to show
+            </span>
+          </summary>
+          <div className="overflow-x-auto border-t border-border">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-border">
                 {tokens.data!.map((t) => {
@@ -130,11 +139,8 @@ function AgentsPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </details>
       )}
-
-      <StationDiscoveries />
-      {canManage && <PrepareUsbStick open={stickOpen} onOpenChange={setStickOpen} />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -157,7 +163,7 @@ function AgentsPage() {
             </form>
           )}
           <DialogFooter>
-            {token ? <Button onClick={() => setOpen(false)}>Done</Button> : <><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" form="new-token" disabled={busy}>Create token</Button></>}
+            {token ? <Button onClick={() => setOpen(false)}>Done</Button> : <><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" form="new-token" loading={busy}>Create token</Button></>}
           </DialogFooter>
         </DialogContent>
       </Dialog>

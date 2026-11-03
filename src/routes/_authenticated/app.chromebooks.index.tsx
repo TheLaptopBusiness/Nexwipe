@@ -203,8 +203,8 @@ function RegisterDialog({ initialSerial, onClose }: { initialSerial: string; onC
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="cb-register" variant="outline" disabled={busy} data-open="0">Save and scan next</Button>
-          <Button type="submit" form="cb-register" disabled={busy} data-open="1">Save and open</Button>
+          <Button type="submit" form="cb-register" variant="outline" loading={busy} data-open="0">Save and scan next</Button>
+          <Button type="submit" form="cb-register" loading={busy} data-open="1">Save and open</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
