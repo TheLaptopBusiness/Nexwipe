@@ -185,7 +185,8 @@ function ConvertFrom-NdJson([string]$text) {
 
 function Get-Field($obj, [string]$name) {
   if ($null -eq $obj) { return $null }
-  if ($obj -is [Collections.IDictionary]) { if ($obj.Contains($name)) { return $obj[$name] } else { return $null } }
+  # Loop instead of .Contains(): the Dictionary that JSON parsing returns hides Contains from PowerShell.
+  if ($obj -is [Collections.IDictionary]) { foreach ($k in $obj.Keys) { if ($k -ceq $name) { return $obj[$k] } }; return $null }
   return $obj.$name
 }
 
@@ -223,6 +224,7 @@ function Invoke-SelfTest {
   [Threading.Thread]::CurrentThread.CurrentCulture = $old
   $p = ConvertFrom-NdJson '{"inventory_requested":true,"reboot_to_usb_requested":false,"x":{"y":2}}'
   Check "JSON parse" ((Get-Field $p "inventory_requested") -eq $true -and (Get-Field (Get-Field $p "x") "y") -eq 2)
+  Check "JSON parse: missing field is empty" ($null -eq (Get-Field $p "wifi") -and $null -eq (Get-Field (Get-Field $p "wifi") "ssid"))
   # identity helpers
   Check "placeholder serials rejected" ((Test-Placeholder "To be filled by O.E.M.") -and (Test-Placeholder "0000000") -and (Test-Placeholder " ") -and -not (Test-Placeholder "5CG8123ABC"))
   Check "Windows 7 swapped hex serial decoded" ((ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637") -eq "1WD-XMA1L1234567".Substring(0,0) + (ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637"))
