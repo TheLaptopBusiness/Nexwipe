@@ -5,6 +5,7 @@ import { LoadingBlock } from "@/components/nd/page";
 import { safeRedirect } from "@/lib/session";
 
 export const Route = createFileRoute("/auth_/callback")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Signing in — NexWipe" },

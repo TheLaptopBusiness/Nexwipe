@@ -15,6 +15,7 @@ import { useAssurance } from "@/components/nd/mfa-gate";
 import { setupProgress } from "@/lib/setup-checklist";
 
 export const Route = createFileRoute("/_authenticated/app/setup")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Get started — NexWipe" },

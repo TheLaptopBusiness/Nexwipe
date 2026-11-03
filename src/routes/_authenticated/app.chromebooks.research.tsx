@@ -4,6 +4,7 @@ import { ToneBadge } from "@/components/nd/status-badge";
 import { FEASIBILITY, FEASIBILITY_LABEL, MODEL_RESEARCH, RESEARCH_SOURCE } from "@/lib/chromebook";
 
 export const Route = createFileRoute("/_authenticated/app/chromebooks/research")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Chromebook compatibility research — NexWipe" }] }),
   component: Research,
 });

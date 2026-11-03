@@ -17,6 +17,7 @@ import { can } from "@/lib/permissions";
 import { formatDate, useClients, useProjectCounts, useProjects, useSites } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/projects/")({
+  staticData: { sitemap: false },
   component: Projects,
 });
 

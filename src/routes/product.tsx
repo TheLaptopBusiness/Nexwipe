@@ -4,6 +4,7 @@ import { PublicLayout } from "@/components/nd/public-layout";
 import { ToneBadge } from "@/components/nd/status-badge";
 
 export const Route = createFileRoute("/product")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Product — NexWipe" },

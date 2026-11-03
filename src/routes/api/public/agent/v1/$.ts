@@ -8,6 +8,7 @@ async function handle(request: Request, splat: string | undefined) {
 }
 
 export const Route = createFileRoute("/api/public/agent/v1/$")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: ({ request, params }) => handle(request, params._splat),

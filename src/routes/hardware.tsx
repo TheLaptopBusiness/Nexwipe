@@ -3,6 +3,7 @@ import { PublicLayout } from "@/components/nd/public-layout";
 import { HardwareScope } from "@/components/nd/hardware-scope";
 
 export const Route = createFileRoute("/hardware")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Supported hardware — NexWipe" },

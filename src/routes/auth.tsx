@@ -15,6 +15,7 @@ import { safeRedirect } from "@/lib/session";
 type Mode = "signin" | "forgot" | "check-email" | "mfa";
 
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
     const out: { redirect?: string } = {};
     if (typeof s["redirect"] === "string") out.redirect = s["redirect"];

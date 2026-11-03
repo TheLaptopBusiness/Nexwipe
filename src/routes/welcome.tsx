@@ -8,6 +8,7 @@ import { safeRedirect, useSessionUser } from "@/lib/session";
 import { needsFirstPassword } from "@/lib/first-password";
 
 export const Route = createFileRoute("/welcome")({
+  staticData: { sitemap: false },
   validateSearch: z.object({ next: z.string().optional() }),
   head: () => ({
     meta: [

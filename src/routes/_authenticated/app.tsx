@@ -51,6 +51,7 @@ import { PendingInvitations } from "@/components/nd/pending-invitations";
 import { ActivityBar } from "@/components/nd/activity-bar";
 
 export const Route = createFileRoute("/_authenticated/app")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "NexWipe Cloud" },
