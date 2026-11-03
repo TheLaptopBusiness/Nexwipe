@@ -20,7 +20,7 @@ $ErrorActionPreference = "Stop"
 $VERSION = "0.1.0-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
-$Inv = [Globalization.CultureInfo]::InvariantCulture
+$Culture = [Globalization.CultureInfo]::InvariantCulture
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ============================================================== safety: allowed programs
@@ -45,8 +45,8 @@ function Test-Allowed([string]$exe, [string[]]$argv) {
 
 function Invoke-Tool([string]$exe, [string[]]$argv) {
   if (-not (Test-Allowed $exe $argv)) { throw "Refused: '$exe $($argv -join ' ')' is not on the NexWipe read-only allow-list." }
-  $out = & $exe @argv 2>&1 | Out-String
-  return @{ code = $LASTEXITCODE; text = $out }
+  $res = & $exe @argv 2>&1 | Out-String
+  return @{ code = $LASTEXITCODE; text = $res }
 }
 
 # ============================================================== small helpers
@@ -142,8 +142,8 @@ function Find-UsbBootEntry([string]$text, [string]$stickModel) {
 function ConvertTo-NdJson($v) {
   if ($null -eq $v) { return "null" }
   if ($v -is [bool]) { if ($v) { return "true" } else { return "false" } }
-  if ($v -is [int] -or $v -is [int64] -or $v -is [uint32] -or $v -is [uint64] -or $v -is [int16] -or $v -is [uint16] -or $v -is [byte]) { return ([int64]$v).ToString($Inv) }
-  if ($v -is [double] -or $v -is [single] -or $v -is [decimal]) { return ([double]$v).ToString("R", $Inv) }
+  if ($v -is [int] -or $v -is [int64] -or $v -is [uint32] -or $v -is [uint64] -or $v -is [int16] -or $v -is [uint16] -or $v -is [byte]) { return ([int64]$v).ToString($Culture) }
+  if ($v -is [double] -or $v -is [single] -or $v -is [decimal]) { return ([double]$v).ToString("R", $Culture) }
   if ($v -is [string] -or $v -is [char]) {
     $sb = New-Object Text.StringBuilder
     [void]$sb.Append('"')
@@ -422,7 +422,8 @@ function Get-Inventory {
       serial = $(if ($s -and -not (Test-Placeholder $s.SerialNumber)) { Cap $s.SerialNumber 80 } else { $null })
       chemistry = $chem; status = $status
       design_capacity_mwh = $design; full_charge_capacity_mwh = $fc
-      cycle_count = $(if ($cy) { Num $cy.CycleCount } else { $null })
+      # Many batteries do not count cycles and Windows then reports 0; a real 0 only occurs on a brand-new pack.
+      cycle_count = $(if ($cy -and (Num $cy.CycleCount) -gt 0) { Num $cy.CycleCount } else { $null })
       health_pct = (Get-BatteryHealth $design $fc)
     }
   }
@@ -507,7 +508,7 @@ function Invoke-Nd([string]$method, [string]$path, $body, [switch]$Auth) {
   $req.ContentType = "application/json"
   if ($Auth) {
     $req.Headers.Add("Authorization", "Bearer $script:Credential")
-    $req.Headers.Add("X-ND-Timestamp", ([DateTime]::UtcNow.AddSeconds($script:ClockOffset)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ", $Inv))
+    $req.Headers.Add("X-ND-Timestamp", ([DateTime]::UtcNow.AddSeconds($script:ClockOffset)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ", $Culture))
     $req.Headers.Add("X-ND-Nonce", (New-Nonce))
   }
   try {
@@ -538,7 +539,7 @@ function Sync-Clock {
   $t = Get-Field $r.body "server_time"
   if ($t) {
     try {
-      $server = [DateTime]::Parse([string]$t, $Inv, [Globalization.DateTimeStyles]::AdjustToUniversal)
+      $server = [DateTime]::Parse([string]$t, $Culture, [Globalization.DateTimeStyles]::AdjustToUniversal)
       $script:ClockOffset = ($server - [DateTime]::UtcNow).TotalSeconds
     } catch {}
   }
@@ -569,21 +570,52 @@ function Show-Banner([string]$status) {
 
 function Say([string]$msg, [string]$color = "Gray") { Write-Host ("  [{0}] {1}" -f (Get-Date).ToString("HH:mm:ss"), $msg) -ForegroundColor $color }
 
+$IfaceNames = @{ nvme_ssd = "NVMe SSD"; sata_ssd = "SATA SSD"; sata_hdd = "SATA hard disk (HDD)"; unsupported_other = "type not reported by Windows" }
+
 function Show-Summary($p) {
   $s = $p.system
   $gb = { param($b) if ($b) { "{0:N1} GB" -f ($b / 1e9) } else { "-" } }
+  $line = { param($k, $v) if ($null -ne $v -and "$v" -ne "") { Write-Host ("  {0,-11} {1}" -f $k, $v) } }
+  $yn = { param($b) if ($null -eq $b) { $null } elseif ($b) { "on" } else { "off" } }
   Write-Host ""
-  Write-Host ("  Laptop    {0} {1}" -f $s.manufacturer, $s.model) -ForegroundColor White
-  Write-Host ("  Serial    {0}" -f $(if ($s.serial) { $s.serial } else { "(not reported - flagged for review)" }))
-  Write-Host ("  CPU       {0}" -f $s.cpu)
-  Write-Host ("  RAM       {0} in {1} module(s)" -f (& $gb $s.ram_bytes), @($p.memory_modules).Count)
+  Write-Host ("  {0,-11} {1} {2}" -f "Laptop", $s.manufacturer, $s.model) -ForegroundColor White
+  & $line "Serial" $(if ($s.serial) { $s.serial } else { "(not reported - flagged for review)" })
+  & $line "SKU" $s.sku
+  & $line "Asset tag" $s.asset_tag
+  & $line "Type" $s.chassis
+  & $line "Board" $s.board
+  & $line "BIOS" (((@($s.bios_vendor, $s.bios_version, $s.bios_date) | Where-Object { $_ }) -join "  "))
+  & $line "Boot" (((@($s.boot_mode, $(if ($null -ne $s.secure_boot) { "Secure Boot " + (& $yn $s.secure_boot) })) | Where-Object { $_ }) -join ", "))
+  & $line "CPU" $(if ($s.cpu_cores) { "$($s.cpu)  ($($s.cpu_cores) cores / $($s.cpu_threads) threads)" } else { $s.cpu })
+  & $line "RAM" ("{0} in {1} module(s)" -f (& $gb $s.ram_bytes), @($p.memory_modules).Count)
+  foreach ($m in @($p.memory_modules)) { if ($m) { & $line "  module" (((@($m.slot, (& $gb $m.size_bytes), $m.type, $(if ($m.speed_mhz) { "$($m.speed_mhz) MHz" }), $m.manufacturer, $m.part_number, $(if ($m.serial) { "S/N $($m.serial)" })) | Where-Object { $_ }) -join "  ")) } }
   foreach ($d in @($p.drives)) {
-    $note = ""; if ($d.is_boot_medium) { $note = "  (this NexWipe stick - not recorded)" } elseif ($d.removable) { $note = "  (removable - not recorded)" }
-    Write-Host ("  Drive     {0}  {1}  S/N {2}{3}" -f $d.model, (& $gb $d.capacity_bytes), $d.serial, $note)
+    if (-not $d) { continue }
+    if ($d.is_boot_medium) { & $line "USB stick" ("{0}  {1}  (this NexWipe stick - not recorded)" -f $d.model, (& $gb $d.capacity_bytes)); continue }
+    if ($d.removable) { & $line "Removable" ("{0}  {1}  (not recorded)" -f $d.model, (& $gb $d.capacity_bytes)); continue }
+    Write-Host ("  {0,-11} {1}  {2}" -f "Drive", $IfaceNames[[string]$d.interface], (& $gb $d.capacity_bytes)) -ForegroundColor White
+    & $line "  model" $d.model
+    & $line "  serial" $d.serial
+    & $line "  firmware" $d.firmware
+    & $line "  connection" $d.transport
   }
-  foreach ($b in @($p.batteries)) { if ($b) { Write-Host ("  Battery   health {0}  cycles {1}" -f $(if ($null -ne $b.health_pct) { "$($b.health_pct)%" } else { "unknown" }), $(if ($null -ne $b.cycle_count) { $b.cycle_count } else { "unknown" })) } }
-  Write-Host ("  Windows   {0} {1}" -f $p.os.name, $p.os.version)
-  if ($p.station.hardware_source -eq "virtual") { Write-Host "  Note      This looks like a virtual machine; NexWipe will label it test hardware." -ForegroundColor Yellow }
+  foreach ($b in @($p.batteries)) {
+    if (-not $b) { continue }
+    & $line "Battery" (((@($b.manufacturer, $b.name, $b.chemistry, $(if ($b.serial) { "S/N $($b.serial)" })) | Where-Object { $_ }) -join "  "))
+    & $line "  health" $(if ($null -ne $b.health_pct) { "$($b.health_pct)%  ($($b.full_charge_capacity_mwh) of $($b.design_capacity_mwh) mWh)" } else { "unknown" })
+    & $line "  cycles" $(if ($null -ne $b.cycle_count) { $b.cycle_count } else { "not reported by the battery" })
+    & $line "  status" $b.status
+  }
+  foreach ($g in @($p.gpus)) { if ($g) { & $line "Graphics" $g.name } }
+  foreach ($n in @($p.network_adapters)) { if ($n) { & $line "Network" ("{0}  {1}  MAC {2}" -f $n.kind, $n.name, $n.mac) } }
+  $sec = $p.security
+  if ($sec) {
+    & $line "TPM" $(if ($sec.tpm_present) { "present $($sec.tpm_version)" } else { "not found (or needs administrator rights to read)" })
+    foreach ($v in @($sec.bitlocker)) { if ($v) { & $line "BitLocker" ("{0} {1}" -f $v.volume, $v.protection) } }
+  }
+  & $line "Windows" ("{0} {1} ({2})" -f $p.os.name, $p.os.version, $p.os.architecture)
+  foreach ($f in @($p.review_flags)) { if ($f) { Write-Host ("  {0,-11} {1} {2}" -f "Review", $f.code, $(if ($f.detail) { "- $($f.detail)" })) -ForegroundColor Yellow } }
+  if ($p.station.hardware_source -eq "virtual") { Write-Host "  Note        This looks like a virtual machine; NexWipe will label it test hardware." -ForegroundColor Yellow }
   Write-Host ""
 }
 
@@ -596,7 +628,7 @@ function Read-JsonFile([string]$p) { if (Test-Path $p) { try { return ConvertFro
 
 function Save-State($name, $agentId) {
   if (-not (Test-Path $StateDir)) { [void](New-Item -ItemType Directory -Path $StateDir) }
-  Save-Text $StatePath (ConvertTo-NdJson @{ server = $script:Server; credential = $script:Credential; name = $name; agent_id = $agentId; saved_at = [DateTime]::UtcNow.ToString("o", $Inv) })
+  Save-Text $StatePath (ConvertTo-NdJson @{ server = $script:Server; credential = $script:Credential; name = $name; agent_id = $agentId; saved_at = [DateTime]::UtcNow.ToString("o", $Culture) })
 }
 
 function Connect-Wifi($setup) {
