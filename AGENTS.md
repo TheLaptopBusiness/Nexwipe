@@ -11,8 +11,7 @@
 
 # NexWipe engineering rules
 
-- New contributors: start with `docs/HOW_IT_WORKS.md` (system guide), then `docs/STATUS.md`.
-
+- New contributors: start with `docs/HOW_IT_WORKS.md` (system guide), then `docs/STATUS.md`. Subdirectories (e.g. `agent-handoff/`) have their own `AGENTS.md`; read it before changing files there.
 - Read `docs/ARCHITECTURE.md` and `docs/STATUS.md` before changing schema or features; update STATUS when a feature's status changes.
 - Tenant tables carry `org_id` with `UNIQUE (org_id, id)` and child rows use composite FKs `(org_id, parent_id)` — prevents cross-company references even with forged ids.
 - Access rules live in RLS + `SECURITY DEFINER` RPCs (`has_org_role`, `is_org_staff`, `has_project_grant`); `src/lib/permissions.ts` only mirrors them for UI and must not be the security boundary.
@@ -30,11 +29,9 @@
 - Anything simulated carries `is_simulated` set by trusted code only and must be visibly labelled in the UI; simulated jobs can never be billable or certificate-eligible.
 - Owner/admin rights require an AAL2 session inside `has_org_role`; never add a privileged path that checks membership without it (e.g. via `is_org_member`), or MFA enforcement is bypassed.
 - Invitation tokens are only ever known to `create_invitation`'s caller; send emails from the same server function that created the token, never by re-deriving tokens.
-- `agent-handoff/` holds docs, the read-only station program (`station/`) and the USB build (`usb-image/`); never add erasure commands or destructive tools there — `verify-image.sh` and `station/nd_station/safety.py` enforce this.
 - Physical stations enroll read-only (`agents.read_only`, enforced by triggers on authorizations/events/evidence); only trusted server code may unlock one, never an app user.
 - Outdated-code/stale-chunk recovery has one policy: `src/lib/app-recovery.ts` (in-app) and `src/lib/boot-recovery-script.ts` (before mount, keep in sync); TanStack Router's own silent reload is disabled there — it ignores unsaved form input and has no loop guard window.
 - Chromebooks are a separate track (`chromebook_records`/`chromebook_events`, `chromebook_*` RPCs, `src/lib/chromebook.ts`, routes `app.chromebooks.*`): devices with `device_class = 'chromebook'` never get drive-erasure jobs; management and reset statuses stay independent; integration-confirmed deprovisioning and `api_reported` values are trusted-code only — because a Powerwash or setup screen is not proof of deprovisioning or erasure. Resale-ready is decided by one SQL rule (`_cb_resale_blockers`) used by `chromebook_review` and a trigger for every caller; the UI only displays it via `chromebook_resale_check`.
-- Chromebook discovery build lives in `agent-handoff/chromebook-discovery/`: `nd_chromebook` wraps the unchanged `nd_station` (never edit the laptop station for Chromebook needs) and adds firmware/flag tools to the deny-list; it stays read-only — Developer Mode transitions are technician-performed ChromeOS operations, recorded separately from NexWipe operations, because ChromeOS's own wipe is not a NexWipe result. Release images are assembled only after `preflight.py` accepts the kernel and rootfs (re-checked from the finished image) and internal disks are locked read-only at kernel level plus process confinement — because a valid developer-key signature or a passing build is not evidence of boot or of read-only behaviour.
 - Public sign-up continues setup via `src/lib/landing-hash.ts` (fragment captured before the auth client consumes it), because verification links may land on the site root instead of `/auth/callback`. Company creation limits and email-verified checks live in `create_organization`, not the UI.
 - Production app addresses live in `src/lib/app-origins.ts`; server-built links (invitation emails) may only use an origin it allows, because the request Origin header is attacker-controlled.
 - The dashboard's "What you can use today" panel (`src/components/nd/availability-panel.tsx`) must match `docs/STATUS.md`; never list simulated or unbuilt work as available.
