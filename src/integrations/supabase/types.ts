@@ -767,7 +767,6 @@ export type Database = {
           created_by: string | null
           device_class: string
           diagnostic_notes: string | null
-          grade: string | null
           hardware_origin: string
           hardware_verified: boolean
           id: string
@@ -799,7 +798,6 @@ export type Database = {
           created_by?: string | null
           device_class?: string
           diagnostic_notes?: string | null
-          grade?: string | null
           hardware_origin?: string
           hardware_verified?: boolean
           id?: string
@@ -831,7 +829,6 @@ export type Database = {
           created_by?: string | null
           device_class?: string
           diagnostic_notes?: string | null
-          grade?: string | null
           hardware_origin?: string
           hardware_verified?: boolean
           id?: string
