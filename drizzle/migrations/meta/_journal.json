@@ -134,6 +134,13 @@
       "when": 1793600692804,
       "tag": "0018_connected_devices_and_station_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793677911323,
+      "tag": "0019_connected_devices_and_station_actions",
+      "breakpoints": true
     }
   ]
 }
