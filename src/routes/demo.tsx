@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/components/nd/page";
 
 export const Route = createFileRoute("/demo")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Book a Demo — NexWipe" },

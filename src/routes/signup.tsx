@@ -12,6 +12,7 @@ import { Wordmark } from "@/components/nd/wordmark";
 import { errorMessage } from "@/components/nd/page";
 
 export const Route = createFileRoute("/signup")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Create Your NexWipe Account" },

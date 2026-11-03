@@ -18,6 +18,7 @@ import { StationDiscoveries } from "@/components/nd/station-discoveries";
 import { PrepareUsbStick } from "@/components/nd/prepare-usb-stick";
 
 export const Route = createFileRoute("/_authenticated/app/agents")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Agents & stations · NexWipe" }] }),
   component: AgentsPage,
 });

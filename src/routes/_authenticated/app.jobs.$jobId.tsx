@@ -22,6 +22,7 @@ import { INTERFACE_LABELS, METHOD_LABELS, PIPELINE, heartbeatState, isTerminal, 
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/jobs/$jobId")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Erasure job · NexWipe" }] }),
   component: JobDetail,
 });

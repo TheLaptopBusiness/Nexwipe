@@ -14,6 +14,7 @@ import { useSignOut } from "@/lib/session";
 import { PendingInvitations } from "@/components/nd/pending-invitations";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Create your organization — NexWipe" },

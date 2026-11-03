@@ -154,6 +154,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 const themeScript = `try{if(localStorage.getItem('nd.theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

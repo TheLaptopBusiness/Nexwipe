@@ -17,6 +17,7 @@ import { useBatches, useChromebooks, useProjects } from "@/lib/queries";
 import { MANAGEMENT_LABEL, RESET_LABEL, nextStep, type ManagementStatus, type ResetStatus } from "@/lib/chromebook";
 
 export const Route = createFileRoute("/_authenticated/app/chromebooks/")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Chromebook processing — NexWipe" }] }),
   component: Chromebooks,
 });

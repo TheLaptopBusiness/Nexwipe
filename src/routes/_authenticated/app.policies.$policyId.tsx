@@ -16,6 +16,7 @@ import { can } from "@/lib/permissions";
 import { formatDateTime, memberName, useMembers, usePolicies } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/policies/$policyId")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Policy · NexWipe" }] }),
   component: PolicyDetail,
 });
