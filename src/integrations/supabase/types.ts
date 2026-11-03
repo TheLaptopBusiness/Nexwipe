@@ -2069,6 +2069,8 @@ export type Database = {
         Returns: number
       }
       _new_device_code: { Args: never; Returns: string }
+      _payload_battery_pct: { Args: { _p: Json }; Returns: number }
+      _payload_ram_gb: { Args: { _p: Json }; Returns: number }
       _policy_support_reason: {
         Args: {
           _iface: Database["public"]["Enums"]["drive_interface"]

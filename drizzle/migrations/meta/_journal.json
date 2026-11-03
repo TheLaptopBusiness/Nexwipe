@@ -162,6 +162,13 @@
       "when": 1793692844234,
       "tag": "0022_inventory_from_connected_station",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793693413617,
+      "tag": "0023_inventory_from_connected_station",
+      "breakpoints": true
     }
   ]
 }
