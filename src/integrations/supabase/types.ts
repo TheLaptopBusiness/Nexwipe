@@ -65,6 +65,7 @@ export type Database = {
       agent_discoveries: {
         Row: {
           agent_id: string
+          device_code: string
           device_id: string | null
           hardware_origin: string
           hardware_origin_reason: string | null
@@ -82,6 +83,7 @@ export type Database = {
         }
         Insert: {
           agent_id: string
+          device_code: string
           device_id?: string | null
           hardware_origin?: string
           hardware_origin_reason?: string | null
@@ -99,6 +101,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string
+          device_code?: string
           device_id?: string | null
           hardware_origin?: string
           hardware_origin_reason?: string | null
@@ -173,6 +176,11 @@ export type Database = {
           org_id: string
           platform: string | null
           read_only: boolean
+          reboot_detail: string | null
+          reboot_requested_at: string | null
+          reboot_requested_by: string | null
+          reboot_status: string | null
+          reboot_status_at: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -195,6 +203,11 @@ export type Database = {
           org_id: string
           platform?: string | null
           read_only?: boolean
+          reboot_detail?: string | null
+          reboot_requested_at?: string | null
+          reboot_requested_by?: string | null
+          reboot_status?: string | null
+          reboot_status_at?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -217,6 +230,11 @@ export type Database = {
           org_id?: string
           platform?: string | null
           read_only?: boolean
+          reboot_detail?: string | null
+          reboot_requested_at?: string | null
+          reboot_requested_by?: string | null
+          reboot_status?: string | null
+          reboot_status_at?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -1932,6 +1950,10 @@ export type Database = {
       }
     }
     Functions: {
+      _agent_is_windows_helper: {
+        Args: { _platform: string }
+        Returns: boolean
+      }
       _cb_event: {
         Args: {
           _from: string
@@ -2043,6 +2065,7 @@ export type Database = {
         }
         Returns: number
       }
+      _new_device_code: { Args: never; Returns: string }
       _policy_support_reason: {
         Args: {
           _iface: Database["public"]["Enums"]["drive_interface"]
@@ -2095,6 +2118,10 @@ export type Database = {
       }
       agent_list_jobs: { Args: { _agent: string }; Returns: Json }
       agent_reconcile: { Args: { _agent: string; _jobs: Json }; Returns: Json }
+      agent_report_action: {
+        Args: { _action: string; _agent: string; _detail: string; _ok: boolean }
+        Returns: Json
+      }
       agent_report_inventory: {
         Args: { _agent: string; _payload: Json }
         Returns: Json
@@ -2287,6 +2314,10 @@ export type Database = {
           org_name: string
           role: Database["public"]["Enums"]["org_role"]
         }[]
+      }
+      request_station_action: {
+        Args: { _action: string; _agent: string }
+        Returns: Json
       }
       review_job: {
         Args: { _approve: boolean; _job: string; _notes: string }
