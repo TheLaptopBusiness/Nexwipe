@@ -17,7 +17,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.2.1-win"
+$VERSION = "0.2.2-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -816,18 +816,20 @@ function Invoke-KeyboardTest {
   try {
     Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
-    if (-not ([Management.Automation.PSTypeName]'NexWipe.KeyFilter').Type) {
-      # An application message filter sees EVERY key message before it reaches any control (unlike a
-      # form WndProc, which never sees keys sent to a focused button). It reads the true scancode +
-      # extended bit, raises it, and swallows the key so a press can never click a button.
+    if (-not ([Management.Automation.PSTypeName]'NexWipe.KeyForm').Type) {
+      # ProcessCmdKey is called by WinForms for every WM_KEYDOWN/WM_SYSKEYDOWN before the key reaches
+      # the focused control, and it bubbles up to the form even when a button has focus (which a plain
+      # WndProc override does not). It carries the raw Message, so we read the true scancode + extended
+      # bit; returning true swallows the key so a press can never click a button. Mouse clicks are not
+      # key messages, so the buttons still work. This works inside a modal ShowDialog.
       Add-Type -ReferencedAssemblies 'System.Windows.Forms', 'System.Drawing' -TypeDefinition @'
 using System;
 using System.Windows.Forms;
 namespace NexWipe {
   public delegate void ScanHandler(string id);
-  public class KeyFilter : IMessageFilter {
+  public class KeyForm : Form {
     public event ScanHandler KeyScanned;
-    public bool PreFilterMessage(ref Message m) {
+    protected override bool ProcessCmdKey(ref Message m, Keys keyData) {
       if (m.Msg == 0x100 || m.Msg == 0x104) { // WM_KEYDOWN / WM_SYSKEYDOWN
         long lp = m.LParam.ToInt64();
         int sc = (int)((lp >> 16) & 0xFF);
@@ -838,8 +840,7 @@ namespace NexWipe {
         }
         return true; // swallow: a keypress is test input, never a button click
       }
-      if (m.Msg == 0x101 || m.Msg == 0x105) return true; // swallow key-up too (WM_KEYUP / WM_SYSKEYUP)
-      return false;
+      return base.ProcessCmdKey(ref m, keyData);
     }
   }
 }
@@ -858,7 +859,7 @@ namespace NexWipe {
   $cGreen = [Drawing.Color]::FromArgb(150, 210, 150)
   $cRed = [Drawing.Color]::FromArgb(240, 150, 120)
 
-  $form = New-Object Windows.Forms.Form
+  $form = New-Object NexWipe.KeyForm
   $form.Text = "NexWipe keyboard test"
   $form.StartPosition = "CenterScreen"
   $form.FormBorderStyle = "FixedDialog"
@@ -879,16 +880,23 @@ namespace NexWipe {
   $board.SetBounds(12, 86, 816, 400)
   $board.FlowDirection = "TopDown"; $board.WrapContents = $false
 
-  # Buttons are created before $refresh so the closure captures the real $btnFail.
+  # "All keys work" stays disabled until at least this many keys register, so a test that captured
+  # nothing (or almost nothing) can never be marked Pass. The server enforces the same floor.
+  $MinPass = 20
+
+  # Buttons are created before $refresh so the closure captures the real $btnOk/$btnFail.
   $btnOk = New-Object Windows.Forms.Button
-  $btnOk.Text = "All keys work"; $btnOk.SetBounds(12, 498, 150, 40)
+  $btnOk.Text = "All keys work"; $btnOk.SetBounds(12, 498, 150, 40); $btnOk.Enabled = $false
   $btnFail = New-Object Windows.Forms.Button
   $btnFail.Text = "Finish - dead keys"; $btnFail.SetBounds(172, 498, 170, 40); $btnFail.Enabled = $false
   $btnCancel = New-Object Windows.Forms.Button
   $btnCancel.Text = "Cancel"; $btnCancel.SetBounds(352, 498, 110, 40)
 
   $refresh = {
-    $count.Text = "Pressed $($registered.Count)" + $(if ($flagged.Count) { "   -   dead keys flagged: $($flagged.Count)" } else { "   -   grey = not pressed yet" })
+    $need = $MinPass - $registered.Count
+    $hint = if ($need -gt 0) { "   -   press $need more key(s) to enable Pass" } elseif ($flagged.Count) { "   -   dead keys flagged: $($flagged.Count)" } else { "   -   grey = not pressed yet" }
+    $count.Text = "Pressed $($registered.Count)" + $hint
+    $btnOk.Enabled = ($registered.Count -ge $MinPass)
     $btnFail.Enabled = ($flagged.Count -gt 0)
   }.GetNewClosure()
 
@@ -918,8 +926,7 @@ namespace NexWipe {
     [void]$board.Controls.Add($rp)
   }
 
-  $filter = New-Object NexWipe.KeyFilter
-  $filter.add_KeyScanned({
+  $form.add_KeyScanned({
     param($id)
     $registered[$id] = $true
     $c = $cells[$id]
@@ -931,9 +938,9 @@ namespace NexWipe {
   $btnFail.add_Click({ $state.verdict = "flagged"; $form.Close() }.GetNewClosure())
   $btnCancel.add_Click({ $state.verdict = "cancel"; $form.Close() }.GetNewClosure())
 
+  & $refresh # set the initial "press N more to enable Pass" hint
   $form.Controls.AddRange(@($info, $count, $board, $btnOk, $btnFail, $btnCancel))
-  [Windows.Forms.Application]::AddMessageFilter($filter)
-  try { [void]$form.ShowDialog() } finally { [Windows.Forms.Application]::RemoveMessageFilter($filter) }
+  [void]$form.ShowDialog()
   $form.Dispose()
 
   $out.registered = @($registered.Keys)

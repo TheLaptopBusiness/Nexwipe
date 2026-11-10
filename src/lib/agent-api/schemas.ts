@@ -269,20 +269,31 @@ export const ActionResultRequest = z.object({
 });
 
 // Result of a diagnostic the heartbeat delivered. Reads hardware only; never touches storage.
-// keys_registered / keys_flagged are physical scancode names (e.g. "KEY_A", "SC_01E"), not characters.
-export const DiagnosticResultRequest = z.object({
-  test: z.enum(["keyboard"]),
-  outcome: z.enum(["pass", "fail", "incomplete"]),
-  result: z
-    .object({
-      layout: shortText(20).optional(),
-      keys_registered: z.array(shortText(24)).max(200).default([]),
-      keys_flagged: z.array(shortText(24)).max(200).optional(),
-      note: shortText(500).optional(),
-    })
-    .default({ keys_registered: [] }),
-  detail: shortText(300).optional(),
-});
+// keys_registered / keys_flagged are physical scancode names (e.g. "SC_1E", "E0_1D"), not characters.
+// A keyboard test cannot "pass" without this many keys actually registering — otherwise a window that
+// captured nothing could be marked all-good. The Windows helper enforces the same floor in its UI.
+export const KEYBOARD_PASS_MIN_KEYS = 20;
+export const DiagnosticResultRequest = z
+  .object({
+    test: z.enum(["keyboard"]),
+    outcome: z.enum(["pass", "fail", "incomplete"]),
+    result: z
+      .object({
+        layout: shortText(20).optional(),
+        keys_registered: z.array(shortText(24)).max(200).default([]),
+        keys_flagged: z.array(shortText(24)).max(200).optional(),
+        note: shortText(500).optional(),
+      })
+      .default({ keys_registered: [] }),
+    detail: shortText(300).optional(),
+  })
+  .refine(
+    (v) => v.outcome !== "pass" || v.result.keys_registered.length >= KEYBOARD_PASS_MIN_KEYS,
+    {
+      message: `A keyboard test cannot pass with fewer than ${KEYBOARD_PASS_MIN_KEYS} keys registered`,
+      path: ["outcome"],
+    },
+  );
 
 export const ReconcileRequest = z.object({
   jobs: z
