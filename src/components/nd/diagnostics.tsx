@@ -1,5 +1,9 @@
-import { Keyboard } from "lucide-react";
+import { useState } from "react";
+import { Keyboard, LayoutGrid } from "lucide-react";
 import { ToneBadge, SimulatedBadge, type Tone } from "@/components/nd/status-badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { KeyboardMap } from "@/components/nd/keyboard-map";
 import { formatDateTime } from "@/lib/queries";
 
 export type DiagnosticResult = {
@@ -37,7 +41,9 @@ export function DiagnosticResultsCard({
 }: {
   results: DiagnosticResult[] | null | undefined;
 }) {
+  const [mapFor, setMapFor] = useState<DiagnosticResult | null>(null);
   if (!results || results.length === 0) return null;
+  const mapKb = mapFor ? kb(mapFor.result) : null;
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-4 shadow-card">
       <h2 className="font-medium text-foreground">Diagnostics run on the laptop</h2>
@@ -71,6 +77,11 @@ export function DiagnosticResultsCard({
               )}
               {k?.note && <p className="mt-1 text-muted-foreground">Note: {k.note}</p>}
               {r.detail && <p className="mt-1 text-xs text-muted-foreground">{r.detail}</p>}
+              {k && (
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => setMapFor(r)}>
+                  <LayoutGrid /> View keyboard map
+                </Button>
+              )}
             </li>
           );
         })}
@@ -79,6 +90,23 @@ export function DiagnosticResultsCard({
         A key registering means it was pressed, not that it feels good; the technician judges sticky
         or worn keys.
       </p>
+
+      <Dialog open={!!mapFor} onOpenChange={(v) => !v && setMapFor(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>
+              Keyboard map{mapFor ? ` · ${formatDateTime(mapFor.created_at)}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {mapKb && (
+            <KeyboardMap
+              registered={mapKb.keys_registered ?? []}
+              faultyText={mapKb.note ?? null}
+              flaggedIds={mapKb.keys_flagged ?? []}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

@@ -17,7 +17,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.2.2-win"
+$VERSION = "0.3.0-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -777,8 +777,8 @@ function New-KeyboardResult([string[]]$registered, [string[]]$flagged, [string]$
   if ($flg.Count -gt 0) { $res.keys_flagged = $flg }
   if ($note) { $res.note = (Cap $note 500) }
   $detail = switch ($verdict) {
-    "ok" { "$($reg.Count) keys registered; operator confirmed all good" }
-    "flagged" { "$($flg.Count) key(s) flagged dead/sticky" }
+    "ok" { "$($reg.Count) keys registered; technician confirmed all keys work" }
+    "flagged" { if ($note) { "Faulty keys: $note" } else { "$($flg.Count) key(s) reported not working" } }
     default { "Keyboard test cancelled at the laptop" }
   }
   return @{ test = "keyboard"; outcome = $outcome; result = $res; detail = (Cap $detail 300) }
@@ -830,7 +830,9 @@ namespace NexWipe {
   public class KeyForm : Form {
     public event ScanHandler KeyScanned;
     protected override bool ProcessCmdKey(ref Message m, Keys keyData) {
-      if (m.Msg == 0x100 || m.Msg == 0x104) { // WM_KEYDOWN / WM_SYSKEYDOWN
+      // Capture keys for the test UNLESS a text box has focus - then let the technician type the
+      // list of faulty keys normally.
+      if ((m.Msg == 0x100 || m.Msg == 0x104) && !(this.ActiveControl is TextBox)) { // WM_KEYDOWN / WM_SYSKEYDOWN
         long lp = m.LParam.ToInt64();
         int sc = (int)((lp >> 16) & 0xFF);
         bool ext = ((lp >> 24) & 1) != 0;
@@ -852,12 +854,10 @@ namespace NexWipe {
   }
 
   $registered = New-Object Collections.Hashtable
-  $flagged = New-Object Collections.Hashtable
   $cells = New-Object Collections.Hashtable
-  $state = @{ verdict = "cancel" }
+  $state = @{ verdict = "cancel"; note = $null }
   $cGrey = [Drawing.Color]::FromArgb(235, 235, 235)
   $cGreen = [Drawing.Color]::FromArgb(150, 210, 150)
-  $cRed = [Drawing.Color]::FromArgb(240, 150, 120)
 
   $form = New-Object NexWipe.KeyForm
   $form.Text = "NexWipe keyboard test"
@@ -865,41 +865,20 @@ namespace NexWipe {
   $form.FormBorderStyle = "FixedDialog"
   $form.MaximizeBox = $false; $form.MinimizeBox = $false
   $form.TopMost = $true
-  $form.ClientSize = New-Object Drawing.Size(840, 560)
+  $form.ClientSize = New-Object Drawing.Size(840, 620)
 
   $info = New-Object Windows.Forms.Label
-  $info.Text = "Press EVERY key on this laptop. Each key turns GREEN when it works. A key that stays grey after you press it is dead - CLICK its cell to mark it red. When finished, use the buttons below (mouse)."
-  $info.SetBounds(12, 8, 816, 48)
+  $info.Text = "Press every key on this laptop to check it - each one turns GREEN. Grey keys your laptop does not have are fine to skip. If any key does NOT work, type it in the box below (for example: J, Right Shift, Space). Leave the box empty if every key works. Use the buttons with the mouse."
+  $info.SetBounds(12, 8, 816, 56)
 
   $count = New-Object Windows.Forms.Label
   $count.Font = New-Object Drawing.Font("Segoe UI", 11, [Drawing.FontStyle]::Bold)
-  $count.SetBounds(12, 58, 816, 24)
-  $count.Text = "Pressed 0   -   grey = not pressed yet"
+  $count.SetBounds(12, 66, 816, 22)
+  $count.Text = "Pressed 0"
 
   $board = New-Object Windows.Forms.FlowLayoutPanel
-  $board.SetBounds(12, 86, 816, 400)
+  $board.SetBounds(12, 92, 816, 350)
   $board.FlowDirection = "TopDown"; $board.WrapContents = $false
-
-  # "All keys work" stays disabled until at least this many keys register, so a test that captured
-  # nothing (or almost nothing) can never be marked Pass. The server enforces the same floor.
-  $MinPass = 20
-
-  # Buttons are created before $refresh so the closure captures the real $btnOk/$btnFail.
-  $btnOk = New-Object Windows.Forms.Button
-  $btnOk.Text = "All keys work"; $btnOk.SetBounds(12, 498, 150, 40); $btnOk.Enabled = $false
-  $btnFail = New-Object Windows.Forms.Button
-  $btnFail.Text = "Finish - dead keys"; $btnFail.SetBounds(172, 498, 170, 40); $btnFail.Enabled = $false
-  $btnCancel = New-Object Windows.Forms.Button
-  $btnCancel.Text = "Cancel"; $btnCancel.SetBounds(352, 498, 110, 40)
-
-  $refresh = {
-    $need = $MinPass - $registered.Count
-    $hint = if ($need -gt 0) { "   -   press $need more key(s) to enable Pass" } elseif ($flagged.Count) { "   -   dead keys flagged: $($flagged.Count)" } else { "   -   grey = not pressed yet" }
-    $count.Text = "Pressed $($registered.Count)" + $hint
-    $btnOk.Enabled = ($registered.Count -ge $MinPass)
-    $btnFail.Enabled = ($flagged.Count -gt 0)
-  }.GetNewClosure()
-
   foreach ($row in (Get-KeyboardTemplate)) {
     $rp = New-Object Windows.Forms.FlowLayoutPanel
     $rp.FlowDirection = "LeftToRight"; $rp.WrapContents = $false; $rp.AutoSize = $true
@@ -908,44 +887,63 @@ namespace NexWipe {
       $cell = New-Object Windows.Forms.Label
       $cell.Text = $k.t; $cell.Tag = $k.id
       $cell.Width = $k.w; $cell.Height = 38
-      $cell.TextAlign = "MiddleCenter"
-      $cell.BorderStyle = "FixedSingle"
+      $cell.TextAlign = "MiddleCenter"; $cell.BorderStyle = "FixedSingle"
       $cell.BackColor = $cGrey
       $cell.Margin = New-Object Windows.Forms.Padding(2)
-      # Clicking a grey/green cell marks it dead (red); clicking a red cell clears it.
-      $cell.add_Click({
-        param($s, $e)
-        $id = [string]$s.Tag
-        if ($flagged.ContainsKey($id)) { $flagged.Remove($id); $s.BackColor = $(if ($registered.ContainsKey($id)) { $cGreen } else { $cGrey }) }
-        else { $flagged[$id] = $true; $s.BackColor = $cRed }
-        & $refresh
-      }.GetNewClosure())
       $cells[$k.id] = $cell
       [void]$rp.Controls.Add($cell)
     }
     [void]$board.Controls.Add($rp)
   }
 
+  $lblBad = New-Object Windows.Forms.Label
+  $lblBad.Text = "Keys that do NOT work (leave blank if all keys work):"
+  $lblBad.SetBounds(12, 450, 816, 20)
+  $txtBad = New-Object Windows.Forms.TextBox
+  $txtBad.SetBounds(12, 472, 816, 24)
+
+  # "All keys work" needs at least this many keys pressed, so a test that captured nothing cannot pass.
+  # "Report faulty keys" needs text in the box. The server enforces the same pass floor.
+  $MinPass = 20
+  $btnOk = New-Object Windows.Forms.Button
+  $btnOk.Text = "All keys work"; $btnOk.SetBounds(12, 510, 170, 42); $btnOk.Enabled = $false
+  $btnFail = New-Object Windows.Forms.Button
+  $btnFail.Text = "Report faulty keys"; $btnFail.SetBounds(192, 510, 180, 42); $btnFail.Enabled = $false
+  $btnCancel = New-Object Windows.Forms.Button
+  $btnCancel.Text = "Cancel"; $btnCancel.SetBounds(382, 510, 110, 42)
+
+  $refresh = {
+    $need = $MinPass - $registered.Count
+    $count.Text = "Pressed $($registered.Count)" + $(if ($need -gt 0) { "   -   press $need more to enable 'All keys work'" } else { "" })
+    $btnOk.Enabled = ($registered.Count -ge $MinPass)
+    $btnFail.Enabled = ($txtBad.Text.Trim().Length -gt 0)
+  }.GetNewClosure()
+
   $form.add_KeyScanned({
     param($id)
     $registered[$id] = $true
     $c = $cells[$id]
-    if ($c -and -not $flagged.ContainsKey($id)) { $c.BackColor = $cGreen }
+    if ($c) { $c.BackColor = $cGreen }
     & $refresh
   }.GetNewClosure())
+  $txtBad.add_TextChanged({ & $refresh }.GetNewClosure())
 
   $btnOk.add_Click({ $state.verdict = "ok"; $form.Close() }.GetNewClosure())
-  $btnFail.add_Click({ $state.verdict = "flagged"; $form.Close() }.GetNewClosure())
+  $btnFail.add_Click({ $state.verdict = "flagged"; $state.note = $txtBad.Text.Trim(); $form.Close() }.GetNewClosure())
   $btnCancel.add_Click({ $state.verdict = "cancel"; $form.Close() }.GetNewClosure())
 
-  & $refresh # set the initial "press N more to enable Pass" hint
-  $form.Controls.AddRange(@($info, $count, $board, $btnOk, $btnFail, $btnCancel))
+  & $refresh
+  $form.Controls.AddRange(@($info, $count, $board, $lblBad, $txtBad, $btnOk, $btnFail, $btnCancel))
+  # Start with a button focused, not the text box, so the first keypresses test keys (the text box
+  # only takes focus when the technician clicks it to type faulty keys).
+  $form.add_Shown({ $btnCancel.Focus() }.GetNewClosure())
   [void]$form.ShowDialog()
   $form.Dispose()
 
   $out.registered = @($registered.Keys)
-  $out.flagged = @($flagged.Keys)
+  $out.flagged = @()
   $out.verdict = $state.verdict
+  $out.note = $state.note
   return $out
 }
 
