@@ -222,9 +222,17 @@ function Invoke-SelfTest {
   [Threading.Thread]::CurrentThread.CurrentCulture = New-Object Globalization.CultureInfo "de-DE"
   Check "JSON decimals use a dot on German Windows" ((ConvertTo-NdJson 74.5) -eq "74.5")
   [Threading.Thread]::CurrentThread.CurrentCulture = $old
-  $p = ConvertFrom-NdJson '{"inventory_requested":true,"reboot_to_usb_requested":false,"x":{"y":2}}'
+  $p = ConvertFrom-NdJson '{"inventory_requested":true,"reboot_to_usb_requested":false,"diagnostic_requested":true,"diagnostic_test":"keyboard","x":{"y":2}}'
   Check "JSON parse" ((Get-Field $p "inventory_requested") -eq $true -and (Get-Field (Get-Field $p "x") "y") -eq 2)
   Check "JSON parse: missing field is empty" ($null -eq (Get-Field $p "wifi") -and $null -eq (Get-Field (Get-Field $p "wifi") "ssid"))
+  Check "heartbeat diagnostic command parsed" ((Get-Field $p "diagnostic_requested") -eq $true -and (Get-Field $p "diagnostic_test") -eq "keyboard")
+  # keyboard result builder
+  $kr = New-KeyboardResult @("SC_1E", "SC_1E", "SC_30") @() "ok" $null "ansi"
+  Check "keyboard pass: deduped keys, outcome pass" ($kr.outcome -eq "pass" -and $kr.test -eq "keyboard" -and @($kr.result.keys_registered).Count -eq 2)
+  $kf = New-KeyboardResult @("SC_1E") @("SC_39") "flagged" "spacebar dead" "ansi"
+  Check "keyboard flagged: outcome fail with flagged key" ($kf.outcome -eq "fail" -and @($kf.result.keys_flagged).Count -eq 1 -and $kf.result.note -eq "spacebar dead")
+  $kc = New-KeyboardResult @() @() "cancel" "Declined at the laptop" $null
+  Check "keyboard cancel: outcome incomplete" ($kc.outcome -eq "incomplete")
   # identity helpers
   Check "placeholder serials rejected" ((Test-Placeholder "To be filled by O.E.M.") -and (Test-Placeholder "0000000") -and (Test-Placeholder " ") -and -not (Test-Placeholder "5CG8123ABC"))
   Check "Windows 7 swapped hex serial decoded" ((ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637") -eq "1WD-XMA1L1234567".Substring(0,0) + (ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637"))
@@ -750,6 +758,126 @@ function Invoke-RebootToUsb($stick) {
   Say "Restarting in 10 seconds." "Yellow"
 }
 
+# ============================================================== Diagnostics (keyboard)
+# A diagnostic reads hardware only; it never writes to any disk and starts no external program
+# (the keyboard test runs in-process with .NET WinForms), so the read-only allow-list is untouched.
+
+# Pure: turn a finished keyboard test into the payload POSTed to /diagnostics/result.
+# verdict: 'ok' -> pass, 'flagged' -> fail (dead/sticky keys), 'cancel' -> incomplete.
+function New-KeyboardResult([string[]]$registered, [string[]]$flagged, [string]$verdict, [string]$note, [string]$layout) {
+  $outcome = switch ($verdict) { "ok" { "pass" } "flagged" { "fail" } default { "incomplete" } }
+  $reg = @($registered | Where-Object { $_ } | Select-Object -Unique)
+  $flg = @($flagged | Where-Object { $_ } | Select-Object -Unique)
+  $res = @{ layout = (Cap $layout 20); keys_registered = $reg }
+  if ($flg.Count -gt 0) { $res.keys_flagged = $flg }
+  if ($note) { $res.note = (Cap $note 500) }
+  $detail = switch ($verdict) {
+    "ok" { "$($reg.Count) keys registered; operator confirmed all good" }
+    "flagged" { "$($flg.Count) key(s) flagged dead/sticky" }
+    default { "Keyboard test cancelled at the laptop" }
+  }
+  return @{ test = "keyboard"; outcome = $outcome; result = $res; detail = (Cap $detail 300) }
+}
+
+function Send-DiagnosticResult($payload) {
+  $r = Invoke-Nd "POST" "/diagnostics/result" $payload -Auth
+  if ($r.status -eq 200) { Say "Keyboard test result sent to NexWipe ($($payload.outcome))." "Green" }
+  else { Say "Could not send the result: $($r.error)" "Red" }
+}
+
+# Interactive keyboard capture. Opens a WinForms window; the technician presses every physical key
+# (each lights up by its scancode, layout-independent) then confirms or flags dead keys.
+# Returns @{ registered; flagged; verdict; note; layout }. 'verdict'='cancel' if no desktop/UI.
+function Invoke-KeyboardTest {
+  $out = @{ registered = @(); flagged = @(); verdict = "cancel"; note = $null; layout = $null }
+  try {
+    Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+    Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+    if (-not ([Management.Automation.PSTypeName]'NexWipe.Native').Type) {
+      Add-Type -Namespace NexWipe -Name Native -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("user32.dll")]
+public static extern uint MapVirtualKey(uint uCode, uint uMapType);
+'@ -ErrorAction Stop
+    }
+  } catch {
+    $out.note = "No desktop UI available for the keyboard test"
+    return $out
+  }
+  $registered = New-Object Collections.Hashtable
+  $flagged = New-Object Collections.Hashtable
+  # The cloud shows a generic template and the operator confirms completeness against the real keyboard,
+  # so a precise layout name is not needed; record the common default.
+  $out.layout = "ansi"
+
+  $form = New-Object Windows.Forms.Form
+  $form.Text = "NexWipe keyboard test"
+  $form.Size = New-Object Drawing.Size(560, 420)
+  $form.StartPosition = "CenterScreen"
+  $form.KeyPreview = $true
+  $form.TopMost = $true
+
+  $info = New-Object Windows.Forms.Label
+  $info.Text = "Press EVERY key on this laptop's keyboard. Each key is counted once. When done, click `"All keys work`". If a key never registers, click `"Flag dead key`" and press it (or type its name)."
+  $info.Dock = "Top"; $info.Height = 70; $info.Padding = New-Object Windows.Forms.Padding(8)
+  $count = New-Object Windows.Forms.Label
+  $count.Dock = "Top"; $count.Height = 28; $count.Font = New-Object Drawing.Font("Segoe UI", 12, [Drawing.FontStyle]::Bold)
+  $count.Text = "0 keys registered"
+  $list = New-Object Windows.Forms.TextBox
+  $list.Multiline = $true; $list.ReadOnly = $true; $list.Dock = "Fill"; $list.ScrollBars = "Vertical"
+  $panel = New-Object Windows.Forms.FlowLayoutPanel
+  $panel.Dock = "Bottom"; $panel.Height = 48; $panel.FlowDirection = "LeftToRight"
+
+  $script:kbVerdict = "cancel"; $script:kbFlagMode = $false
+  $btnOk = New-Object Windows.Forms.Button; $btnOk.Text = "All keys work"; $btnOk.Width = 130
+  $btnFlag = New-Object Windows.Forms.Button; $btnFlag.Text = "Flag dead key"; $btnFlag.Width = 130
+  $btnDone = New-Object Windows.Forms.Button; $btnDone.Text = "Done (has flags)"; $btnDone.Width = 130; $btnDone.Enabled = $false
+  $btnCancel = New-Object Windows.Forms.Button; $btnCancel.Text = "Cancel"; $btnCancel.Width = 90
+  $panel.Controls.AddRange(@($btnOk, $btnFlag, $btnDone, $btnCancel))
+
+  $refresh = {
+    $count.Text = "$($registered.Count) keys registered" + $(if ($flagged.Count) { "  -  $($flagged.Count) flagged" } else { "" })
+    $list.Text = (@($registered.Keys | Sort-Object) -join "  ")
+  }.GetNewClosure()
+
+  $form.add_KeyDown({
+    param($s, $e)
+    $sc = 0; try { $sc = [int][NexWipe.Native]::MapVirtualKey([uint32]$e.KeyValue, 0) } catch {}
+    $name = if ($sc -gt 0) { "SC_{0:X2}" -f $sc } else { "VK_{0}" -f [int]$e.KeyValue }
+    if ($script:kbFlagMode) { $flagged[$name] = $true; $script:kbFlagMode = $false; $form.Text = "NexWipe keyboard test" }
+    else { $registered[$name] = $true }
+    & $refresh
+    $e.SuppressKeyPress = $true; $e.Handled = $true
+  }.GetNewClosure())
+
+  $btnOk.add_Click({ $script:kbVerdict = "ok"; $form.Close() }.GetNewClosure())
+  $btnFlag.add_Click({ $script:kbFlagMode = $true; $btnDone.Enabled = $true; $form.Text = "Press the DEAD key now..." }.GetNewClosure())
+  $btnDone.add_Click({ $script:kbVerdict = "flagged"; $form.Close() }.GetNewClosure())
+  $btnCancel.add_Click({ $script:kbVerdict = "cancel"; $form.Close() }.GetNewClosure())
+
+  $form.Controls.AddRange(@($list, $count, $info, $panel))
+  [void]$form.ShowDialog()
+  $form.Dispose()
+  $out.registered = @($registered.Keys); $out.flagged = @($flagged.Keys); $out.verdict = $script:kbVerdict
+  return $out
+}
+
+function Invoke-Diagnostic([string]$test) {
+  if ($test -ne "keyboard") { Say "NexWipe asked for an unknown diagnostic ('$test'); ignoring." "Yellow"; return }
+  Say "NexWipe cloud asked to run the keyboard test on this laptop." "Yellow"
+  try { [void][Console]::KeyAvailable } catch { [void](Send-DiagnosticResult (New-KeyboardResult @() @() "cancel" "No console to confirm at the laptop" $null)); return }
+  Write-Host ""
+  $ans = (Read-Host "  Permit the keyboard test on this laptop? [Y/N]").Trim()
+  if ($ans -notmatch '^[Yy]') {
+    Say "Keyboard test declined at the laptop." "Gray"
+    [void](Send-DiagnosticResult (New-KeyboardResult @() @() "cancel" "Declined at the laptop" $null))
+    return
+  }
+  Say "Opening the keyboard test window. Press every key, then confirm." "Cyan"
+  $kb = Invoke-KeyboardTest
+  [void](Send-DiagnosticResult (New-KeyboardResult $kb.registered $kb.flagged $kb.verdict $kb.note $kb.layout))
+  Say "Keyboard test finished." "Green"
+}
+
 # ============================================================== main
 if ($SelfTest) { Invoke-SelfTest }
 
@@ -806,4 +934,5 @@ while ($true) {
   }
   if ((Get-Field $hb.body "inventory_requested") -eq $true) { Say "NexWipe cloud asked for a Rescan." "Cyan"; $inv = Send-Inventory }
   if ((Get-Field $hb.body "reboot_to_usb_requested") -eq $true) { Invoke-RebootToUsb $inv.stick }
+  if ((Get-Field $hb.body "diagnostic_requested") -eq $true) { Invoke-Diagnostic ([string](Get-Field $hb.body "diagnostic_test")) }
 }

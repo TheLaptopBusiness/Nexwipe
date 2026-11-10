@@ -112,6 +112,15 @@ An authorization row is bound to **organization + job + station + device + drive
 
 `POST /heartbeat` returns `server_time`, `queued_jobs`, `heartbeat_timeout_seconds`, `inventory_requested`, plus
 `mode` (`read_only` | `standard` | `simulated`), `credential_expires_at` and `rotate_recommended` (true when < 14 days remain).
+It also returns `reboot_to_usb_requested`, and `diagnostic_requested` + `diagnostic_test` (currently `keyboard`). Each
+command is delivered **exactly once** (next heartbeat flips it on, then off); if no heartbeat picks it up within 2 minutes it expires.
+
+## 9a. Diagnostics (keyboard test)
+
+When a heartbeat returns `diagnostic_requested: true`, the Windows helper runs the named test on the laptop (reads hardware
+only; never touches a disk) and reports with `POST /diagnostics/result`:
+`{ "test": "keyboard", "outcome": "pass" | "fail" | "incomplete", "result": { "keys_registered": ["SC_1E", …], "keys_flagged": [...], "note": "..." }, "detail": "..." }`.
+Keys are scancode names (physical position, layout-independent). Results are recorded against the laptop's device code; they do not change a device grade.
 
 ## 10. Credential rotation
 

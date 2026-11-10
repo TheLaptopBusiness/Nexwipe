@@ -7,7 +7,11 @@ export const AGENT_API_BASE = "/api/public/agent/v1";
 export const MAX_BODY_BYTES = 400_000;
 export const MAX_EVIDENCE_BYTES = 262_144;
 
-const idem = z.string().min(8).max(128).regex(/^[A-Za-z0-9._:-]+$/, "idempotency_key may contain letters, digits, . _ : -");
+const idem = z
+  .string()
+  .min(8)
+  .max(128)
+  .regex(/^[A-Za-z0-9._:-]+$/, "idempotency_key may contain letters, digits, . _ : -");
 const seq = z.number().int().min(1).max(1_000_000);
 const occurredAt = z.string().datetime({ offset: true }).optional();
 const shortText = (max: number) => z.string().trim().max(max);
@@ -36,13 +40,33 @@ export const DriveCapabilities = z.object({
   source: z.enum(["ata_identify_sysfs", "nvme_identify_controller", "unavailable"]),
   reason: shortText(160).optional(),
   ata_security: flagSet({
-    supported: z.boolean().nullable(), enabled: z.boolean(), locked: z.boolean(), frozen: z.boolean(),
-    enhanced_erase_supported: z.boolean(), normal_erase_minutes: minutes, enhanced_erase_minutes: minutes,
+    supported: z.boolean().nullable(),
+    enabled: z.boolean(),
+    locked: z.boolean(),
+    frozen: z.boolean(),
+    enhanced_erase_supported: z.boolean(),
+    normal_erase_minutes: minutes,
+    enhanced_erase_minutes: minutes,
   }).optional(),
-  ata_sanitize_feature: flagSet({ supported: z.boolean(), crypto_scramble: z.boolean(), overwrite: z.boolean(), block_erase: z.boolean() }).optional(),
+  ata_sanitize_feature: flagSet({
+    supported: z.boolean(),
+    crypto_scramble: z.boolean(),
+    overwrite: z.boolean(),
+    block_erase: z.boolean(),
+  }).optional(),
   trim_supported: z.boolean().optional(),
-  nvme_format_nvm: flagSet({ supported: z.boolean(), crypto_erase: z.boolean(), applies_to_all_namespaces: z.boolean(), erase_applies_to_all_namespaces: z.boolean() }).optional(),
-  nvme_sanitize_feature: flagSet({ supported: z.boolean(), crypto_erase: z.boolean(), block_erase: z.boolean(), overwrite: z.boolean() }).optional(),
+  nvme_format_nvm: flagSet({
+    supported: z.boolean(),
+    crypto_erase: z.boolean(),
+    applies_to_all_namespaces: z.boolean(),
+    erase_applies_to_all_namespaces: z.boolean(),
+  }).optional(),
+  nvme_sanitize_feature: flagSet({
+    supported: z.boolean(),
+    crypto_erase: z.boolean(),
+    block_erase: z.boolean(),
+    overwrite: z.boolean(),
+  }).optional(),
   nvme_namespace_count: z.number().int().min(0).max(1_000_000).optional(),
   nvme_namespace_management: z.boolean().optional(),
 });
@@ -69,22 +93,79 @@ export const InventoryRequest = z.object({
     board: shortText(120).optional(),
   }),
   // Further detail shown on the Connected devices page. All optional, read-only identity data.
-  os: z.object({ name: shortText(120).optional(), version: shortText(60).optional(), build: shortText(60).optional(), architecture: shortText(40).optional() }).optional(),
-  memory_modules: z.array(z.object({
-    slot: shortText(60).optional(), size_bytes: z.number().int().nonnegative().optional(), speed_mhz: count.optional(),
-    type: shortText(40).optional(), manufacturer: shortText(80).optional(), part_number: shortText(80).optional(), serial: shortText(80).optional(),
-  })).max(32).optional(),
-  batteries: z.array(z.object({
-    name: shortText(80).optional(), manufacturer: shortText(80).optional(), serial: shortText(80).optional(), chemistry: shortText(40).optional(),
-    design_capacity_mwh: count.optional(), full_charge_capacity_mwh: count.optional(), cycle_count: count.optional(),
-    health_pct: z.number().min(0).max(200).optional(), status: shortText(40).optional(),
-  })).max(4).optional(),
-  gpus: z.array(z.object({ name: shortText(120).optional(), driver_version: shortText(60).optional(), vram_bytes: z.number().int().nonnegative().optional() })).max(8).optional(),
-  network_adapters: z.array(z.object({ name: shortText(120).optional(), mac: shortText(40).optional(), kind: z.enum(["wifi", "ethernet", "bluetooth", "other"]).optional() })).max(16).optional(),
-  security: z.object({
-    tpm_present: z.boolean().optional(), tpm_version: shortText(40).optional(),
-    bitlocker: z.array(z.object({ volume: shortText(20).optional(), protection: z.enum(["on", "off", "unknown"]).optional() })).max(16).optional(),
-  }).optional(),
+  os: z
+    .object({
+      name: shortText(120).optional(),
+      version: shortText(60).optional(),
+      build: shortText(60).optional(),
+      architecture: shortText(40).optional(),
+    })
+    .optional(),
+  memory_modules: z
+    .array(
+      z.object({
+        slot: shortText(60).optional(),
+        size_bytes: z.number().int().nonnegative().optional(),
+        speed_mhz: count.optional(),
+        type: shortText(40).optional(),
+        manufacturer: shortText(80).optional(),
+        part_number: shortText(80).optional(),
+        serial: shortText(80).optional(),
+      }),
+    )
+    .max(32)
+    .optional(),
+  batteries: z
+    .array(
+      z.object({
+        name: shortText(80).optional(),
+        manufacturer: shortText(80).optional(),
+        serial: shortText(80).optional(),
+        chemistry: shortText(40).optional(),
+        design_capacity_mwh: count.optional(),
+        full_charge_capacity_mwh: count.optional(),
+        cycle_count: count.optional(),
+        health_pct: z.number().min(0).max(200).optional(),
+        status: shortText(40).optional(),
+      }),
+    )
+    .max(4)
+    .optional(),
+  gpus: z
+    .array(
+      z.object({
+        name: shortText(120).optional(),
+        driver_version: shortText(60).optional(),
+        vram_bytes: z.number().int().nonnegative().optional(),
+      }),
+    )
+    .max(8)
+    .optional(),
+  network_adapters: z
+    .array(
+      z.object({
+        name: shortText(120).optional(),
+        mac: shortText(40).optional(),
+        kind: z.enum(["wifi", "ethernet", "bluetooth", "other"]).optional(),
+      }),
+    )
+    .max(16)
+    .optional(),
+  security: z
+    .object({
+      tpm_present: z.boolean().optional(),
+      tpm_version: shortText(40).optional(),
+      bitlocker: z
+        .array(
+          z.object({
+            volume: shortText(20).optional(),
+            protection: z.enum(["on", "off", "unknown"]).optional(),
+          }),
+        )
+        .max(16)
+        .optional(),
+    })
+    .optional(),
   station: z
     .object({
       agent_version: shortText(40).optional(),
@@ -187,13 +268,38 @@ export const ActionResultRequest = z.object({
   detail: shortText(300).optional(),
 });
 
+// Result of a diagnostic the heartbeat delivered. Reads hardware only; never touches storage.
+// keys_registered / keys_flagged are physical scancode names (e.g. "KEY_A", "SC_01E"), not characters.
+export const DiagnosticResultRequest = z.object({
+  test: z.enum(["keyboard"]),
+  outcome: z.enum(["pass", "fail", "incomplete"]),
+  result: z
+    .object({
+      layout: shortText(20).optional(),
+      keys_registered: z.array(shortText(24)).max(200).default([]),
+      keys_flagged: z.array(shortText(24)).max(200).optional(),
+      note: shortText(500).optional(),
+    })
+    .default({ keys_registered: [] }),
+  detail: shortText(300).optional(),
+});
+
 export const ReconcileRequest = z.object({
-  jobs: z.array(z.object({ job_id: z.string().uuid(), agent_last_seq: z.number().int().min(0) })).max(50),
+  jobs: z
+    .array(z.object({ job_id: z.string().uuid(), agent_last_seq: z.number().int().min(0) }))
+    .max(50),
 });
 
 /** Build the payload stored with a job event: everything except transport fields. */
 export function eventPayload<T extends Record<string, unknown>>(body: T): Record<string, unknown> {
-  const { seq: _s, idempotency_key: _i, type: _t, occurred_at: _o, stage: _st, ...rest } = body as Record<string, unknown>;
+  const {
+    seq: _s,
+    idempotency_key: _i,
+    type: _t,
+    occurred_at: _o,
+    stage: _st,
+    ...rest
+  } = body as Record<string, unknown>;
   return rest;
 }
 

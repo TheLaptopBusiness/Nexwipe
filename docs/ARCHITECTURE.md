@@ -85,4 +85,4 @@ Job state machine: `draft → awaiting_authorization → queued → running → 
 
 ## Migrations
 
-Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`, `phase2b_security.sql`, `phase2c_readonly_stations.sql`, `phase2d_hardware_origin.sql`, `phase2e_chromebook.sql`.
+Applied migrations live in `drizzle/migrations/` (version-controlled). Database acceptance checks: `tests/db/phase1_acceptance.sql`, `tests/db/phase2_acceptance.sql`, `phase2b_security.sql`, `phase2c_readonly_stations.sql`, `phase2d_hardware_origin.sql`, `phase2e_chromebook.sql`, `phase2h_connected_devices.sql`, `phase2k_diagnostics.sql` (agent-run keyboard diagnostic).

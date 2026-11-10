@@ -11,7 +11,11 @@ export function useSites() {
   return useQuery({
     queryKey: ["sites", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").eq("org_id", orgId).order("name");
+      const { data, error } = await supabase
+        .from("sites")
+        .select("*")
+        .eq("org_id", orgId)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -23,7 +27,11 @@ export function useClients() {
   return useQuery({
     queryKey: ["clients", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("*").eq("org_id", orgId).order("name");
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("org_id", orgId)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -51,7 +59,10 @@ export function useProjectCounts() {
   return useQuery({
     queryKey: ["project-counts", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("project_device_counts").select("*").eq("org_id", orgId);
+      const { data, error } = await supabase
+        .from("project_device_counts")
+        .select("*")
+        .eq("org_id", orgId);
       if (error) throw error;
       return new Map(data.map((r) => [r.project_id!, r]));
     },
@@ -63,7 +74,10 @@ export function useBatchCounts() {
   return useQuery({
     queryKey: ["batch-counts", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("batch_device_counts").select("*").eq("org_id", orgId);
+      const { data, error } = await supabase
+        .from("batch_device_counts")
+        .select("*")
+        .eq("org_id", orgId);
       if (error) throw error;
       return new Map(data.map((r) => [r.batch_id!, r]));
     },
@@ -75,7 +89,11 @@ export function useBatches(projectId?: string) {
   return useQuery({
     queryKey: ["batches", orgId, projectId ?? "all"],
     queryFn: async () => {
-      let q = supabase.from("batches").select("*").eq("org_id", orgId).order("created_at", { ascending: false });
+      let q = supabase
+        .from("batches")
+        .select("*")
+        .eq("org_id", orgId)
+        .order("created_at", { ascending: false });
       if (projectId) q = q.eq("project_id", projectId);
       const { data, error } = await q;
       if (error) throw error;
@@ -100,7 +118,9 @@ export function useMembers() {
   });
 }
 
-export function memberName(m: { profiles: { full_name: string | null; email: string } | null } | undefined) {
+export function memberName(
+  m: { profiles: { full_name: string | null; email: string } | null } | undefined,
+) {
   if (!m?.profiles) return "Unknown user";
   return m.profiles.full_name || m.profiles.email;
 }
@@ -120,12 +140,22 @@ export function formatBytes(bytes: number | null | undefined): string {
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 }
 
 // ----- Phase 2: policies, agents, jobs -----
@@ -158,7 +188,11 @@ export function useAgents(opts: { refetchMs?: number } = {}) {
     queryKey: ["agents", orgId],
     refetchInterval: opts.refetchMs ?? false,
     queryFn: async () => {
-      const { data, error } = await supabase.from("agents").select(AGENT_COLUMNS).eq("org_id", orgId).order("enrolled_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("agents")
+        .select(AGENT_COLUMNS)
+        .eq("org_id", orgId)
+        .order("enrolled_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -177,7 +211,9 @@ export function useChromebooks() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chromebook_records")
-        .select("*, devices(asset_tag, manufacturer, model, system_serial, hardware_origin, project_id, batch_id)")
+        .select(
+          "*, devices(asset_tag, manufacturer, model, system_serial, hardware_origin, project_id, batch_id)",
+        )
         .eq("org_id", orgId)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -194,7 +230,9 @@ export function useChromebook(recordId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chromebook_records")
-        .select("*, devices(id, asset_tag, manufacturer, model, system_serial, hardware_origin, received_at, projects(name), batches(name))")
+        .select(
+          "*, devices(id, asset_tag, manufacturer, model, system_serial, hardware_origin, received_at, projects(name), batches(name))",
+        )
         .eq("org_id", orgId)
         .eq("id", recordId)
         .maybeSingle();
@@ -224,7 +262,9 @@ export function useChromebookEvents(recordId: string) {
 // ----- Connected devices (station reports) -----
 
 const CONNECTED_COLUMNS =
-  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at), devices(asset_tag, grade, hardware_verified, hardware_origin, source)";
+  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at, diagnostic_status, diagnostic_test, diagnostic_detail, diagnostic_status_at), devices(asset_tag, grade, hardware_verified, hardware_origin, source)";
+
+const DIAGNOSTIC_COLUMNS = "id, test, outcome, result, detail, is_simulated, created_at";
 
 export function useConnectedDevices() {
   const { orgId } = useOrg();
@@ -232,8 +272,12 @@ export function useConnectedDevices() {
     queryKey: ["connected-devices", orgId],
     retry: (n, err) => !needsDbUpdate(err) && n < 3,
     queryFn: async () => {
-      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId)
-        .order("last_reported_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase
+        .from("agent_discoveries")
+        .select(CONNECTED_COLUMNS)
+        .eq("org_id", orgId)
+        .order("last_reported_at", { ascending: false })
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -247,8 +291,14 @@ export function useDeviceDiscovery(deviceId: string) {
     queryKey: ["device-discovery", orgId, deviceId],
     retry: (n, err) => !needsDbUpdate(err) && n < 3,
     queryFn: async () => {
-      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId).eq("device_id", deviceId)
-        .order("last_reported_at", { ascending: false }).limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from("agent_discoveries")
+        .select(CONNECTED_COLUMNS)
+        .eq("org_id", orgId)
+        .eq("device_id", deviceId)
+        .order("last_reported_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -261,7 +311,31 @@ export function useConnectedDevice(discoveryId: string) {
     queryKey: ["connected-device", orgId, discoveryId],
     retry: (n, err) => !needsDbUpdate(err) && n < 3,
     queryFn: async () => {
-      const { data, error } = await supabase.from("agent_discoveries").select(CONNECTED_COLUMNS).eq("org_id", orgId).eq("id", discoveryId).maybeSingle();
+      const { data, error } = await supabase
+        .from("agent_discoveries")
+        .select(CONNECTED_COLUMNS)
+        .eq("org_id", orgId)
+        .eq("id", discoveryId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+/** Diagnostic results for one laptop. Key by device_code (connected page) or device_id (inventory). */
+export function useDiagnosticResults(by: { deviceCode?: string | null; deviceId?: string | null }) {
+  const { orgId } = useOrg();
+  const key = by.deviceCode ? ["code", by.deviceCode] : ["device", by.deviceId];
+  return useQuery({
+    enabled: Boolean(by.deviceCode || by.deviceId),
+    queryKey: ["diagnostic-results", orgId, ...key],
+    retry: (n, err) => !needsDbUpdate(err) && n < 3,
+    refetchInterval: 5000, // the result lands a few heartbeats after the test is requested
+    queryFn: async () => {
+      let qb = supabase.from("diagnostic_results").select(DIAGNOSTIC_COLUMNS).eq("org_id", orgId);
+      qb = by.deviceCode ? qb.eq("device_code", by.deviceCode) : qb.eq("device_id", by.deviceId!);
+      const { data, error } = await qb.order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
       return data;
     },

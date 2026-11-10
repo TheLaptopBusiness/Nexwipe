@@ -89,9 +89,37 @@ paths:
       requestBody:
         content: { application/json: { schema: { type: object, properties: { state: { type: string, enum: [idle, busy, reconciling] }, agent_version: { type: string } } } } }
       responses:
-        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report).", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean }, mode: { type: string, enum: [read_only, standard, simulated] }, credential_expires_at: { type: [string, "null"], format: date-time }, rotate_recommended: { type: boolean } } } } } }
+        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report). When `diagnostic_requested` is true, run the test named by `diagnostic_test` and POST /diagnostics/result.", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean }, reboot_to_usb_requested: { type: boolean }, diagnostic_requested: { type: boolean }, diagnostic_test: { type: [string, "null"], enum: [keyboard, null] }, mode: { type: string, enum: [read_only, standard, simulated] }, credential_expires_at: { type: [string, "null"], format: date-time }, rotate_recommended: { type: boolean } } } } } }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+  /diagnostics/result:
+    post:
+      summary: Report the result of a diagnostic the heartbeat delivered (reads hardware only; never writes to a disk)
+      parameters: [{ $ref: "#/components/parameters/Timestamp" }, { $ref: "#/components/parameters/Nonce" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [test, outcome]
+              properties:
+                test: { type: string, enum: [keyboard] }
+                outcome: { type: string, enum: [pass, fail, incomplete] }
+                detail: { type: string, maxLength: 300 }
+                result:
+                  type: object
+                  description: "Keyboard test: scancode names of keys pressed and any flagged dead/sticky. Physical positions, layout-independent."
+                  properties:
+                    layout: { type: string }
+                    keys_registered: { type: array, maxItems: 200, items: { type: string } }
+                    keys_flagged: { type: array, maxItems: 200, items: { type: string } }
+                    note: { type: string }
+      responses:
+        "200": { description: "Recorded.", content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, outcome: { type: string } } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
   /inventory:
     post:
       summary: Report discovered system and drive identities

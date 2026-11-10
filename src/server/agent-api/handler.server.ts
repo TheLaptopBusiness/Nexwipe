@@ -9,6 +9,7 @@ import {
   AGENT_API_VERSION,
   AckRequest,
   ActionResultRequest,
+  DiagnosticResultRequest,
   EnrollRequest,
   EventRequest,
   EvidenceRequest,
@@ -48,7 +49,8 @@ function json(status: number, body: unknown): Response {
 
 async function readBody<S extends ZodTypeAny>(request: Request, schema: S): Promise<z.infer<S>> {
   const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) throw new ApiError(413, "payload_too_large", "Request body is too large");
+  if (text.length > MAX_BODY_BYTES)
+    throw new ApiError(413, "payload_too_large", "Request body is too large");
   let parsed: unknown;
   try {
     parsed = text ? JSON.parse(text) : {};
@@ -76,13 +78,38 @@ function fromDb(error: RpcError): ApiError {
   const expected = error.hint?.match(/expected_seq=(\d+)/);
   if (expected) extra["expected_seq"] = Number(expected[1]);
   const code =
-    status === 401 ? "unauthorized" : status === 403 ? "forbidden" : status === 404 ? "not_found" : status === 409 ? "conflict" : "unprocessable";
-  return new ApiError(status, error.message.startsWith("Sequence conflict") ? "sequence_conflict" : error.message.startsWith("Replayed") ? "replayed_request" : code, error.message, extra);
+    status === 401
+      ? "unauthorized"
+      : status === 403
+        ? "forbidden"
+        : status === 404
+          ? "not_found"
+          : status === 409
+            ? "conflict"
+            : "unprocessable";
+  return new ApiError(
+    status,
+    error.message.startsWith("Sequence conflict")
+      ? "sequence_conflict"
+      : error.message.startsWith("Replayed")
+        ? "replayed_request"
+        : code,
+    error.message,
+    extra,
+  );
 }
 
 // The generated client types cover these functions; a loose wrapper keeps call sites compact.
-async function rpc<T = Record<string, unknown>>(fn: string, args: Record<string, unknown>): Promise<T> {
-  const { data, error } = await (supabaseAdmin.rpc as unknown as (f: string, a: Record<string, unknown>) => Promise<{ data: T; error: RpcError | null }>)(fn, args);
+async function rpc<T = Record<string, unknown>>(
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<T> {
+  const { data, error } = await (
+    supabaseAdmin.rpc as unknown as (
+      f: string,
+      a: Record<string, unknown>,
+    ) => Promise<{ data: T; error: RpcError | null }>
+  )(fn, args);
   if (error) throw fromDb(error);
   return data;
 }
@@ -117,7 +144,11 @@ async function authenticate(request: Request): Promise<AgentIdentity> {
   if (!ts) throw new ApiError(401, "unauthorized", "Missing or invalid X-ND-Timestamp header");
   const nonce = request.headers.get("x-nd-nonce");
   if (!nonce) throw new ApiError(401, "unauthorized", "Missing X-ND-Nonce header");
-  return rpc<AgentIdentity>("agent_authenticate", { _credential: credential, _nonce: nonce, _timestamp: ts.toISOString() });
+  return rpc<AgentIdentity>("agent_authenticate", {
+    _credential: credential,
+    _nonce: nonce,
+    _timestamp: ts.toISOString(),
+  });
 }
 
 function jobIdFrom(segment: string | undefined): string {
@@ -128,7 +159,8 @@ function jobIdFrom(segment: string | undefined): string {
 /** Convert an agent_job_event result into a response, honouring recorded rejections. */
 function eventResponse(result: Record<string, unknown>): Response {
   if (result["ok"] === false) {
-    const status = typeof result["http_status"] === "number" ? (result["http_status"] as number) : 409;
+    const status =
+      typeof result["http_status"] === "number" ? (result["http_status"] as number) : 409;
     return json(status, {
       error: { code: result["error"], message: result["message"] ?? String(result["error"]) },
       job_status: result["job_status"],
@@ -145,7 +177,11 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
   const parts = splat.split("/").filter(Boolean);
   try {
     if (method === "GET" && parts.length === 1 && parts[0] === "health") {
-      return json(200, { ok: true, api_version: AGENT_API_VERSION, server_time: new Date().toISOString() });
+      return json(200, {
+        ok: true,
+        api_version: AGENT_API_VERSION,
+        server_time: new Date().toISOString(),
+      });
     }
 
     if (method === "POST" && parts.length === 1 && parts[0] === "enroll") {
@@ -157,7 +193,11 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
         _platform: body.platform ?? null,
         _hostname: body.hostname ?? null,
       });
-      return json(201, { ...result, api_version: AGENT_API_VERSION, heartbeat_interval_seconds: 30 });
+      return json(201, {
+        ...result,
+        api_version: AGENT_API_VERSION,
+        heartbeat_interval_seconds: 30,
+      });
     }
 
     const agent = await authenticate(request);
@@ -165,19 +205,62 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
 
     if (method === "POST" && parts.length === 1 && parts[0] === "heartbeat") {
       const body = await readBody(request, HeartbeatRequest);
-      const hb = await rpc("agent_heartbeat", { _agent: a, _state: body.state, _version: body.agent_version ?? null });
+      const hb = await rpc("agent_heartbeat", {
+        _agent: a,
+        _state: body.state,
+        _version: body.agent_version ?? null,
+      });
       return json(200, { ...hb, ...credentialInfo(agent) });
     }
-    if (method === "POST" && parts.length === 2 && parts[0] === "credentials" && parts[1] === "rotate") {
-      return json(200, await rpc("agent_rotate_credential", { _agent: a, _credential_id: agent.credential_id }));
+    if (
+      method === "POST" &&
+      parts.length === 2 &&
+      parts[0] === "credentials" &&
+      parts[1] === "rotate"
+    ) {
+      return json(
+        200,
+        await rpc("agent_rotate_credential", { _agent: a, _credential_id: agent.credential_id }),
+      );
     }
     if (method === "POST" && parts.length === 1 && parts[0] === "inventory") {
       const body = await readBody(request, InventoryRequest);
       return json(200, await rpc("agent_report_inventory", { _agent: a, _payload: body }));
     }
-    if (method === "POST" && parts.length === 2 && parts[0] === "actions" && parts[1] === "result") {
+    if (
+      method === "POST" &&
+      parts.length === 2 &&
+      parts[0] === "actions" &&
+      parts[1] === "result"
+    ) {
       const body = await readBody(request, ActionResultRequest);
-      return json(200, await rpc("agent_report_action", { _agent: a, _action: body.action, _ok: body.ok, _detail: body.detail ?? null }));
+      return json(
+        200,
+        await rpc("agent_report_action", {
+          _agent: a,
+          _action: body.action,
+          _ok: body.ok,
+          _detail: body.detail ?? null,
+        }),
+      );
+    }
+    if (
+      method === "POST" &&
+      parts.length === 2 &&
+      parts[0] === "diagnostics" &&
+      parts[1] === "result"
+    ) {
+      const body = await readBody(request, DiagnosticResultRequest);
+      return json(
+        200,
+        await rpc("agent_report_diagnostic", {
+          _agent: a,
+          _test: body.test,
+          _outcome: body.outcome,
+          _result: body.result,
+          _detail: body.detail ?? null,
+        }),
+      );
     }
     if (method === "GET" && parts.length === 1 && parts[0] === "jobs") {
       return json(200, { jobs: await rpc("agent_list_jobs", { _agent: a }) });
@@ -194,8 +277,13 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
         const body = await readBody(request, AckRequest);
         return eventResponse(
           await rpc("agent_job_event", {
-            _agent: a, _job: jobId, _type: "ack", _seq: body.seq, _idem: body.idempotency_key,
-            _payload: eventPayload(body), _occurred_at: body.occurred_at ?? null,
+            _agent: a,
+            _job: jobId,
+            _type: "ack",
+            _seq: body.seq,
+            _idem: body.idempotency_key,
+            _payload: eventPayload(body),
+            _occurred_at: body.occurred_at ?? null,
           }),
         );
       }
@@ -203,27 +291,53 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
         const body = await readBody(request, EventRequest);
         return eventResponse(
           await rpc("agent_job_event", {
-            _agent: a, _job: jobId, _type: body.type, _seq: body.seq, _idem: body.idempotency_key,
-            _payload: eventPayload(body), _occurred_at: body.occurred_at ?? null,
+            _agent: a,
+            _job: jobId,
+            _type: body.type,
+            _seq: body.seq,
+            _idem: body.idempotency_key,
+            _payload: eventPayload(body),
+            _occurred_at: body.occurred_at ?? null,
           }),
         );
       }
       if (action === "result") {
         const body = await readBody(request, ResultRequest);
-        if (body.stage === "execution" && body.outcome === "passed") throw new ApiError(422, "validation_failed", "Execution outcome must be succeeded or failed");
-        if (body.stage === "verification" && body.outcome === "succeeded") throw new ApiError(422, "validation_failed", "Verification outcome must be passed or failed");
+        if (body.stage === "execution" && body.outcome === "passed")
+          throw new ApiError(
+            422,
+            "validation_failed",
+            "Execution outcome must be succeeded or failed",
+          );
+        if (body.stage === "verification" && body.outcome === "succeeded")
+          throw new ApiError(
+            422,
+            "validation_failed",
+            "Verification outcome must be passed or failed",
+          );
         return eventResponse(
           await rpc("agent_job_event", {
-            _agent: a, _job: jobId, _type: body.stage === "execution" ? "execution_result" : "verification_result",
-            _seq: body.seq, _idem: body.idempotency_key, _payload: eventPayload(body), _occurred_at: body.occurred_at ?? null,
+            _agent: a,
+            _job: jobId,
+            _type: body.stage === "execution" ? "execution_result" : "verification_result",
+            _seq: body.seq,
+            _idem: body.idempotency_key,
+            _payload: eventPayload(body),
+            _occurred_at: body.occurred_at ?? null,
           }),
         );
       }
       if (action === "evidence") {
         const body = await readBody(request, EvidenceRequest);
         const result = await rpc("agent_upload_evidence", {
-          _agent: a, _job: jobId, _idem: body.idempotency_key, _kind: body.kind, _filename: body.filename,
-          _content_type: body.content_type ?? "text/plain", _content: body.content, _sha256: body.sha256.toLowerCase(),
+          _agent: a,
+          _job: jobId,
+          _idem: body.idempotency_key,
+          _kind: body.kind,
+          _filename: body.filename,
+          _content_type: body.content_type ?? "text/plain",
+          _content: body.content,
+          _sha256: body.sha256.toLowerCase(),
         });
         return json(result["duplicate"] ? 200 : 201, result);
       }
@@ -231,7 +345,8 @@ export async function handleAgentRequest(request: Request, splat: string): Promi
 
     throw new ApiError(404, "not_found", `No endpoint ${method} /${parts.join("/")}`);
   } catch (e) {
-    if (e instanceof ApiError) return json(e.status, { error: { code: e.code, message: e.message, ...e.extra } });
+    if (e instanceof ApiError)
+      return json(e.status, { error: { code: e.code, message: e.message, ...e.extra } });
     console.error("[agent-api] unexpected error", e);
     return json(500, { error: { code: "internal_error", message: "Internal error" } });
   }

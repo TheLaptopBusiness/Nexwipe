@@ -60,7 +60,7 @@ const MATRIX: Record<Capability, OrgRole[]> = {
   "jobs.operate": ["owner", "admin", "technician"],
   "agents.view": ["owner", "admin", "technician", "auditor"],
   "agents.manage": ["owner", "admin"],
-  // Mirrors request_station_action: Rescan / Reboot into NexWipe. Auditors only watch.
+  // Mirrors request_station_action and request_diagnostic: Rescan / Reboot into NexWipe / Run keyboard test. Auditors only watch.
   "stations.act": ["owner", "admin", "technician"],
   "simulator.run": ["owner", "admin", "technician"],
   // Mirrors chromebook_* RPCs: technicians run the workflow; reset authorization and release need owner/admin.
