@@ -17,7 +17,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.2.0-win"
+$VERSION = "0.2.1-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -816,17 +816,18 @@ function Invoke-KeyboardTest {
   try {
     Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
-    if (-not ([Management.Automation.PSTypeName]'NexWipe.KeyForm').Type) {
-      # A Form that reads the true scancode + extended bit from each key message, raises it, and then
-      # swallows the key so presses never activate the buttons. Buttons are used with the mouse only.
+    if (-not ([Management.Automation.PSTypeName]'NexWipe.KeyFilter').Type) {
+      # An application message filter sees EVERY key message before it reaches any control (unlike a
+      # form WndProc, which never sees keys sent to a focused button). It reads the true scancode +
+      # extended bit, raises it, and swallows the key so a press can never click a button.
       Add-Type -ReferencedAssemblies 'System.Windows.Forms', 'System.Drawing' -TypeDefinition @'
 using System;
 using System.Windows.Forms;
 namespace NexWipe {
   public delegate void ScanHandler(string id);
-  public class KeyForm : Form {
+  public class KeyFilter : IMessageFilter {
     public event ScanHandler KeyScanned;
-    protected override void WndProc(ref Message m) {
+    public bool PreFilterMessage(ref Message m) {
       if (m.Msg == 0x100 || m.Msg == 0x104) { // WM_KEYDOWN / WM_SYSKEYDOWN
         long lp = m.LParam.ToInt64();
         int sc = (int)((lp >> 16) & 0xFF);
@@ -835,9 +836,10 @@ namespace NexWipe {
           ScanHandler h = KeyScanned;
           if (h != null) h((ext ? "E0_" : "SC_") + sc.ToString("X2"));
         }
-        return; // keys are test input, not control input
+        return true; // swallow: a keypress is test input, never a button click
       }
-      base.WndProc(ref m);
+      if (m.Msg == 0x101 || m.Msg == 0x105) return true; // swallow key-up too (WM_KEYUP / WM_SYSKEYUP)
+      return false;
     }
   }
 }
@@ -856,7 +858,7 @@ namespace NexWipe {
   $cGreen = [Drawing.Color]::FromArgb(150, 210, 150)
   $cRed = [Drawing.Color]::FromArgb(240, 150, 120)
 
-  $form = New-Object NexWipe.KeyForm
+  $form = New-Object Windows.Forms.Form
   $form.Text = "NexWipe keyboard test"
   $form.StartPosition = "CenterScreen"
   $form.FormBorderStyle = "FixedDialog"
@@ -916,7 +918,8 @@ namespace NexWipe {
     [void]$board.Controls.Add($rp)
   }
 
-  $form.add_KeyScanned({
+  $filter = New-Object NexWipe.KeyFilter
+  $filter.add_KeyScanned({
     param($id)
     $registered[$id] = $true
     $c = $cells[$id]
@@ -929,7 +932,8 @@ namespace NexWipe {
   $btnCancel.add_Click({ $state.verdict = "cancel"; $form.Close() }.GetNewClosure())
 
   $form.Controls.AddRange(@($info, $count, $board, $btnOk, $btnFail, $btnCancel))
-  [void]$form.ShowDialog()
+  [Windows.Forms.Application]::AddMessageFilter($filter)
+  try { [void]$form.ShowDialog() } finally { [Windows.Forms.Application]::RemoveMessageFilter($filter) }
   $form.Dispose()
 
   $out.registered = @($registered.Keys)
