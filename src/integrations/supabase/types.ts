@@ -164,6 +164,12 @@ export type Database = {
           agent_version: string | null
           created_at: string
           credential_prefix: string
+          diagnostic_detail: string | null
+          diagnostic_requested_at: string | null
+          diagnostic_requested_by: string | null
+          diagnostic_status: string | null
+          diagnostic_status_at: string | null
+          diagnostic_test: string | null
           enrolled_at: string
           enrollment_token_id: string | null
           hostname: string | null
@@ -191,6 +197,12 @@ export type Database = {
           agent_version?: string | null
           created_at?: string
           credential_prefix: string
+          diagnostic_detail?: string | null
+          diagnostic_requested_at?: string | null
+          diagnostic_requested_by?: string | null
+          diagnostic_status?: string | null
+          diagnostic_status_at?: string | null
+          diagnostic_test?: string | null
           enrolled_at?: string
           enrollment_token_id?: string | null
           hostname?: string | null
@@ -218,6 +230,12 @@ export type Database = {
           agent_version?: string | null
           created_at?: string
           credential_prefix?: string
+          diagnostic_detail?: string | null
+          diagnostic_requested_at?: string | null
+          diagnostic_requested_by?: string | null
+          diagnostic_status?: string | null
+          diagnostic_status_at?: string | null
+          diagnostic_test?: string | null
           enrolled_at?: string
           enrollment_token_id?: string | null
           hostname?: string | null
@@ -893,6 +911,70 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sites"
             referencedColumns: ["org_id", "id"]
+          },
+        ]
+      }
+      diagnostic_results: {
+        Row: {
+          agent_id: string
+          created_at: string
+          detail: string | null
+          device_code: string
+          device_id: string | null
+          id: number
+          is_simulated: boolean
+          org_id: string
+          outcome: string
+          result: Json
+          test: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          detail?: string | null
+          device_code: string
+          device_id?: string | null
+          id?: never
+          is_simulated?: boolean
+          org_id: string
+          outcome: string
+          result?: Json
+          test: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          detail?: string | null
+          device_code?: string
+          device_id?: string | null
+          id?: never
+          is_simulated?: boolean
+          org_id?: string
+          outcome?: string
+          result?: Json
+          test?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_results_org_id_agent_id_fkey"
+            columns: ["org_id", "agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "diagnostic_results_org_id_device_id_fkey"
+            columns: ["org_id", "device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["org_id", "id"]
+          },
+          {
+            foreignKeyName: "diagnostic_results_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2127,6 +2209,16 @@ export type Database = {
         Args: { _action: string; _agent: string; _detail: string; _ok: boolean }
         Returns: Json
       }
+      agent_report_diagnostic: {
+        Args: {
+          _agent: string
+          _detail: string
+          _outcome: string
+          _result: Json
+          _test: string
+        }
+        Returns: Json
+      }
       agent_report_inventory: {
         Args: { _agent: string; _payload: Json }
         Returns: Json
@@ -2319,6 +2411,10 @@ export type Database = {
           org_name: string
           role: Database["public"]["Enums"]["org_role"]
         }[]
+      }
+      request_diagnostic: {
+        Args: { _agent: string; _test: string }
+        Returns: Json
       }
       request_station_action: {
         Args: { _action: string; _agent: string }
