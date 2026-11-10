@@ -20,6 +20,7 @@ import { DEVICE_CSV_COLUMNS, toCsv, validateDeviceCsv, type ImportResult } from 
 import { manufacturerInScope } from "@/lib/hardware";
 
 export const Route = createFileRoute("/_authenticated/app/inventory/")({
+  staticData: { sitemap: false },
   validateSearch: (s: Record<string, unknown>): { intake?: true } =>
     s["intake"] === true || s["intake"] === "true" ? { intake: true } : {},
   component: Inventory,

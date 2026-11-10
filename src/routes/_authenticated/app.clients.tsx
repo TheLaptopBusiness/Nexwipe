@@ -16,6 +16,7 @@ import { can } from "@/lib/permissions";
 import { useClients, useProjects } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/clients")({
+  staticData: { sitemap: false },
   component: Clients,
 });
 

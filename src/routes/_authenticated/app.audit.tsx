@@ -11,6 +11,7 @@ import { can } from "@/lib/permissions";
 import { formatDateTime, memberName, useMembers } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/audit")({
+  staticData: { sitemap: false },
   component: Audit,
 });
 

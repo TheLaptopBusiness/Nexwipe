@@ -18,6 +18,7 @@ import { formatDate, usePolicies } from "@/lib/queries";
 import { INTERFACE_LABELS } from "@/lib/jobs";
 
 export const Route = createFileRoute("/_authenticated/app/policies/")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Erasure policies · NexWipe" }] }),
   component: PoliciesPage,
 });

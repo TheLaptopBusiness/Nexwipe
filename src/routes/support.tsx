@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicLayout } from "@/components/nd/public-layout";
 
 export const Route = createFileRoute("/support")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Support — NexWipe" },

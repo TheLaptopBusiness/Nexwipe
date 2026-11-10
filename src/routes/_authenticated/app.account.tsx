@@ -11,6 +11,7 @@ import { PageHeader, errorMessage } from "@/components/nd/page";
 import { ToneBadge } from "@/components/nd/status-badge";
 
 export const Route = createFileRoute("/_authenticated/app/account")({
+  staticData: { sitemap: false },
   component: Account,
 });
 

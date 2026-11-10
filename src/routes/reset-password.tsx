@@ -9,9 +9,11 @@ import { Wordmark } from "@/components/nd/wordmark";
 import { errorMessage } from "@/components/nd/page";
 
 export const Route = createFileRoute("/reset-password")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Set a new password — NexWipe" },
+      { name: "robots", content: "noindex" },
       { name: "description", content: "Choose a new password for your NexWipe account." },
       { property: "og:title", content: "Set a new password — NexWipe" },
       { property: "og:description", content: "Choose a new password for your NexWipe account." },

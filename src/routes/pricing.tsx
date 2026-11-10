@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PublicLayout } from "@/components/nd/public-layout";
 
 export const Route = createFileRoute("/pricing")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Pricing — NexWipe" },

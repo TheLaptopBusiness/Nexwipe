@@ -33,6 +33,7 @@ import {
 } from "@/lib/chromebook";
 
 export const Route = createFileRoute("/_authenticated/app/chromebooks/$recordId")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Chromebook record — NexWipe" }] }),
   component: ChromebookDetail,
 });

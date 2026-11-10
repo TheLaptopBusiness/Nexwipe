@@ -5,6 +5,7 @@ import { PublicLayout } from "@/components/nd/public-layout";
 import { ToneBadge } from "@/components/nd/status-badge";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "NexWipe — Laptop data-erasure operations platform" },

@@ -1,4 +1,4 @@
--- UNDO for drizzle/migrations/0023_diagnostics_keyboard.sql.
+-- UNDO for drizzle/migrations/0024_diagnostics_keyboard.sql.
 -- Restores agent_heartbeat exactly as defined in 0019 (no diagnostic delivery), drops the two new
 -- RPCs, the diagnostic_results table and the agents.diagnostic_* columns.
 -- Data note: recorded diagnostic results are lost (the table is dropped). These are append-only

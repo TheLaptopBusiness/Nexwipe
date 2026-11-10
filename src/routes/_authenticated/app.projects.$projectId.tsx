@@ -15,6 +15,7 @@ import { formatDate, memberName, useBatchCounts, useBatches, useMembers, useProj
 import { Boxes, CheckCircle2, PackageCheck, ShieldAlert, Target } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/projects/$projectId")({
+  staticData: { sitemap: false },
   component: ProjectDetail,
 });
 

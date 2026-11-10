@@ -49,6 +49,7 @@ import { tagFields } from "@/lib/device-tag";
 import { GradeAndTag } from "@/components/nd/device-tag-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/connected/$discoveryId")({
+  staticData: { sitemap: false },
   component: ConnectedDevicePage,
 });
 

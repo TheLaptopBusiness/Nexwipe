@@ -14,6 +14,7 @@ import { ROLE_LABELS, type OrgRole } from "@/lib/permissions";
 import { membershipsQueryKey, rememberOrg } from "@/lib/org-context";
 
 export const Route = createFileRoute("/invite/$token")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Accept invitation — NexWipe" },

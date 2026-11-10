@@ -28,6 +28,7 @@ import { assignableRoles, can, canManageMember, ROLE_DESCRIPTIONS, ROLE_LABELS, 
 import { formatDate, memberName, useMembers } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/app/team")({
+  staticData: { sitemap: false },
   component: Team,
 });
 

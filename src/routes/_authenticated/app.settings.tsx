@@ -12,6 +12,7 @@ import { membershipsQueryKey, useOrg } from "@/lib/org-context";
 import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
+  staticData: { sitemap: false },
   component: OrgSettings,
 });
 

@@ -71,6 +71,7 @@ import { GradeAndTag } from "@/components/nd/device-tag-dialog";
 import { manufacturerInScope } from "@/lib/hardware";
 
 export const Route = createFileRoute("/_authenticated/app/inventory/$deviceId")({
+  staticData: { sitemap: false },
   component: DeviceDetail,
 });
 
