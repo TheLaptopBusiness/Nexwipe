@@ -169,6 +169,13 @@
       "when": 1793693413617,
       "tag": "0023_inventory_from_connected_station",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794298686928,
+      "tag": "0024_diagnostics_keyboard_apply",
+      "breakpoints": true
     }
   ]
 }
