@@ -17,7 +17,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.1.0-win"
+$VERSION = "0.2.0-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -233,6 +233,11 @@ function Invoke-SelfTest {
   Check "keyboard flagged: outcome fail with flagged key" ($kf.outcome -eq "fail" -and @($kf.result.keys_flagged).Count -eq 1 -and $kf.result.note -eq "spacebar dead")
   $kc = New-KeyboardResult @() @() "cancel" "Declined at the laptop" $null
   Check "keyboard cancel: outcome incomplete" ($kc.outcome -eq "incomplete")
+  # Every template key must have a unique scancode id, or a cell would never light up.
+  $ids = @(); foreach ($row in (Get-KeyboardTemplate)) { foreach ($k in $row) { $ids += $k.id } }
+  $uniq = @($ids | Select-Object -Unique)
+  Check "keyboard template ids are unique" ($ids.Count -eq $uniq.Count -and $ids.Count -gt 60)
+  Check "keyboard template distinguishes left/right and numpad" (($ids -contains 'SC_1D') -and ($ids -contains 'E0_1D') -and ($ids -contains 'SC_4B') -and ($ids -contains 'E0_4B'))
   # identity helpers
   Check "placeholder serials rejected" ((Test-Placeholder "To be filled by O.E.M.") -and (Test-Placeholder "0000000") -and (Test-Placeholder " ") -and -not (Test-Placeholder "5CG8123ABC"))
   Check "Windows 7 swapped hex serial decoded" ((ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637") -eq "1WD-XMA1L1234567".Substring(0,0) + (ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637"))
@@ -785,79 +790,151 @@ function Send-DiagnosticResult($payload) {
   else { Say "Could not send the result: $($r.error)" "Red" }
 }
 
-# Interactive keyboard capture. Opens a WinForms window; the technician presses every physical key
-# (each lights up by its scancode, layout-independent) then confirms or flags dead keys.
-# Returns @{ registered; flagged; verdict; note; layout }. 'verdict'='cancel' if no desktop/UI.
+# A standard keyboard, row by row. Each cell is { label ; id } where id is the physical scancode
+# (extended keys prefixed E0_), so left/right modifiers, arrows and numpad are all distinct.
+# Laptops that lack some keys (e.g. no numpad) simply leave those cells grey; the operator judges
+# completeness against the real keyboard. Width w defaults to 40; wider keys set it.
+function Get-KeyboardTemplate {
+  $c = { param($t, $id, $w = 40) @{ t = $t; id = $id; w = $w } }
+  return @(
+    @((& $c 'Esc' 'SC_01'), (& $c 'F1' 'SC_3B'), (& $c 'F2' 'SC_3C'), (& $c 'F3' 'SC_3D'), (& $c 'F4' 'SC_3E'), (& $c 'F5' 'SC_3F'), (& $c 'F6' 'SC_40'), (& $c 'F7' 'SC_41'), (& $c 'F8' 'SC_42'), (& $c 'F9' 'SC_43'), (& $c 'F10' 'SC_44'), (& $c 'F11' 'SC_57'), (& $c 'F12' 'SC_58')),
+    @((& $c '`' 'SC_29'), (& $c '1' 'SC_02'), (& $c '2' 'SC_03'), (& $c '3' 'SC_04'), (& $c '4' 'SC_05'), (& $c '5' 'SC_06'), (& $c '6' 'SC_07'), (& $c '7' 'SC_08'), (& $c '8' 'SC_09'), (& $c '9' 'SC_0A'), (& $c '0' 'SC_0B'), (& $c '-' 'SC_0C'), (& $c '=' 'SC_0D'), (& $c 'Back' 'SC_0E' 64)),
+    @((& $c 'Tab' 'SC_0F' 58), (& $c 'Q' 'SC_10'), (& $c 'W' 'SC_11'), (& $c 'E' 'SC_12'), (& $c 'R' 'SC_13'), (& $c 'T' 'SC_14'), (& $c 'Y' 'SC_15'), (& $c 'U' 'SC_16'), (& $c 'I' 'SC_17'), (& $c 'O' 'SC_18'), (& $c 'P' 'SC_19'), (& $c '[' 'SC_1A'), (& $c ']' 'SC_1B'), (& $c '\' 'SC_2B' 46)),
+    @((& $c 'Caps' 'SC_3A' 70), (& $c 'A' 'SC_1E'), (& $c 'S' 'SC_1F'), (& $c 'D' 'SC_20'), (& $c 'F' 'SC_21'), (& $c 'G' 'SC_22'), (& $c 'H' 'SC_23'), (& $c 'J' 'SC_24'), (& $c 'K' 'SC_25'), (& $c 'L' 'SC_26'), (& $c ';' 'SC_27'), (& $c "'" 'SC_28'), (& $c 'Enter' 'SC_1C' 76)),
+    @((& $c 'LShift' 'SC_2A' 86), (& $c 'Z' 'SC_2C'), (& $c 'X' 'SC_2D'), (& $c 'C' 'SC_2E'), (& $c 'V' 'SC_2F'), (& $c 'B' 'SC_30'), (& $c 'N' 'SC_31'), (& $c 'M' 'SC_32'), (& $c ',' 'SC_33'), (& $c '.' 'SC_34'), (& $c '/' 'SC_35'), (& $c 'RShift' 'SC_36' 90)),
+    @((& $c 'LCtrl' 'SC_1D' 52), (& $c 'Win' 'E0_5B' 46), (& $c 'LAlt' 'SC_38' 46), (& $c 'Space' 'SC_39' 240), (& $c 'RAlt' 'E0_38' 46), (& $c 'Menu' 'E0_5D' 46), (& $c 'RCtrl' 'E0_1D' 52)),
+    @((& $c 'Ins' 'E0_52'), (& $c 'Del' 'E0_53'), (& $c 'Home' 'E0_47' 46), (& $c 'End' 'E0_4F'), (& $c 'PgUp' 'E0_49' 46), (& $c 'PgDn' 'E0_51' 46), (& $c 'PrSc' 'E0_37'), (& $c 'Left' 'E0_4B'), (& $c 'Up' 'E0_48'), (& $c 'Down' 'E0_50'), (& $c 'Right' 'E0_4D')),
+    @((& $c 'Num' 'SC_45'), (& $c 'N/' 'E0_35'), (& $c 'N*' 'SC_37'), (& $c 'N-' 'SC_4A'), (& $c 'N7' 'SC_47'), (& $c 'N8' 'SC_48'), (& $c 'N9' 'SC_49'), (& $c 'N+' 'SC_4E'), (& $c 'N4' 'SC_4B'), (& $c 'N5' 'SC_4C'), (& $c 'N6' 'SC_4D'), (& $c 'N1' 'SC_4F'), (& $c 'N2' 'SC_50'), (& $c 'N3' 'SC_51'), (& $c 'N0' 'SC_52'), (& $c 'N.' 'SC_53'), (& $c 'NEnt' 'E0_1C' 46))
+  )
+}
+
+# Interactive keyboard capture. Opens a window with a picture of a keyboard: each key lights green
+# when pressed (physical scancode, so left/right and numpad are distinct). A dead key can't be
+# pressed, so the operator CLICKS its grey cell to mark it. Returns @{ registered; flagged; verdict; note; layout }.
 function Invoke-KeyboardTest {
-  $out = @{ registered = @(); flagged = @(); verdict = "cancel"; note = $null; layout = $null }
+  $out = @{ registered = @(); flagged = @(); verdict = "cancel"; note = $null; layout = "ansi" }
   try {
     Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
-    if (-not ([Management.Automation.PSTypeName]'NexWipe.Native').Type) {
-      Add-Type -Namespace NexWipe -Name Native -MemberDefinition @'
-[System.Runtime.InteropServices.DllImport("user32.dll")]
-public static extern uint MapVirtualKey(uint uCode, uint uMapType);
+    if (-not ([Management.Automation.PSTypeName]'NexWipe.KeyForm').Type) {
+      # A Form that reads the true scancode + extended bit from each key message, raises it, and then
+      # swallows the key so presses never activate the buttons. Buttons are used with the mouse only.
+      Add-Type -ReferencedAssemblies 'System.Windows.Forms', 'System.Drawing' -TypeDefinition @'
+using System;
+using System.Windows.Forms;
+namespace NexWipe {
+  public delegate void ScanHandler(string id);
+  public class KeyForm : Form {
+    public event ScanHandler KeyScanned;
+    protected override void WndProc(ref Message m) {
+      if (m.Msg == 0x100 || m.Msg == 0x104) { // WM_KEYDOWN / WM_SYSKEYDOWN
+        long lp = m.LParam.ToInt64();
+        int sc = (int)((lp >> 16) & 0xFF);
+        bool ext = ((lp >> 24) & 1) != 0;
+        if (sc != 0) {
+          ScanHandler h = KeyScanned;
+          if (h != null) h((ext ? "E0_" : "SC_") + sc.ToString("X2"));
+        }
+        return; // keys are test input, not control input
+      }
+      base.WndProc(ref m);
+    }
+  }
+}
 '@ -ErrorAction Stop
     }
   } catch {
     $out.note = "No desktop UI available for the keyboard test"
     return $out
   }
+
   $registered = New-Object Collections.Hashtable
   $flagged = New-Object Collections.Hashtable
-  # The cloud shows a generic template and the operator confirms completeness against the real keyboard,
-  # so a precise layout name is not needed; record the common default.
-  $out.layout = "ansi"
+  $cells = New-Object Collections.Hashtable
+  $state = @{ verdict = "cancel" }
+  $cGrey = [Drawing.Color]::FromArgb(235, 235, 235)
+  $cGreen = [Drawing.Color]::FromArgb(150, 210, 150)
+  $cRed = [Drawing.Color]::FromArgb(240, 150, 120)
 
-  $form = New-Object Windows.Forms.Form
+  $form = New-Object NexWipe.KeyForm
   $form.Text = "NexWipe keyboard test"
-  $form.Size = New-Object Drawing.Size(560, 420)
   $form.StartPosition = "CenterScreen"
-  $form.KeyPreview = $true
+  $form.FormBorderStyle = "FixedDialog"
+  $form.MaximizeBox = $false; $form.MinimizeBox = $false
   $form.TopMost = $true
+  $form.ClientSize = New-Object Drawing.Size(840, 560)
 
   $info = New-Object Windows.Forms.Label
-  $info.Text = "Press EVERY key on this laptop's keyboard. Each key is counted once. When done, click `"All keys work`". If a key never registers, click `"Flag dead key`" and press it (or type its name)."
-  $info.Dock = "Top"; $info.Height = 70; $info.Padding = New-Object Windows.Forms.Padding(8)
-  $count = New-Object Windows.Forms.Label
-  $count.Dock = "Top"; $count.Height = 28; $count.Font = New-Object Drawing.Font("Segoe UI", 12, [Drawing.FontStyle]::Bold)
-  $count.Text = "0 keys registered"
-  $list = New-Object Windows.Forms.TextBox
-  $list.Multiline = $true; $list.ReadOnly = $true; $list.Dock = "Fill"; $list.ScrollBars = "Vertical"
-  $panel = New-Object Windows.Forms.FlowLayoutPanel
-  $panel.Dock = "Bottom"; $panel.Height = 48; $panel.FlowDirection = "LeftToRight"
+  $info.Text = "Press EVERY key on this laptop. Each key turns GREEN when it works. A key that stays grey after you press it is dead - CLICK its cell to mark it red. When finished, use the buttons below (mouse)."
+  $info.SetBounds(12, 8, 816, 48)
 
-  $script:kbVerdict = "cancel"; $script:kbFlagMode = $false
-  $btnOk = New-Object Windows.Forms.Button; $btnOk.Text = "All keys work"; $btnOk.Width = 130
-  $btnFlag = New-Object Windows.Forms.Button; $btnFlag.Text = "Flag dead key"; $btnFlag.Width = 130
-  $btnDone = New-Object Windows.Forms.Button; $btnDone.Text = "Done (has flags)"; $btnDone.Width = 130; $btnDone.Enabled = $false
-  $btnCancel = New-Object Windows.Forms.Button; $btnCancel.Text = "Cancel"; $btnCancel.Width = 90
-  $panel.Controls.AddRange(@($btnOk, $btnFlag, $btnDone, $btnCancel))
+  $count = New-Object Windows.Forms.Label
+  $count.Font = New-Object Drawing.Font("Segoe UI", 11, [Drawing.FontStyle]::Bold)
+  $count.SetBounds(12, 58, 816, 24)
+  $count.Text = "Pressed 0   -   grey = not pressed yet"
+
+  $board = New-Object Windows.Forms.FlowLayoutPanel
+  $board.SetBounds(12, 86, 816, 400)
+  $board.FlowDirection = "TopDown"; $board.WrapContents = $false
+
+  # Buttons are created before $refresh so the closure captures the real $btnFail.
+  $btnOk = New-Object Windows.Forms.Button
+  $btnOk.Text = "All keys work"; $btnOk.SetBounds(12, 498, 150, 40)
+  $btnFail = New-Object Windows.Forms.Button
+  $btnFail.Text = "Finish - dead keys"; $btnFail.SetBounds(172, 498, 170, 40); $btnFail.Enabled = $false
+  $btnCancel = New-Object Windows.Forms.Button
+  $btnCancel.Text = "Cancel"; $btnCancel.SetBounds(352, 498, 110, 40)
 
   $refresh = {
-    $count.Text = "$($registered.Count) keys registered" + $(if ($flagged.Count) { "  -  $($flagged.Count) flagged" } else { "" })
-    $list.Text = (@($registered.Keys | Sort-Object) -join "  ")
+    $count.Text = "Pressed $($registered.Count)" + $(if ($flagged.Count) { "   -   dead keys flagged: $($flagged.Count)" } else { "   -   grey = not pressed yet" })
+    $btnFail.Enabled = ($flagged.Count -gt 0)
   }.GetNewClosure()
 
-  $form.add_KeyDown({
-    param($s, $e)
-    $sc = 0; try { $sc = [int][NexWipe.Native]::MapVirtualKey([uint32]$e.KeyValue, 0) } catch {}
-    $name = if ($sc -gt 0) { "SC_{0:X2}" -f $sc } else { "VK_{0}" -f [int]$e.KeyValue }
-    if ($script:kbFlagMode) { $flagged[$name] = $true; $script:kbFlagMode = $false; $form.Text = "NexWipe keyboard test" }
-    else { $registered[$name] = $true }
+  foreach ($row in (Get-KeyboardTemplate)) {
+    $rp = New-Object Windows.Forms.FlowLayoutPanel
+    $rp.FlowDirection = "LeftToRight"; $rp.WrapContents = $false; $rp.AutoSize = $true
+    $rp.Margin = New-Object Windows.Forms.Padding(0)
+    foreach ($k in $row) {
+      $cell = New-Object Windows.Forms.Label
+      $cell.Text = $k.t; $cell.Tag = $k.id
+      $cell.Width = $k.w; $cell.Height = 38
+      $cell.TextAlign = "MiddleCenter"
+      $cell.BorderStyle = "FixedSingle"
+      $cell.BackColor = $cGrey
+      $cell.Margin = New-Object Windows.Forms.Padding(2)
+      # Clicking a grey/green cell marks it dead (red); clicking a red cell clears it.
+      $cell.add_Click({
+        param($s, $e)
+        $id = [string]$s.Tag
+        if ($flagged.ContainsKey($id)) { $flagged.Remove($id); $s.BackColor = $(if ($registered.ContainsKey($id)) { $cGreen } else { $cGrey }) }
+        else { $flagged[$id] = $true; $s.BackColor = $cRed }
+        & $refresh
+      }.GetNewClosure())
+      $cells[$k.id] = $cell
+      [void]$rp.Controls.Add($cell)
+    }
+    [void]$board.Controls.Add($rp)
+  }
+
+  $form.add_KeyScanned({
+    param($id)
+    $registered[$id] = $true
+    $c = $cells[$id]
+    if ($c -and -not $flagged.ContainsKey($id)) { $c.BackColor = $cGreen }
     & $refresh
-    $e.SuppressKeyPress = $true; $e.Handled = $true
   }.GetNewClosure())
 
-  $btnOk.add_Click({ $script:kbVerdict = "ok"; $form.Close() }.GetNewClosure())
-  $btnFlag.add_Click({ $script:kbFlagMode = $true; $btnDone.Enabled = $true; $form.Text = "Press the DEAD key now..." }.GetNewClosure())
-  $btnDone.add_Click({ $script:kbVerdict = "flagged"; $form.Close() }.GetNewClosure())
-  $btnCancel.add_Click({ $script:kbVerdict = "cancel"; $form.Close() }.GetNewClosure())
+  $btnOk.add_Click({ $state.verdict = "ok"; $form.Close() }.GetNewClosure())
+  $btnFail.add_Click({ $state.verdict = "flagged"; $form.Close() }.GetNewClosure())
+  $btnCancel.add_Click({ $state.verdict = "cancel"; $form.Close() }.GetNewClosure())
 
-  $form.Controls.AddRange(@($list, $count, $info, $panel))
+  $form.Controls.AddRange(@($info, $count, $board, $btnOk, $btnFail, $btnCancel))
   [void]$form.ShowDialog()
   $form.Dispose()
-  $out.registered = @($registered.Keys); $out.flagged = @($flagged.Keys); $out.verdict = $script:kbVerdict
+
+  $out.registered = @($registered.Keys)
+  $out.flagged = @($flagged.Keys)
+  $out.verdict = $state.verdict
   return $out
 }
 
