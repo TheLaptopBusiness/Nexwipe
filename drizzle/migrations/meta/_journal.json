@@ -183,6 +183,13 @@
       "when": 1794642791015,
       "tag": "0025_full_hardware_test_apply",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794648687042,
+      "tag": "0026_test_suite_in_windows_apply",
+      "breakpoints": true
     }
   ]
 }
