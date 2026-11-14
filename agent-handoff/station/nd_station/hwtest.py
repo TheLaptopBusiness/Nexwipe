@@ -73,6 +73,21 @@ def key_id(code: int) -> str:
     return _EXT.get(code, f"LK_{code}")
 
 
+MODIFIER_CODES = {29, 42, 54, 56, 97, 100, 125, 126}  # Ctrl, Shift, Alt, Win (left/right)
+
+
+def split_shortcut(codes: list):
+    """Key-downs read together -> (codes to credit, shortcut name or None).
+    Laptop action keys (e.g. HP F1 without Fn) make the keyboard send a whole shortcut such as
+    Ctrl+Shift+Alt+Win+Space at once; those keys were not pressed. 3+ keys arriving together with 2+
+    modifiers and at most one normal key are such a shortcut and count as one extra key; anything else
+    (a palm slide) is credited."""
+    mods = sum(1 for c in codes if c in MODIFIER_CODES)
+    if len(codes) >= 3 and mods >= 2 and len(codes) - mods <= 1:  # modifiers + at most one normal key
+        return [], "+".join(key_id(c) for c in codes)
+    return codes, None
+
+
 def parse_events(buf: bytes) -> list:
     """Raw /dev/input bytes -> [(type, code, value)]."""
     return [_EVENT.unpack_from(buf, o)[2:] for o in range(0, len(buf) - _EVENT.size + 1, _EVENT.size)]
@@ -332,7 +347,7 @@ def test_keyboard(ui: UI, sysroot: str) -> dict:
     fds = [fd for fd, _d in _open_inputs(devs, grab=True)]
     if not fds:
         return {"outcome": "incomplete", "note": "Could not read the keyboard (station not running as root?)", "keys_registered": []}
-    hit, extra, held = set(), set(), {}
+    hit, extra, held, combos = set(), set(), {}, []
     try:
         while True:
             y = ui.page("Keyboard", ["Press EVERY key. Each one turns GREEN. Keys this laptop does not have stay grey - that is fine.",
@@ -350,20 +365,29 @@ def test_keyboard(ui: UI, sysroot: str) -> dict:
                 y += 2
             ui.put(y, 0, f"Keys working: {len(hit)}    Extra keys (Fn / media): {len(extra)}", curses.A_BOLD)
             ui.scr.refresh()
+            downs = []
             for _fd, typ, code, val in _read_events(fds, 0.1):
                 if typ != EV_KEY or 0x100 <= code < 0x160:  # mouse/touch buttons are not keys
                     continue
                 if val == 1:
-                    kid = key_id(code)
-                    (extra if kid.startswith("LK_") else hit).add(kid)
+                    downs.append(code)
                     held[code] = time.monotonic()
                 elif val == 0:
                     held.pop(code, None)
+            credited, shortcut = split_shortcut(downs)
+            if shortcut:
+                combos.append(shortcut)
+                extra.add(f"COMBO_{len(combos)}")
+            for code in credited:
+                kid = key_id(code)
+                (extra if kid.startswith("LK_") else hit).add(kid)
             if any(time.monotonic() - t >= FINISH_HOLD_S for c, t in held.items() if c in (KEY_ESC, KEY_ENTER)):
                 break
     finally:
         _close(fds)
     res = {"keys_registered": sorted(hit), "extra_keys": sorted(extra), "values": {"keyboards": ", ".join(names)[:200]}}
+    if combos:
+        res["values"]["shortcut_keys"] = "; ".join(combos)[:200]
     y = ui.page("Keyboard", [f"{len(hit)} keys registered, {len(extra)} extra (Fn / media) keys."])
     a = ui.ask(y + 1, "Did EVERY key on this laptop turn green?", extra="", hint="")
     if a == "n":

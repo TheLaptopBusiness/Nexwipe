@@ -63,6 +63,16 @@ class HwTest(unittest.TestCase):
         missing = [kid for row in hwtest.KEY_ROWS for _l, kid in row if kid not in reachable]
         self.assertEqual(missing, [])
 
+    def test_action_key_shortcut_is_not_credited_as_real_keys(self):
+        # HP F1 without Fn: Ctrl+Shift+Alt+Win+Space sent together by the keyboard
+        self.assertEqual(hwtest.split_shortcut([29, 42, 56, 125, 57]), ([], "SC_1D+SC_2A+SC_38+E0_5B+SC_39"))
+        self.assertEqual(hwtest.split_shortcut([42, 125, 193])[0], [])        # Copilot key: Shift+Win+F23
+        self.assertEqual(hwtest.split_shortcut([30, 31, 32, 33]), ([30, 31, 32, 33], None))  # palm slide: credited
+        self.assertEqual(hwtest.split_shortcut([29, 56]), ([29, 56], None))   # Ctrl+Alt by hand: credited
+        slide = [29, 42, 30, 31, 32]                                          # slide incl. Ctrl+Shift: credited
+        self.assertEqual(hwtest.split_shortcut(slide), (slide, None))
+        self.assertEqual(hwtest.split_shortcut([]), ([], None))
+
     def test_parse_events(self):
         buf = struct.pack("llHHi", 1, 2, 1, 30, 1) + struct.pack("llHHi", 1, 3, 0, 0, 0) + b"\x00" * 5
         self.assertEqual(hwtest.parse_events(buf), [(1, 30, 1), (0, 0, 0)])

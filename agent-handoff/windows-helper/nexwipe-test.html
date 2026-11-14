@@ -54,6 +54,10 @@
 "use strict";
 const TOKEN = new URLSearchParams(location.search).get("t") || "";
 const MIN_KEYS = 20;               // same floor as the server (KEYBOARD_PASS_MIN_KEYS)
+// 3+ key-downs within 15 ms that are 2+ modifiers plus at most one normal key come from ONE key that sends
+// a shortcut (firmware), not from fingers; a palm slide across the keys is still counted normally.
+const COMBO_MS = 15, COMBO_MIN = 3;
+const MODIFIERS = /^(Control|Shift|Alt|Meta)(Left|Right)$/;
 const BATTERY_FAIL_BELOW = 50;     // battery health % below this is a fail
 const MIC_RMS = 0.02, MIC_OVER_FLOOR = 4;  // calibration knobs: tune on real laptops
 
@@ -136,22 +140,49 @@ async function testKeyboard() {
     Keys this laptop does not have stay grey &mdash; that is fine. Try <b>Fn + F-keys</b> too (brightness, volume).</p>
     <p class="muted">The screen goes full-screen so keys like Win, Alt+Tab and Esc are captured. When finished, click <b>Done</b> with the touchpad.</p>
     <div class="kb" id="kb">${ROWS.map((r) => `<div class="row">${r.map(([t, id]) => `<div class="k" data-id="${id}">${esc(t)}</div>`).join("")}</div>`).join("")}</div>
-    <p class="big">Keys working: <span id="n">0</span> &nbsp; <span class="muted" style="font-size:15px">extra (Fn / media): <span id="x">0</span></span></p>
+    <p class="big">Keys working: <span id="n">0</span> &nbsp; <span class="muted" style="font-size:15px">extra (Fn / media / shortcut keys): <span id="x">0</span></span></p>
+    <p class="muted" id="combo"></p>
     ${buttons([["done", "Done", "primary"]])}`);
   try { await document.documentElement.requestFullscreen(); await navigator.keyboard?.lock?.(); } catch { /* still works without it */ }
-  const onKey = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const id = CODE_TO_ID[e.code];
+  // Laptop action keys (e.g. HP F1 without Fn) make the keyboard send a whole shortcut such as
+  // Ctrl+Shift+Alt+Win+Space at once. Those keys were not pressed, so a burst is held back and,
+  // if it is a shortcut, counted as ONE extra key instead of lighting Ctrl, Shift, Alt...
+  const combos = [];
+  let burst = [], timer = 0;
+  const credit = (code) => {
+    const id = CODE_TO_ID[code];
     if (id) { hit.add(id); document.querySelector(`.k[data-id="${id}"]`)?.classList.add("on"); }
-    else if (e.code) extra.add(("WB_" + e.code).slice(0, 24));
+    else if (code) extra.add(("WB_" + code).slice(0, 24));
+  };
+  const flush = () => {
+    const mods = burst.filter((c) => MODIFIERS.test(c)).length;
+    // Shape of a shortcut: modifiers plus at most ONE normal key (Ctrl+Shift+Alt+Win+Space, Shift+Win+F23).
+    if (burst.length >= COMBO_MIN && mods >= 2 && burst.length - mods <= 1) {
+      const name = burst.map((c) => c.replace(/^(Key|Digit)/, "").replace(/(Left|Right)$/, "").replace(/^Control$/, "Ctrl").replace(/^Meta$/, "Win")).join("+");
+      combos.push(name); extra.add(("COMBO_" + combos.length).slice(0, 24));
+      $("combo").textContent = `One key sent a shortcut (${name}): counted as an extra key, not as those keys.`;
+    } else burst.forEach(credit);
+    burst = []; timer = 0;
     $("n").textContent = hit.size; $("x").textContent = extra.size;
   };
-  // PrintScreen only sends keyup on Windows, so listen to both.
-  addEventListener("keydown", onKey, true); addEventListener("keyup", onKey, true);
+  const onDown = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (e.repeat || !e.code) return;
+    burst.push(e.code);
+    if (!timer) timer = setTimeout(flush, COMBO_MS);
+  };
+  // PrintScreen sends only a key-up on Windows; every other key is counted on key-down.
+  const onUp = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (e.code === "PrintScreen" && !burst.length) { credit(e.code); $("n").textContent = hit.size; }
+  };
+  addEventListener("keydown", onDown, true); addEventListener("keyup", onUp, true);
   await choose(["done"]);
-  removeEventListener("keydown", onKey, true); removeEventListener("keyup", onKey, true);
+  removeEventListener("keydown", onDown, true); removeEventListener("keyup", onUp, true);
+  if (timer) { clearTimeout(timer); flush(); }
   try { navigator.keyboard?.unlock?.(); if (document.fullscreenElement) await document.exitFullscreen(); } catch {}
-  const res = { keys_registered: [...hit].sort(), extra_keys: [...extra].sort() };
+  const res = { keys_registered: [...hit].sort(), extra_keys: [...extra].sort(),
+    ...(combos.length ? { values: { shortcut_keys: combos.join("; ").slice(0, 200) } } : {}) };
   const a = await ask("Keyboard", `${hit.size} keys registered. Did <b>every</b> key on this laptop turn green?`);
   if (a === "n") return { outcome: "fail", note: await describe("Keyboard", "Which keys did NOT work? (e.g. J, RShift, Space)", "Technician reported faulty keys"), ...res };
   if (hit.size < MIN_KEYS) return { outcome: "incomplete", note: `Only ${hit.size} keys registered (at least ${MIN_KEYS} needed)`, ...res };
@@ -181,54 +212,97 @@ async function testDisplay() {
 
 // ---------------------------------------------------------------- camera / microphone access
 // Windows can block a browser from the camera/microphone (Settings > Privacy); that is a setting, not a fault.
+const IR_CAM = /\b(IR|infrared)\b|hello/i;  // Windows Hello infrared cameras: blink, but give no usable picture
+const stop = (s) => s && s.getTracks().forEach((t) => t.stop());
+// getUserMedia with a time limit; a stream that arrives after the limit is switched off again.
+function openOnce(constraints, ms) {
+  return new Promise((res, rej) => {
+    let over = false;
+    const t = setTimeout(() => { over = true; rej({ name: "TimeoutError", message: `no answer within ${ms / 1000} s` }); }, ms);
+    navigator.mediaDevices.getUserMedia(constraints).then((st) => { if (over) stop(st); else { over = true; clearTimeout(t); res(st); } },
+      (e) => { if (!over) { over = true; clearTimeout(t); rej(e); } });
+  });
+}
+async function listCameras() {
+  const all = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  return all.filter((d) => d.kind === "videoinput").sort((a, b) => IR_CAM.test(a.label) - IR_CAM.test(b.label));
+}
+// Open the camera or microphone. For the camera, if the default one fails, try every camera Windows
+// has (normal ones before IR / Windows Hello ones) before giving up.
+async function tryOpen(kind, constraints) {
+  try { return await openOnce(constraints, 20000); }
+  catch (first) {
+    if (kind !== "camera" || first.name === "NotAllowedError" || first.name === "NotFoundError") throw first;
+    let last = first;
+    for (const c of await listCameras()) {
+      try { return await openOnce({ video: { deviceId: { exact: c.deviceId } } }, 20000); }
+      catch (e) { last = e; if (e.name === "NotAllowedError") throw e; }
+    }
+    throw last;
+  }
+}
+const errText = (e) => `${(e && e.name) || "Error"}${e && e.message ? ": " + e.message : ""}`.slice(0, 200);
+
 async function getMedia(kind, constraints) {
   const what = kind === "camera" ? "camera" : "microphone";
   for (;;) {
     loading(LABELS[kind === "camera" ? "webcam" : "microphone"], `Starting the ${what}… If the browser asks, click <b>Allow</b>.`);
-    // A stuck driver can leave getUserMedia pending forever; give up after 10 s and show the choices.
-    try { return { stream: await Promise.race([navigator.mediaDevices.getUserMedia(constraints),
-      new Promise((_, no) => setTimeout(() => no({ name: "TimeoutError" }), 10000))]) }; }
+    try { return { stream: await tryOpen(kind, constraints) }; }
     catch (e) {
-      const name = (e && e.name) || "Error", detail = `${name}${e && e.message ? ": " + e.message : ""}`.slice(0, 200);
+      const name = (e && e.name) || "Error", detail = errText(e);
       if (name === "NotFoundError") return { missing: true };
-      if (name === "OverconstrainedError") { constraints = { [kind === "camera" ? "video" : "audio"]: true }; continue; }
-      show(LABELS[kind === "camera" ? "webcam" : "microphone"], `<h1>Windows blocked the ${what}</h1>
-        <p>${name === "TimeoutError" ? `The ${what} did not respond.`
-          : name === "NotReadableError" ? `Windows could not start the ${what}: another app may be using it, a privacy shutter or ${what}-off key may be on, or Windows privacy settings block it.`
+      show(LABELS[kind === "camera" ? "webcam" : "microphone"], `<h1>The ${what} did not start</h1>
+        <p>${name === "TimeoutError" ? `The ${what} did not answer within 20 seconds.`
+          : name === "NotReadableError" ? `Windows could not start the ${what}: another app (Teams, Zoom, Camera) may be using it, or a privacy shutter or ${what}-off key is on.`
           : name === "NotAllowedError" ? `The ${what} permission was refused, either in the browser question or by Windows privacy settings.`
           : `The ${what} could not be opened.`}</p>
-        <p>Check the ${what} privacy shutter / key. Click <b>Open settings</b>, switch on <b>${what} access</b> and <b>Let desktop apps access your ${what}</b>, then <b>Try again</b>. If the browser asks, click <b>Allow</b>.</p>
-        <p class="muted">Windows said: ${esc(detail)}</p>`
-        + buttons([["set", "Open settings", "primary"], ["again", "Try again"], ["bad", `The ${what} is faulty`, "bad"]]));
+        <p>Close other apps that use the ${what}, check the privacy shutter / ${what} key, then <b>Try again</b>. If Windows privacy settings block it, click <b>Open settings</b> and switch on <b>${what} access</b> and <b>Let desktop apps access your ${what}</b>.</p>
+        <p class="muted">Browser said: ${esc(detail)}</p>`
+        + buttons([["again", "Try again", "primary"], ["set", "Open settings"], ["bad", `The ${what} is faulty`, "bad"]]));
       let a = await choose(["set", "again", "bad"]);
       if (a === "set") { await api("/settings", { what }).catch(() => {}); a = await choose(["again", "bad"]); }
       if (a === "bad") return { error: `${what} could not be opened (${detail})` };
     }
   }
 }
-const stop = (s) => s && s.getTracks().forEach((t) => t.stop());
 
 // ---------------------------------------------------------------- 3. webcam
 async function testWebcam() {
-  const m = await getMedia("camera", { video: { width: 640, height: 480 } });
+  const m = await getMedia("camera", { video: true });
   if (m.missing) {
     const a = await ask("Webcam", "No camera was found. Does this laptop <b>have</b> a webcam?");
     return a === "y" ? { outcome: "fail", note: "Webcam not detected" } : { outcome: "skipped", note: "No webcam fitted" };
   }
   if (m.error) return { outcome: "fail", note: m.error };
-  const track = m.stream.getVideoTracks()[0];
-  show("Webcam", `<h1>Webcam</h1><p>Camera: <b>${esc(track.label || "camera")}</b>. Wave your hand in front of it.</p><video id="v" autoplay muted playsinline></video>`
-    + buttons([["y", "The picture is correct", "good"], ["n", "No picture / wrong picture", "bad"]]));
-  $("v").srcObject = m.stream;
-  // Picture check: a covered or dead sensor gives an almost uniform frame.
+  let stream = m.stream, msg = "";
+  const label = () => stream.getVideoTracks()[0].label || "camera";
+  const cams = await listCameras();
+  // Windows sometimes hands over the IR (Windows Hello) camera first; prefer a normal one.
+  if (IR_CAM.test(label()) && cams.length && !IR_CAM.test(cams[0].label)) {
+    try { const s2 = await openOnce({ video: { deviceId: { exact: cams[0].deviceId } } }, 20000); stop(stream); stream = s2; } catch {}
+  }
   let detail = 0;
   const cv = document.createElement("canvas"); cv.width = 64; cv.height = 48; const g = cv.getContext("2d", { willReadFrequently: true });
   const timer = setInterval(() => { try { g.drawImage($("v"), 0, 0, 64, 48); const d = g.getImageData(0, 0, 64, 48).data; let s = 0, s2 = 0, n = 0;
     for (let i = 0; i < d.length; i += 4) { const y = 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]; s += y; s2 += y * y; n++; }
     detail = Math.max(detail, Math.sqrt(Math.max(0, s2 / n - (s / n) ** 2))); } catch {} }, 400);
-  const a = await choose(["y", "n"]);
-  clearInterval(timer); stop(m.stream);
-  const values = { camera: track.label || "camera", picture_detail: Math.round(detail * 10) / 10 };
+  let a;
+  for (;;) {
+    show("Webcam", `<h1>Webcam</h1><p>Camera: <b>${esc(label())}</b>. Wave your hand in front of it.</p>${msg ? `<p class="warn">${esc(msg)}</p>` : ""}<video id="v" autoplay muted playsinline></video>`
+      + buttons([["y", "The picture is correct", "good"], ...(cams.length > 1 ? [["sw", `Switch camera (${cams.length} found)`]] : []), ["n", "No picture / wrong picture", "bad"]]));
+    $("v").srcObject = stream;
+    a = await choose(["y", "n", "sw"]);
+    if (a !== "sw") break;
+    const cur = stream.getVideoTracks()[0].getSettings().deviceId;
+    const next = cams[(cams.findIndex((c) => c.deviceId === cur) + 1) % cams.length];
+    loading("Webcam", `Switching to ${esc(next.label || "the next camera")}…`);
+    stop(stream);
+    try { stream = await openOnce({ video: { deviceId: { exact: next.deviceId } } }, 20000); msg = ""; detail = 0; }
+    catch (e) { msg = `${next.label || "That camera"} did not start (${errText(e)}).`; stream = await openOnce({ video: true }, 20000).catch(() => null); if (!stream) { clearInterval(timer); return { outcome: "fail", note: msg }; } }
+  }
+  clearInterval(timer);
+  const values = { camera: label(), picture_detail: Math.round(detail * 10) / 10, cameras_found: cams.length };
+  stop(stream);
   if (a === "n") return { outcome: "fail", note: "Technician: no or wrong picture", values };
   return { outcome: "pass", ...(detail < 6 ? { note: "Picture looked almost uniform (lens covered or sensor fault?)" } : {}), values };
 }
@@ -407,16 +481,20 @@ async function main() {
   show("Summary", `<h1>Result: <span class="${p.outcome === "pass" ? "ok" : p.outcome === "fail" ? "bad" : "warn"}">${p.outcome.toUpperCase()}</span></h1><p class="muted">${esc(p.detail)}</p>
     <ul class="list">${Object.entries(tests).map(([k, t]) => `<li><b>${LABELS[k] || k}</b><span class="pill ${t.outcome}">${t.outcome}</span><span>${esc(t.note || "")}</span></li>`).join("")}</ul>`
     + buttons([["send", "Send to NexWipe", "primary"], ["no", "Do not send"]]));
-  const a = await choose(["send", "no"]);
-  const r = await api("/result", a === "send" ? p : null).catch(() => ({ ok: false, error: "The NexWipe window is not answering" }));
-  show("Done", a !== "send" ? `<h1>Not sent</h1><p>You can close this window.</p>`
-    : r.ok ? `<h1 class="ok">Sent to NexWipe ✓</h1><p>You can close this window.</p>`
-    : `<h1 class="bad">Not sent</h1><p>${esc(r.error || "Unknown error")}</p>` + buttons([["retry", "Try again", "primary"]]));
-  if (a === "send" && !r.ok) { await choose(["retry"]); return main.retrySend(p); }
+  let a = await choose(["send", "no"]);
+  for (;;) {
+    loading("Summary", a === "send" ? "Sending to NexWipe…" : "Closing…");
+    const r = await api("/result", a === "send" ? p : null).catch((e) => ({ ok: false, error: e.message }));
+    if (r.ok || a !== "send") return finished(a === "send" ? "Sent to NexWipe ✓" : "Closed without sending");
+    show("Not sent", `<h1 class="bad">Not sent</h1><p>${esc(r.error || "Unknown error")}</p><p class="muted">The results are kept on this screen until you choose.</p>`
+      + buttons([["send", "Try again", "primary"], ["no", "Close without sending"]]));
+    a = await choose(["send", "no"]);
+  }
 }
-main.retrySend = async (p) => { for (;;) { const r = await api("/result", p).catch(() => ({ ok: false, error: "The NexWipe window is not answering" }));
-  if (r.ok) { show("Done", `<h1 class="ok">Sent to NexWipe ✓</h1><p>You can close this window.</p>`); return; }
-  show("Done", `<h1 class="bad">Not sent</h1><p>${esc(r.error)}</p>` + buttons([["retry", "Try again", "primary"]])); await choose(["retry"]); } };
+function finished(title) {
+  show("Done", `<h1 class="${title.startsWith("Sent") ? "ok" : ""}">${title}</h1><p>The test is finished.</p>` + buttons([["close", "Close window", "primary"]]));
+  $("close").onclick = () => { window.close(); show("Done", `<h1>${title}</h1><p>You can close this window now.</p>`); };
+}
 main();
 </script>
 </body>
