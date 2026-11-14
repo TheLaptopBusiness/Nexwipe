@@ -111,18 +111,19 @@ A failure in step 3 or 4 (wrong identifier, missing internal drive, boot stick r
 | Restart without duplicate records | | |
 | Credential revocation | | |
 
-**Complete test suite** — start it from the app ("Run complete test suite") on a laptop running NexWipe for Windows: the console lists tests + permissions, Y restarts into the stick, and the suite starts there without asking again (and does NOT start again on the next boot). Run on each laptop model; note anything that needed a retry
+**Complete test suite (in Windows, no restart)** — start it from the app ("Run complete test suite") on a laptop running NexWipe for Windows 0.6.0-win: the console lists tests + permissions and asks Y/N; Y opens the NexWipe test window in Edge/Chrome. Also try once with Windows camera privacy switched OFF (the page should say so and open the setting). Run on each laptop model; note anything that needed a retry
 
 | Part | PASS / FAIL / not fitted | Notes (what the station showed; Fn/media keys counted as extra?) |
 |---|---|---|
-| Keyboard: every key lights; holding Esc 2 s finishes; Ctrl+Alt+Del during the test does NOT restart | | |
-| Display: five colour fills; white is white, not grey | | |
-| Webcam: live text preview moves when you wave; IR camera not picked | | |
-| Microphone: bar moves when speaking (which device: DMIC / analog?) | | |
+| Keyboard: every key lights (incl. Win, Alt, Esc, PrtSc in full screen); Fn+F-keys counted as extra | | |
+| Display: five full-screen colour fills | | |
+| Webcam: live preview; the right camera is used (not the IR / Windows Hello one) | | |
+| Microphone: bar moves and passes when speaking | | |
 | Speakers: tone from LEFT then RIGHT | | |
 | Touchpad: four corners + left/right click (clickpad right half) | | |
 | Battery: health % and cycles match the vendor tool / BIOS | | |
 | Charging port: unplug → plug detected (barrel and USB-C) | | |
+| Test window opened from the elevated helper without errors (Edge or Chrome?) | | |
 | Wi-Fi adapter found | | |
 | Result appears in the app (Diagnostics) with the right per-part outcomes | | |
 

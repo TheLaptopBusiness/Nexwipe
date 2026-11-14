@@ -1,6 +1,7 @@
--- NexWipe Phase 2k checks: agent-run diagnostics. Since 0025 the full hardware test runs on the NexWipe
--- boot stick: request from the app (boot-stick stations only), exactly-once delivery by heartbeat,
--- result reported by the stick (also when started at the laptop), append-only results, access rules.
+-- NexWipe Phase 2k checks: agent-run diagnostics ("Run complete test suite", migrations 0025 + 0026).
+-- Request from the app, exactly-once delivery by heartbeat; the Windows helper runs the suite in the
+-- laptop's own Windows and reports it (only when asked); the boot stick runs its own suite (also when
+-- started at the laptop); append-only results; access rules.
 -- Single DO block; always rolls back.
 DO $$
 DECLARE
@@ -101,27 +102,28 @@ BEGIN
   SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = lin AND test = 'full';
   r := r || ' [laptop_started_full_test ' || CASE WHEN st = 'done' AND n = 2 THEN 'PASS' ELSE 'FAIL' END || ']';
 
-  -- ===== Windows hand-off =====
-  hb := public.agent_heartbeat(win, 'idle', '0.5.0-win');
+  -- ===== Windows laptop: the suite runs in its own Windows (0026) =====
+  hb := public.agent_heartbeat(win, 'idle', '0.6.0-win');
   r := r || ' [windows_gets_suite ' || CASE WHEN hb->>'diagnostic_test' = 'full' THEN 'PASS' ELSE 'FAIL' END || ']';
-  -- The helper can never report test results, only hand over or say why not.
-  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'pass', '{}', null); r := r || ' [windows_cannot_report_results FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [windows_cannot_report_results PASS]'; END;
   SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = win;
-  res := public.agent_report_diagnostic(win, 'full', 'handoff', '{}', 'restarting');
+  res := public.agent_report_diagnostic(win, 'full', 'pass',
+    '{"layout":"ansi","tests":{"keyboard":{"outcome":"pass","keys_registered":["SC_1E"]},"webcam":{"outcome":"pass"}}}', '2 pass');
   SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
-  r := r || ' [windows_handoff_closes_request ' || CASE WHEN res->>'outcome' = 'handoff' AND st = 'done'
-    AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win) = n THEN 'PASS' ELSE 'FAIL' END || ']';
-  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'handoff', '{}', null); r := r || ' [no_handoff_without_delivery FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [no_handoff_without_delivery PASS]'; END;
+  r := r || ' [windows_reports_suite_result ' || CASE WHEN res->>'outcome' = 'pass' AND st = 'done'
+    AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win AND test = 'full' AND result->'tests'->'webcam'->>'outcome' = 'pass') = 1 THEN 'PASS' ELSE 'FAIL' END || ']';
+  -- Without a delivered request the helper cannot report (only the stick may start a suite on its own).
+  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'pass', '{}', null); r := r || ' [windows_no_report_without_request FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [windows_no_report_without_request PASS]'; END;
   -- Declined at the laptop: recorded as incomplete, request marked failed.
   UPDATE public.agents SET diagnostic_status = 'delivered', diagnostic_test = 'full', diagnostic_status_at = now() WHERE id = win;
   PERFORM public.agent_report_diagnostic(win, 'full', 'incomplete', '{"tests":{"keyboard":{"outcome":"incomplete","note":"Declined at the laptop"}}}', 'Declined at the laptop');
   SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
-  r := r || ' [windows_decline_recorded ' || CASE WHEN st = 'failed' AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win) = n + 1 THEN 'PASS' ELSE 'FAIL' END || ']';
-  -- Only the Windows helper hands over.
-  BEGIN PERFORM public.agent_report_diagnostic(lin, 'full', 'handoff', '{}', null); r := r || ' [stick_cannot_handoff FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [stick_cannot_handoff PASS]'; END;
+  r := r || ' [windows_decline_recorded ' || CASE WHEN st = 'failed' AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win) = n + 2 THEN 'PASS' ELSE 'FAIL' END || ']';
+  -- The 0025 restart hand-off is gone.
+  UPDATE public.agents SET diagnostic_status = 'delivered', diagnostic_test = 'full', diagnostic_status_at = now() WHERE id = win;
+  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'handoff', '{}', null); r := r || ' [no_handoff_outcome FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [no_handoff_outcome PASS]'; END;
+  UPDATE public.agents SET diagnostic_status = 'failed' WHERE id = win;
   -- A keyboard result needs a delivered keyboard request.
   BEGIN PERFORM public.agent_report_diagnostic(win, 'keyboard', 'pass', '{}', null); r := r || ' [no_keyboard_report_without_delivery FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [no_keyboard_report_without_delivery PASS]'; END;
@@ -153,7 +155,7 @@ BEGIN
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal2')::text, true);
   SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id IN (lin, win);
-  r := r || ' [staff_reads_own ' || CASE WHEN n = 4 THEN 'PASS' ELSE 'FAIL' END || ']';
+  r := r || ' [staff_reads_own ' || CASE WHEN n = 5 THEN 'PASS' ELSE 'FAIL' END || ']';
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ux, 'role','authenticated','aal','aal2')::text, true);
   SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id IN (lin, win);
   r := r || ' [other_company_cannot_read ' || CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END || ']';

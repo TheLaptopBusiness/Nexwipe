@@ -133,22 +133,17 @@ describe("DiagnosticResultRequest: full hardware test (boot stick)", () => {
   });
 });
 
-describe("DiagnosticResultRequest: Windows helper hand-off", () => {
-  it("accepts the helper's hand-off and decline payloads", () => {
-    for (const outcome of ["handoff", "incomplete"]) {
-      expect(
-        DiagnosticResultRequest.safeParse({
-          test: "full",
-          outcome,
-          detail: "One-time boot set; restarting in 10 s",
-          result: {
-            tests: { keyboard: { outcome: "incomplete", note: "Runs on the NexWipe stick" } },
-          },
-        }).success,
-      ).toBe(true);
-    }
-    expect(
-      DiagnosticResultRequest.safeParse({ test: "keyboard", outcome: "handoff" }).success,
-    ).toBe(false);
+describe("DiagnosticResultRequest: Windows helper decline", () => {
+  it("accepts the helper's decline payload and refuses the old hand-off outcome", () => {
+    const declined = {
+      test: "full",
+      outcome: "incomplete",
+      detail: "Declined at the laptop",
+      result: { tests: { keyboard: { outcome: "incomplete", note: "Declined at the laptop" } } },
+    };
+    expect(DiagnosticResultRequest.safeParse(declined).success).toBe(true);
+    expect(DiagnosticResultRequest.safeParse({ ...declined, outcome: "handoff" }).success).toBe(
+      false,
+    );
   });
 });

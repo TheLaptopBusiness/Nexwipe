@@ -10,7 +10,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from typing import Optional
 
-from . import VERSION, hwtest, state
+from . import VERSION, state
 from .api import Api, ApiError, NetworkError
 from .discovery import discover, upload_payload
 from .netcheck import NetStatus, check
@@ -65,7 +65,6 @@ class View:
     discovery: dict = field(default_factory=dict)
     refused_jobs: int = 0
     test_requested: bool = False  # NexWipe cloud asked for the full hardware test; the console starts it
-    test_confirmed: bool = False  # ...and the person already said Yes in Windows before restarting into the stick
     log: list = field(default_factory=list)
 
 
@@ -82,7 +81,6 @@ class Station:
         self._binding = ""
         self.rescan()
         self._load()
-        self._check_suite_marker()
 
     # ---------------- helpers
     def note(self, msg: str, error: bool = False) -> None:
@@ -255,23 +253,7 @@ class Station:
 
     def clear_test_request(self) -> None:
         with self.lock:
-            self.v.test_requested = self.v.test_confirmed = False
-
-    def _check_suite_marker(self) -> None:
-        """The Windows helper leaves a one-time request on the stick before restarting into it."""
-        meta = state.load_meta()
-        used = meta.get("used_test_requests", [])
-        mid = hwtest.suite_marker(self.sysroot, used)
-        if not mid:
-            return
-        try:
-            meta["used_test_requests"] = (used + [mid])[-20:]
-            state.save_meta(meta)
-        except OSError:
-            pass  # ponytail: no state partition -> the request runs again on every boot until the file is deleted in Windows
-        with self.lock:
-            self.v.test_requested = self.v.test_confirmed = True
-        self.note("Complete test suite confirmed in Windows on this laptop - starting it.")
+            self.v.test_requested = False
 
     def _send_diagnostic(self) -> None:
         try:

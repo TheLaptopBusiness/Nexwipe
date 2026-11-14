@@ -204,28 +204,6 @@ def pcm_rms(buf: bytes) -> float:
     return math.sqrt(sum(s * s for s in a) / len(a)) if a else 0.0
 
 
-SUITE_MARKER = "run/live/medium/nexwipe-run-tests.json"  # written by the Windows helper before it restarts into the stick
-SUITE_MARKER_MAX_AGE_H = 24  # Windows keeps the hardware clock in local time, so allow a wide window
-
-
-def suite_marker(sysroot: str, used: list, now=None):
-    """Id of a fresh, unused "run the test suite" request left on the stick by the Windows helper, else None."""
-    import datetime as dt
-    import json
-
-    try:
-        with open(os.path.join(sysroot, SUITE_MARKER)) as f:
-            m = json.load(f)
-        mid = str(m.get("id", ""))[:64]
-        at = dt.datetime.strptime(str(m.get("requested_at", "")), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
-    except (OSError, ValueError, AttributeError):
-        return None
-    now = now or dt.datetime.now(dt.timezone.utc)
-    if not mid or mid in used or abs((now - at).total_seconds()) > SUITE_MARKER_MAX_AGE_H * 3600:
-        return None
-    return mid
-
-
 def overall(tests: dict) -> str:
     """fail if any test failed; pass only with a passing keyboard and nothing incomplete; else incomplete."""
     vals = [t["outcome"] for t in tests.values()]
@@ -509,12 +487,11 @@ def test_microphone(ui: UI, sysroot: str) -> dict:
                             continue
                         lvl = pcm_rms(chunk)
                         k = (d["card"], d["dev"])
-                        if time.monotonic() - t0 < 0.6:
-                            floor[k] = max(floor.get(k, 0.0), lvl)
-                        else:
-                            peak = max(peak, lvl)
-                            if lvl >= MIC_SOUND_RMS and lvl >= MIC_OVER_FLOOR * max(floor.get(k, 0.0), 50.0) and not heard_by:
-                                heard_by = d["name"]
+                        # Room noise = the quietest moment seen, not the first (someone may already be talking).
+                        floor[k] = min(floor.get(k, lvl), lvl)
+                        peak = max(peak, lvl)
+                        if time.monotonic() - t0 > 0.3 and lvl >= MIC_SOUND_RMS and lvl >= MIC_OVER_FLOOR * max(floor[k], 50.0) and not heard_by:
+                            heard_by = d["name"]
                         bar = int(min(1.0, lvl / (MIC_SOUND_RMS * 3)) * 60)
                 y = ui.page("Microphone", ["SPEAK, CLAP or TAP near the laptop. The bar moves with sound.", ""])
                 ui.put(y, 0, "[" + "#" * bar + " " * (60 - bar) + "]", curses.color_pair(21) if heard_by else 0)
@@ -708,9 +685,8 @@ STEPS = [("keyboard", test_keyboard), ("display", test_display), ("webcam", test
          ("wifi", test_wifi), (None, test_checklist)]
 
 
-def run(scr, sysroot: str = "/", can_send: bool = True, confirmed: bool = False):
-    """Run every test in order on the console; returns the result payload to send, or None (not sent).
-    confirmed: the person already said Yes in Windows before the restart, so only a cancel window is shown."""
+def run(scr, sysroot: str = "/", can_send: bool = True):
+    """Run every test in order on the console; returns the result payload to send, or None (not sent)."""
     ui = UI(scr)
     curses.curs_set(0)
     ui.total = len(STEPS)
@@ -718,17 +694,7 @@ def run(scr, sysroot: str = "/", can_send: bool = True, confirmed: bool = False)
                 + [f"  {i:>2}. {name:<15} {what}" for i, (name, what, _perm) in enumerate(SUITE, 1)]
                 + ["", "PERMISSIONS REQUIRED:"] + [f"  - {p}" for p in PERMISSIONS]
                 + ["", "Nothing is written to the drives. The result is sent to NexWipe only if you confirm at the end."])
-    if confirmed:
-        for left in range(10, 0, -1):
-            ui.put(y + 1, 0, f"You confirmed this test in Windows. Starting in {left:>2} s ... press N to cancel, Enter to start now.", curses.A_BOLD)
-            ui.scr.refresh()
-            k = (ui.key(1000) or "").lower()
-            if k == "n":
-                scr.timeout(1000)
-                return None
-            if k in ("\n", "\r", "key_enter"):
-                break
-    elif ui.ask(y + 1, "Do you want to initiate the test?", extra="", hint="") != "y":
+    if ui.ask(y + 1, "Do you want to initiate the test?", extra="", hint="") != "y":
         scr.timeout(1000)
         return None
     tests = {}

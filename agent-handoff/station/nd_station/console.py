@@ -145,7 +145,7 @@ def main(scr, st: Station) -> None:
             if ch == "t":
                 v = st.snapshot()
                 st.clear_test_request()
-                payload = hwtest.run(scr, st.sysroot, can_send=v.enrolled, confirmed=v.test_confirmed)
+                payload = hwtest.run(scr, st.sysroot, can_send=v.enrolled)
                 st.clear_test_request()  # this run answers any request that arrived while it ran
                 if not payload and v.test_requested and v.enrolled:
                     # Close the cloud request instead of leaving it "received" forever.

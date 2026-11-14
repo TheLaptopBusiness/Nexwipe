@@ -1,0 +1,386 @@
+<!doctype html>
+<!--
+  NexWipe complete test suite, run inside the laptop's own Windows (no restart).
+  Served by nexwipe.ps1 from http://127.0.0.1:<random port>/?t=<one-time token> and opened in an Edge/Chrome
+  app window. Uses only browser features (keyboard events, camera/microphone, Web Audio, pointer events),
+  like retest.us. Battery, charger and Wi-Fi come from the helper (/info, read from Windows). The result is
+  posted to the helper (/result), which sends it to NexWipe. Nothing here touches a disk.
+  Key ids match src/lib/keyboard-layout.ts (src/lib/windows-test-page.test.ts fails if they drift).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NexWipe test suite</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#14171c; --muted:#5b6472; --line:#d9dde3; --ok:#1f9d55; --bad:#d93025; --warn:#b26a00; --key:#e9ecf0; --accent:#2457d6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.45 "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { display:flex; gap:12px; align-items:center; padding:10px 20px; background:#14171c; color:#fff; }
+  header b { font-size:17px; } header span { color:#b8c0cc; margin-left:auto; }
+  main { max-width:1100px; margin:18px auto; padding:0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 22px; }
+  h1 { font-size:24px; margin:0 0 6px; } p { margin:6px 0; } .muted { color:var(--muted); }
+  .btns { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  button { font:inherit; padding:10px 18px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.good { background:var(--ok); color:#fff; border-color:var(--ok); } button.bad { background:var(--bad); color:#fff; border-color:var(--bad); }
+  button:disabled { opacity:.45; cursor:default; }
+  input[type=text] { font:inherit; padding:9px 12px; width:100%; max-width:560px; border:1px solid var(--line); border-radius:8px; margin-top:8px; }
+  .kb { display:flex; flex-direction:column; gap:6px; margin:14px 0; user-select:none; }
+  .row { display:flex; flex-wrap:wrap; gap:5px; }
+  .k { min-width:44px; padding:9px 8px; text-align:center; border-radius:6px; background:var(--key); border:1px solid #cfd5dc; font-size:13px; }
+  .k.on { background:var(--ok); color:#fff; border-color:var(--ok); }
+  .big { font-size:20px; font-weight:600; } .ok { color:var(--ok); } .bad { color:var(--bad); } .warn { color:var(--warn); }
+  #fill { position:fixed; inset:0; display:none; z-index:10; cursor:pointer; }
+  video { width:100%; max-width:640px; border-radius:8px; background:#000; display:block; margin-top:10px; }
+  .meter { height:26px; max-width:640px; background:var(--key); border-radius:6px; overflow:hidden; margin-top:12px; }
+  .meter > div { height:100%; width:0; background:var(--ok); transition:width .08s; }
+  #pad { position:relative; height:320px; max-width:640px; border:2px dashed var(--line); border-radius:10px; margin-top:12px; touch-action:none; }
+  #pad .c { position:absolute; width:22%; height:22%; border-radius:8px; background:#fde8e6; }
+  #pad .c.on { background:#d7f2e1; } #dot { position:absolute; width:14px; height:14px; border-radius:50%; background:var(--accent); transform:translate(-50%,-50%); display:none; }
+  ul.list { list-style:none; padding:0; margin:10px 0; } ul.list li { padding:7px 0; border-bottom:1px solid var(--line); display:flex; gap:12px; }
+  ul.list li b { width:150px; flex:none; }
+  .pill { padding:1px 10px; border-radius:20px; font-size:13px; font-weight:600; color:#fff; } .pill.pass{background:var(--ok)} .pill.fail{background:var(--bad)} .pill.skipped,.pill.incomplete{background:#7b8594}
+</style>
+</head>
+<body>
+<header><b>NexWipe</b> complete test suite <span id="step"></span></header>
+<main><div class="card" id="view"></div></main>
+<div id="fill"></div>
+<script>
+"use strict";
+const TOKEN = new URLSearchParams(location.search).get("t") || "";
+const MIN_KEYS = 20;               // same floor as the server (KEYBOARD_PASS_MIN_KEYS)
+const BATTERY_FAIL_BELOW = 50;     // battery health % below this is a fail
+const MIC_RMS = 0.02, MIC_OVER_FLOOR = 4;  // calibration knobs: tune on real laptops
+
+// Rows/ids = src/lib/keyboard-layout.ts. ids are PC scancodes, so the web report's keyboard map works unchanged.
+const ROWS = [
+  [["Esc","SC_01","Escape"],["F1","SC_3B","F1"],["F2","SC_3C","F2"],["F3","SC_3D","F3"],["F4","SC_3E","F4"],["F5","SC_3F","F5"],["F6","SC_40","F6"],["F7","SC_41","F7"],["F8","SC_42","F8"],["F9","SC_43","F9"],["F10","SC_44","F10"],["F11","SC_57","F11"],["F12","SC_58","F12"]],
+  [["`","SC_29","Backquote"],["1","SC_02","Digit1"],["2","SC_03","Digit2"],["3","SC_04","Digit3"],["4","SC_05","Digit4"],["5","SC_06","Digit5"],["6","SC_07","Digit6"],["7","SC_08","Digit7"],["8","SC_09","Digit8"],["9","SC_0A","Digit9"],["0","SC_0B","Digit0"],["-","SC_0C","Minus"],["=","SC_0D","Equal"],["Back","SC_0E","Backspace"]],
+  [["Tab","SC_0F","Tab"],["Q","SC_10","KeyQ"],["W","SC_11","KeyW"],["E","SC_12","KeyE"],["R","SC_13","KeyR"],["T","SC_14","KeyT"],["Y","SC_15","KeyY"],["U","SC_16","KeyU"],["I","SC_17","KeyI"],["O","SC_18","KeyO"],["P","SC_19","KeyP"],["[","SC_1A","BracketLeft"],["]","SC_1B","BracketRight"],["\\","SC_2B","Backslash"]],
+  [["Caps","SC_3A","CapsLock"],["A","SC_1E","KeyA"],["S","SC_1F","KeyS"],["D","SC_20","KeyD"],["F","SC_21","KeyF"],["G","SC_22","KeyG"],["H","SC_23","KeyH"],["J","SC_24","KeyJ"],["K","SC_25","KeyK"],["L","SC_26","KeyL"],[";","SC_27","Semicolon"],["'","SC_28","Quote"],["Enter","SC_1C","Enter"]],
+  [["LShift","SC_2A","ShiftLeft"],["Z","SC_2C","KeyZ"],["X","SC_2D","KeyX"],["C","SC_2E","KeyC"],["V","SC_2F","KeyV"],["B","SC_30","KeyB"],["N","SC_31","KeyN"],["M","SC_32","KeyM"],[",","SC_33","Comma"],[".","SC_34","Period"],["/","SC_35","Slash"],["RShift","SC_36","ShiftRight"]],
+  [["LCtrl","SC_1D","ControlLeft"],["Win","E0_5B","MetaLeft"],["LAlt","SC_38","AltLeft"],["Space","SC_39","Space"],["RAlt","E0_38","AltRight"],["Menu","E0_5D","ContextMenu"],["RCtrl","E0_1D","ControlRight"]],
+  [["Ins","E0_52","Insert"],["Del","E0_53","Delete"],["Home","E0_47","Home"],["End","E0_4F","End"],["PgUp","E0_49","PageUp"],["PgDn","E0_51","PageDown"],["PrSc","E0_37","PrintScreen"],["Left","E0_4B","ArrowLeft"],["Up","E0_48","ArrowUp"],["Down","E0_50","ArrowDown"],["Right","E0_4D","ArrowRight"]],
+  [["Num","SC_45","NumLock"],["N/","E0_35","NumpadDivide"],["N*","SC_37","NumpadMultiply"],["N-","SC_4A","NumpadSubtract"],["N7","SC_47","Numpad7"],["N8","SC_48","Numpad8"],["N9","SC_49","Numpad9"],["N+","SC_4E","NumpadAdd"],["N4","SC_4B","Numpad4"],["N5","SC_4C","Numpad5"],["N6","SC_4D","Numpad6"],["N1","SC_4F","Numpad1"],["N2","SC_50","Numpad2"],["N3","SC_51","Numpad3"],["N0","SC_52","Numpad0"],["N.","SC_53","NumpadDecimal"],["NEnt","E0_1C","NumpadEnter"]],
+];
+const CODE_TO_ID = Object.fromEntries(ROWS.flat().map(([, id, code]) => [code, id]));
+CODE_TO_ID.MetaRight = "E0_5C"; CODE_TO_ID.IntlBackslash = "SC_56";
+
+const LABELS = { keyboard:"Keyboard", display:"Display", webcam:"Webcam", microphone:"Microphone", speakers:"Speakers", touchpad:"Touchpad",
+  battery:"Battery", charging:"Charging port", wifi:"Wi-Fi", ports:"USB ports", hinges:"Hinges", body:"Screen & case" };
+const tests = {};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+let stepNo = 0;
+const TOTAL = 10;
+
+function show(title, html) {
+  $("step").textContent = stepNo ? `Step ${stepNo} of ${TOTAL} · ${title}` : title;
+  $("view").innerHTML = html;
+}
+const buttons = (list) => `<div class="btns">${list.map(([id, label, cls]) => `<button id="${id}" class="${cls || ""}">${label}</button>`).join("")}</div>`;
+// Wait for one of the buttons; resolves with its id.
+function choose(ids) {
+  return new Promise((res) => ids.forEach((id) => $(id) && $(id).addEventListener("click", () => res(id), { once: true })));
+}
+async function api(path, body) {
+  const r = await fetch(`${path}?t=${encodeURIComponent(TOKEN)}`, body === undefined ? {} : { method: "POST", body: JSON.stringify(body) });
+  return r.json();
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const scalars = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 200) : v]));
+
+// Ask a yes/no question. Returns "y" | "n" | "s" (not fitted) | other button ids.
+async function ask(title, text, extra = [], allowSkip = false) {
+  show(title, `<p class="big">${text}</p>` + buttons([["y", "Yes", "good"], ["n", "No", "bad"], ...(allowSkip ? [["s", "Not fitted"]] : []), ...extra]));
+  return choose(["y", "n", "s", ...extra.map((e) => e[0])]);
+}
+async function describe(title, prompt, fallback) {
+  show(title, `<p class="big">${prompt}</p><input type="text" id="note" maxlength="300" autofocus>` + buttons([["ok", "Save", "primary"]]));
+  $("note").focus();
+  await choose(["ok"]);
+  return ($("note").value.trim() || fallback).slice(0, 500);
+}
+
+// ---------------------------------------------------------------- 1. keyboard
+async function testKeyboard() {
+  const hit = new Set(), extra = new Set();
+  show("Keyboard", `<h1>Keyboard</h1><p>Press <b>every key</b>. Each key turns <b class="ok">green</b> when it works.
+    Keys this laptop does not have stay grey &mdash; that is fine. Try <b>Fn + F-keys</b> too (brightness, volume).</p>
+    <p class="muted">The screen goes full-screen so keys like Win, Alt+Tab and Esc are captured. When finished, click <b>Done</b> with the touchpad.</p>
+    <div class="kb" id="kb">${ROWS.map((r) => `<div class="row">${r.map(([t, id]) => `<div class="k" data-id="${id}">${esc(t)}</div>`).join("")}</div>`).join("")}</div>
+    <p class="big">Keys working: <span id="n">0</span> &nbsp; <span class="muted" style="font-size:15px">extra (Fn / media): <span id="x">0</span></span></p>
+    ${buttons([["done", "Done", "primary"]])}`);
+  try { await document.documentElement.requestFullscreen(); await navigator.keyboard?.lock?.(); } catch { /* still works without it */ }
+  const onKey = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const id = CODE_TO_ID[e.code];
+    if (id) { hit.add(id); document.querySelector(`.k[data-id="${id}"]`)?.classList.add("on"); }
+    else if (e.code) extra.add(("WB_" + e.code).slice(0, 24));
+    $("n").textContent = hit.size; $("x").textContent = extra.size;
+  };
+  // PrintScreen only sends keyup on Windows, so listen to both.
+  addEventListener("keydown", onKey, true); addEventListener("keyup", onKey, true);
+  await choose(["done"]);
+  removeEventListener("keydown", onKey, true); removeEventListener("keyup", onKey, true);
+  try { navigator.keyboard?.unlock?.(); if (document.fullscreenElement) await document.exitFullscreen(); } catch {}
+  const res = { keys_registered: [...hit].sort(), extra_keys: [...extra].sort() };
+  const a = await ask("Keyboard", `${hit.size} keys registered. Did <b>every</b> key on this laptop turn green?`);
+  if (a === "n") return { outcome: "fail", note: await describe("Keyboard", "Which keys did NOT work? (e.g. J, RShift, Space)", "Technician reported faulty keys"), ...res };
+  if (hit.size < MIN_KEYS) return { outcome: "incomplete", note: `Only ${hit.size} keys registered (at least ${MIN_KEYS} needed)`, ...res };
+  return { outcome: "pass", ...res };
+}
+
+// ---------------------------------------------------------------- 2. display
+async function testDisplay() {
+  show("Display", `<h1>Display</h1><p>The screen fills with <b>red, green, blue, white and black</b>. Look for dots that stay one colour,
+    lines, dark patches, flicker or light bleeding at the edges. Click or press any key for the next colour.</p>${buttons([["go", "Start", "primary"]])}`);
+  await choose(["go"]);
+  try { await document.documentElement.requestFullscreen(); } catch {}
+  const fill = $("fill");
+  for (const c of ["#ff0000", "#00ff00", "#0000ff", "#ffffff", "#000000"]) {
+    fill.style.background = c; fill.style.display = "block";
+    await sleep(300);
+    await new Promise((r) => { const go = () => { removeEventListener("keydown", go, true); fill.removeEventListener("click", go); r(); };
+      addEventListener("keydown", go, true); fill.addEventListener("click", go); });
+  }
+  fill.style.display = "none";
+  try { if (document.fullscreenElement) await document.exitFullscreen(); } catch {}
+  const a = await ask("Display", "Did you see dead or stuck pixels, lines, dark patches or flicker?", [["r", "Show again"]]);
+  if (a === "r") return testDisplay();
+  if (a === "y") return { outcome: "fail", note: await describe("Display", "Describe it (e.g. line at top, dead pixel in the centre)", "Screen fault") };
+  return { outcome: "pass" };
+}
+
+// ---------------------------------------------------------------- camera / microphone access
+// Windows can block a browser from the camera/microphone (Settings > Privacy); that is a setting, not a fault.
+async function getMedia(kind, constraints) {
+  for (;;) {
+    // A stuck driver can leave getUserMedia pending forever; give up after 10 s and show the choices.
+    try { return { stream: await Promise.race([navigator.mediaDevices.getUserMedia(constraints),
+      new Promise((_, no) => setTimeout(() => no({ name: "TimeoutError" }), 10000))]) }; }
+    catch (e) {
+      const name = e && e.name;
+      if (name === "NotFoundError" || name === "OverconstrainedError") return { missing: true };
+      const what = kind === "camera" ? "camera" : "microphone";
+      show(LABELS[kind === "camera" ? "webcam" : "microphone"], `<h1>Windows blocked the ${what}</h1>
+        <p>${name === "TimeoutError" ? `The ${what} did not respond.` : name === "NotReadableError" ? `Another app may be using the ${what}, or Windows privacy settings block it.` : `Windows privacy settings do not let apps use the ${what}.`}</p>
+        <p>Click <b>Open settings</b>, switch on <b>${what} access</b> and <b>Let desktop apps access your ${what}</b>, then click <b>Try again</b>.</p>`
+        + buttons([["set", "Open settings", "primary"], ["again", "Try again"], ["bad", `The ${what} is faulty`, "bad"]]));
+      let a = await choose(["set", "again", "bad"]);
+      if (a === "set") { await api("/settings", { what }); a = await choose(["again", "bad"]); }
+      if (a === "bad") return { error: `${what} could not be opened (${name || "unknown error"})` };
+    }
+  }
+}
+const stop = (s) => s && s.getTracks().forEach((t) => t.stop());
+
+// ---------------------------------------------------------------- 3. webcam
+async function testWebcam() {
+  const m = await getMedia("camera", { video: { width: 640, height: 480 } });
+  if (m.missing) {
+    const a = await ask("Webcam", "No camera was found. Does this laptop <b>have</b> a webcam?");
+    return a === "y" ? { outcome: "fail", note: "Webcam not detected" } : { outcome: "skipped", note: "No webcam fitted" };
+  }
+  if (m.error) return { outcome: "fail", note: m.error };
+  const track = m.stream.getVideoTracks()[0];
+  show("Webcam", `<h1>Webcam</h1><p>Camera: <b>${esc(track.label || "camera")}</b>. Wave your hand in front of it.</p><video id="v" autoplay muted playsinline></video>`
+    + buttons([["y", "The picture is correct", "good"], ["n", "No picture / wrong picture", "bad"]]));
+  $("v").srcObject = m.stream;
+  // Picture check: a covered or dead sensor gives an almost uniform frame.
+  let detail = 0;
+  const cv = document.createElement("canvas"); cv.width = 64; cv.height = 48; const g = cv.getContext("2d", { willReadFrequently: true });
+  const timer = setInterval(() => { try { g.drawImage($("v"), 0, 0, 64, 48); const d = g.getImageData(0, 0, 64, 48).data; let s = 0, s2 = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) { const y = 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]; s += y; s2 += y * y; n++; }
+    detail = Math.max(detail, Math.sqrt(Math.max(0, s2 / n - (s / n) ** 2))); } catch {} }, 400);
+  const a = await choose(["y", "n"]);
+  clearInterval(timer); stop(m.stream);
+  const values = { camera: track.label || "camera", picture_detail: Math.round(detail * 10) / 10 };
+  if (a === "n") return { outcome: "fail", note: "Technician: no or wrong picture", values };
+  return { outcome: "pass", ...(detail < 6 ? { note: "Picture looked almost uniform (lens covered or sensor fault?)" } : {}), values };
+}
+
+// ---------------------------------------------------------------- 4. microphone
+async function testMicrophone() {
+  const m = await getMedia("microphone", { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  if (m.missing) {
+    const a = await ask("Microphone", "No microphone was found. Does this laptop <b>have</b> a built-in microphone?");
+    return a === "y" ? { outcome: "fail", note: "Microphone not detected" } : { outcome: "skipped", note: "No microphone fitted" };
+  }
+  if (m.error) return { outcome: "fail", note: m.error };
+  const label = m.stream.getAudioTracks()[0].label || "microphone";
+  for (;;) {
+    show("Microphone", `<h1>Microphone</h1><p><b>Speak, clap or tap</b> near the laptop. The bar moves with sound.</p><p class="muted">${esc(label)}</p>
+      <div class="meter"><div id="lvl"></div></div><p id="st" class="big">Listening…</p>` + buttons([["n", "Nothing moves", "bad"]]));
+    const ctx = new AudioContext(); const src = ctx.createMediaStreamSource(m.stream); const an = ctx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+    // Room noise = the QUIETEST moment seen (not the first moment: the technician may already be talking).
+    const buf = new Float32Array(an.fftSize); const t0 = performance.now(); let floor = Infinity, peak = 0, heardAt = 0, gaveUp = false;
+    $("n").addEventListener("click", () => { gaveUp = true; }, { once: true });
+    while (!gaveUp && performance.now() - t0 < 15000 && !(heardAt && performance.now() - heardAt > 1500)) {
+      an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; const rms = Math.sqrt(s / buf.length);
+      floor = Math.min(floor, rms); peak = Math.max(peak, rms);
+      if (!heardAt && performance.now() - t0 > 300 && rms >= MIC_RMS && rms >= MIC_OVER_FLOOR * Math.max(floor, 0.002)) { heardAt = performance.now(); $("st").innerHTML = '<span class="ok">Sound heard ✓</span>'; }
+      $("lvl").style.width = Math.min(100, (rms / (MIC_RMS * 3)) * 100) + "%";
+      await sleep(50);
+    }
+    ctx.close();
+    const values = { microphone: label, peak_level: Math.round(peak * 1000) / 1000 };
+    if (heardAt) { stop(m.stream); return { outcome: "pass", values }; }
+    const a = await ask("Microphone", "No sound was picked up. Try again?");
+    if (a !== "y") { stop(m.stream); return { outcome: "fail", note: "No sound picked up by the microphone", values }; }
+  }
+}
+
+// ---------------------------------------------------------------- 5. speakers
+async function testSpeakers() {
+  const failed = [];
+  for (const [side, pan] of [["LEFT", -1], ["RIGHT", 1]]) {
+    for (;;) {
+      show("Speakers", `<h1>Speakers</h1><p class="big">Playing a tone on the <b>${side}</b> speaker…</p><p class="muted">Unplug headphones first. Turn the volume up if needed.</p>`);
+      const ctx = new AudioContext(); const o = ctx.createOscillator(); const p = ctx.createStereoPanner(); const gn = ctx.createGain();
+      o.frequency.value = 440; p.pan.value = pan; gn.gain.value = 0.5; o.connect(gn).connect(p).connect(ctx.destination);
+      o.start(); await sleep(1500); o.stop(); await ctx.close();
+      const a = await ask("Speakers", `Did you hear the tone from the <b>${side}</b> speaker?`, [["r", "Play again"]]);
+      if (a === "r") continue;
+      if (a === "n") failed.push(side.toLowerCase());
+      break;
+    }
+  }
+  return failed.length ? { outcome: "fail", note: `No sound from the ${failed.join(" and ")} speaker` } : { outcome: "pass" };
+}
+
+// ---------------------------------------------------------------- 6. touchpad
+async function testTouchpad() {
+  show("Touchpad", `<h1>Touchpad</h1><p>Move the pointer into <b>all four corners</b> of the box, then <b>left-click</b> and <b>right-click</b> inside it.</p>
+    <div id="pad"><div class="c" id="tl" style="left:0;top:0"></div><div class="c" id="tr" style="right:0;top:0"></div>
+    <div class="c" id="bl" style="left:0;bottom:0"></div><div class="c" id="br" style="right:0;bottom:0"></div><div id="dot"></div></div>
+    <p id="st" class="big">Corners: 0/4 · left click ✗ · right click ✗</p>` + buttons([["f", "Touchpad is faulty", "bad"], ["s", "No touchpad"]]));
+  const pad = $("pad"), corners = new Set(), clicks = new Set();
+  const upd = () => { $("st").textContent = `Corners: ${corners.size}/4 · left click ${clicks.has("left") ? "✓" : "✗"} · right click ${clicks.has("right") ? "✓" : "✗"}`; };
+  return new Promise((res) => {
+    const finish = (r) => { pad.replaceWith(pad.cloneNode(true)); res(r); };
+    pad.addEventListener("pointermove", (e) => {
+      const b = pad.getBoundingClientRect(); const x = (e.clientX - b.left) / b.width, y = (e.clientY - b.top) / b.height;
+      $("dot").style.display = "block"; $("dot").style.left = x * 100 + "%"; $("dot").style.top = y * 100 + "%";
+      if ((x < 0.22 || x > 0.78) && (y < 0.22 || y > 0.78)) { const id = (y < 0.5 ? "t" : "b") + (x < 0.5 ? "l" : "r"); corners.add(id); $(id).classList.add("on"); }
+      upd();
+    });
+    pad.addEventListener("contextmenu", (e) => e.preventDefault());
+    pad.addEventListener("pointerdown", (e) => {
+      if (e.button === 0) clicks.add("left"); if (e.button === 2) clicks.add("right"); upd();
+      if (corners.size === 4 && clicks.size === 2) setTimeout(() => finish({ outcome: "pass" }), 500);
+    });
+    pad.addEventListener("pointermove", () => { if (corners.size === 4 && clicks.size === 2) setTimeout(() => finish({ outcome: "pass" }), 500); });
+    $("f").onclick = () => { const miss = ["tl","tr","bl","br"].filter((c) => !corners.has(c)).map((c) => ({ tl:"top-left", tr:"top-right", bl:"bottom-left", br:"bottom-right" }[c] + " corner"))
+      .concat(["left","right"].filter((c) => !clicks.has(c)).map((c) => c + " click"));
+      finish({ outcome: "fail", note: miss.length ? "Not working: " + miss.join(", ") : "Technician reported a touchpad fault" }); };
+    $("s").onclick = () => finish({ outcome: "skipped", note: "No touchpad fitted" });
+  });
+}
+
+// ---------------------------------------------------------------- 7-9. battery, charger, Wi-Fi (read by the helper from Windows)
+async function testBattery() {
+  const info = await api("/info"); const b = info.battery;
+  let r;
+  if (!b) r = { outcome: "fail", note: "No battery detected" };
+  else if (b.health_pct == null) r = { outcome: "incomplete", note: "The battery did not report its capacity", values: scalars(b) };
+  else if (b.health_pct < BATTERY_FAIL_BELOW) r = { outcome: "fail", note: `Battery health ${b.health_pct}% (below ${BATTERY_FAIL_BELOW}%)`, values: scalars(b) };
+  else r = { outcome: "pass", values: scalars(b) };
+  const q = (v, s = "") => (v == null ? "?" : v + s);
+  show("Battery", `<h1>Battery</h1><p class="big">Health ${q(b && b.health_pct, "%")} · Charge ${q(b && b.charge_pct, "%")} · Cycles ${q(b && b.cycles)} ${esc(b && b.status || "")}</p>
+    <p class="big ${r.outcome === "pass" ? "ok" : "bad"}">${r.outcome.toUpperCase()}${r.note ? " — " + esc(r.note) : ""}</p>` + buttons([["go", "Continue", "primary"]]));
+  await choose(["go"]);
+  return r;
+}
+
+async function testCharging() {
+  let on = (await api("/info")).ac_online;
+  if (on == null) {
+    const a = await ask("Charging port", "Windows does not report the charger. Plug it in: does the charging light come on?", [], true);
+    return { outcome: { y: "pass", n: "fail", s: "skipped" }[a], note: "Checked by eye (charging light)" };
+  }
+  for (const want of on ? [false, true] : [true]) {
+    show("Charging port", `<h1>Charging port</h1><p class="big">${want ? "PLUG the charger in now." : "UNPLUG the charger now."}</p><p class="muted">Waiting for Windows to notice…</p>`
+      + buttons([["s", "No charger here"], ["f", "Port does not work", "bad"]]));
+    let pick = null; $("s").onclick = () => (pick = "s"); $("f").onclick = () => (pick = "f");
+    const end = Date.now() + 90000;
+    while ((await api("/info")).ac_online !== want) {
+      if (pick === "s") return { outcome: "skipped", note: "No charger available at the bench" };
+      if (pick === "f" || Date.now() > end) return { outcome: "fail", note: "Charger plug-in was not detected" };
+      await sleep(1000);
+    }
+  }
+  return { outcome: "pass" };
+}
+
+async function testWifi() {
+  const w = (await api("/info")).wifi;
+  const r = w && w.adapter ? { outcome: "pass", values: scalars({ adapter: w.adapter, connected: !!w.connected }) } : { outcome: "fail", note: "No Wi-Fi adapter found by Windows" };
+  show("Wi-Fi", `<h1>Wi-Fi</h1><p class="big">Adapter: ${esc(w && w.adapter || "none")} · Connected: ${w && w.connected ? "yes" : "no"}</p>
+    <p class="big ${r.outcome === "pass" ? "ok" : "bad"}">${r.outcome.toUpperCase()}${r.note ? " — " + esc(r.note) : ""}</p>` + buttons([["go", "Continue", "primary"]]));
+  await choose(["go"]);
+  return r;
+}
+
+// ---------------------------------------------------------------- 10. physical checks
+async function testChecklist() {
+  const out = {};
+  for (const [k, q] of [["ports", "Plug a USB stick or mouse into <b>each</b> USB port. Do all ports work?"],
+                        ["hinges", "Are the hinges firm, and does the lid stay open at any angle?"],
+                        ["body", "Are the screen and case free of cracks, missing keys and broken parts?"]]) {
+    const a = await ask("Physical checks", q, [], true);
+    out[k] = a === "n" ? { outcome: "fail", note: await describe("Physical checks", "What is wrong?", LABELS[k] + " fault") } : { outcome: a === "y" ? "pass" : "skipped" };
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- result (same shape as the stick: nd_station/hwtest.py build_payload)
+function overall() {
+  const v = Object.values(tests).map((t) => t.outcome);
+  if (v.includes("fail")) return "fail";
+  return tests.keyboard?.outcome === "pass" && !v.includes("incomplete") ? "pass" : "incomplete";
+}
+function payload() {
+  const count = (o) => Object.values(tests).filter((t) => t.outcome === o).length;
+  const failed = Object.keys(tests).filter((k) => tests[k].outcome === "fail").map((k) => LABELS[k]);
+  const detail = ["pass", "fail", "skipped", "incomplete"].filter((o) => count(o)).map((o) => `${count(o)} ${o}`).join(", ") + (failed.length ? ` (failed: ${failed.join(", ")})` : "");
+  return { test: "full", outcome: overall(), result: { layout: "ansi", tests }, detail: detail.slice(0, 300) };
+}
+
+const STEPS = [["keyboard", testKeyboard], ["display", testDisplay], ["webcam", testWebcam], ["microphone", testMicrophone], ["speakers", testSpeakers],
+  ["touchpad", testTouchpad], ["battery", testBattery], ["charging", testCharging], ["wifi", testWifi], [null, testChecklist]];
+
+async function main() {
+  show("Ready", `<h1>Complete test suite</h1><p>You confirmed this test on the NexWipe window. It takes about 5 minutes.</p>
+    <p class="muted">Keyboard · Display · Webcam · Microphone · Speakers · Touchpad · Battery · Charging port · Wi-Fi · Physical checks</p>
+    <p class="muted">The camera and microphone are used only during their tests; no picture or sound is saved or sent. Nothing is written to the drives.</p>`
+    + buttons([["go", "Start the tests", "primary"]]));
+  await choose(["go"]);
+  for (const [key, fn] of STEPS) {
+    stepNo++;
+    let r;
+    try { r = await fn(); } catch (e) { r = { outcome: "incomplete", note: ("Test error: " + (e && e.message || e)).slice(0, 500) }; }
+    if (key) tests[key] = r; else Object.assign(tests, r);
+  }
+  stepNo = 0;
+  const p = payload();
+  show("Summary", `<h1>Result: <span class="${p.outcome === "pass" ? "ok" : p.outcome === "fail" ? "bad" : "warn"}">${p.outcome.toUpperCase()}</span></h1><p class="muted">${esc(p.detail)}</p>
+    <ul class="list">${Object.entries(tests).map(([k, t]) => `<li><b>${LABELS[k] || k}</b><span class="pill ${t.outcome}">${t.outcome}</span><span>${esc(t.note || "")}</span></li>`).join("")}</ul>`
+    + buttons([["send", "Send to NexWipe", "primary"], ["no", "Do not send"]]));
+  const a = await choose(["send", "no"]);
+  const r = await api("/result", a === "send" ? p : null).catch(() => ({ ok: false, error: "The NexWipe window is not answering" }));
+  show("Done", a !== "send" ? `<h1>Not sent</h1><p>You can close this window.</p>`
+    : r.ok ? `<h1 class="ok">Sent to NexWipe ✓</h1><p>You can close this window.</p>`
+    : `<h1 class="bad">Not sent</h1><p>${esc(r.error || "Unknown error")}</p>` + buttons([["retry", "Try again", "primary"]]));
+  if (a === "send" && !r.ok) { await choose(["retry"]); return main.retrySend(p); }
+}
+main.retrySend = async (p) => { for (;;) { const r = await api("/result", p).catch(() => ({ ok: false, error: "The NexWipe window is not answering" }));
+  if (r.ok) { show("Done", `<h1 class="ok">Sent to NexWipe ✓</h1><p>You can close this window.</p>`); return; }
+  show("Done", `<h1 class="bad">Not sent</h1><p>${esc(r.error)}</p>` + buttons([["retry", "Try again", "primary"]])); await choose(["retry"]); } };
+main();
+</script>
+</body>
+</html>

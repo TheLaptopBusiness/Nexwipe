@@ -104,8 +104,8 @@ paths:
               type: object
               required: [test, outcome]
               properties:
-                test: { type: string, enum: [full, keyboard], description: "full = boot-stick hardware test; keyboard = retired Windows-helper test (only for a request delivered before migration 0025)" }
-                outcome: { type: string, enum: [pass, fail, incomplete, handoff], description: "handoff: Windows helper only, after restarting into the stick" }
+                test: { type: string, enum: [full, keyboard], description: "full = complete test suite (Windows helper test page or boot stick); keyboard = retired Windows-helper test (only for a request delivered before migration 0025)" }
+                outcome: { type: string, enum: [pass, fail, incomplete] }
                 detail: { type: string, maxLength: 300 }
                 result:
                   type: object

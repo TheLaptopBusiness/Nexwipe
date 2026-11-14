@@ -156,19 +156,6 @@ class HwTest(unittest.TestCase):
         self.assertEqual(p["detail"], "2 pass, 1 fail, 1 skipped (failed: Speakers)")
         self.assertIn("keyboard", p["result"]["tests"])
 
-    def test_suite_marker_from_windows_runs_once_and_only_when_fresh(self):
-        import datetime as dt
-        now = dt.datetime(2026, 11, 14, 12, 0, tzinfo=dt.timezone.utc)
-        self.assertIsNone(hwtest.suite_marker(self.root, [], now))                      # no file
-        w(self.root, "/run/live/medium/nexwipe-run-tests.json", '{"id":"abc123","requested_at":"2026-11-14T06:30:00Z"}')
-        self.assertEqual(hwtest.suite_marker(self.root, [], now), "abc123")            # local-time clock skew tolerated
-        self.assertIsNone(hwtest.suite_marker(self.root, ["abc123"], now))              # already used: never twice
-        self.assertIsNone(hwtest.suite_marker(self.root, [], now + dt.timedelta(days=2)))  # stale request ignored
-        w(self.root, "/run/live/medium/nexwipe-run-tests.json", "not json")
-        self.assertIsNone(hwtest.suite_marker(self.root, [], now))
-        w(self.root, "/run/live/medium/nexwipe-run-tests.json", '{"id":"x","requested_at":"yesterday"}')
-        self.assertIsNone(hwtest.suite_marker(self.root, [], now))
-
     def test_start_screen_lists_every_test_and_permission(self):
         self.assertEqual(len(hwtest.SUITE), len(hwtest.STEPS))
         perms = " ".join(hwtest.PERMISSIONS)

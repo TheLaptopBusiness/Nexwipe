@@ -118,15 +118,15 @@ command is delivered **exactly once** (next heartbeat flips it on, then off); if
 ## 9a. Diagnostics (full hardware test)
 
 When a heartbeat returns `diagnostic_requested: true` with `diagnostic_test: "full"` ("Run complete test suite"):
-- **Windows helper:** asks the person at the laptop; reports `{ "test": "full", "outcome": "handoff" }` after setting the
-  one-time boot into the stick (closes the request, no result row), or `"incomplete"` with the reason (declined / cannot restart).
-  Any other outcome from the helper is refused (409 without a delivered request, 422 otherwise).
-- **Boot-stick station:** runs the suite on the laptop screen (reads hardware only; never touches a disk). It also runs it
-  without a request when started at the laptop (key T, or after the Windows hand-off). It reports:
+- **Windows helper:** asks the person at the laptop, runs the suite in a local test page (Edge/Chrome), and reports the
+  result. It may report only a suite it was handed (409 otherwise); declined / window closed = `"incomplete"`.
+- **Boot-stick station:** runs the suite on the laptop screen; it may also report a suite started at the laptop (key T)
+  without a request.
+Both report (reads hardware only; never touches a disk):
 `{ "test": "full", "outcome": "pass" | "fail" | "incomplete", "result": { "layout": "ansi", "tests": { "keyboard": { "outcome", "keys_registered": ["SC_1E", …], "extra_keys": ["LK_224", …], "note"? }, "display" | "webcam" | "microphone" | "speakers" | "touchpad" | "battery" | "charging" | "wifi" | "ports" | "hinges" | "body": { "outcome": "pass" | "fail" | "skipped" | "incomplete", "note"?, "values"?: { name: string | number | boolean | null } (≤ 30) } } }, "detail": "..." }`.
 `keyboard` is required. `outcome: "pass"` is refused unless the keyboard passed with ≥ 20 keys and no part failed or is incomplete.
 Keys are PC scancode names (physical position, layout-independent); `LK_<code>` are Linux key codes with no scancode (media/Fn).
-`handoff` from a boot-stick station is refused. The Windows helper never runs tests itself (`"keyboard"` results are accepted only for a keyboard request delivered before 0025).
+`"keyboard"` results are accepted only for a keyboard request delivered before 0025. (The 0025 `"handoff"` outcome was removed in 0026.)
 Results are recorded against the laptop's device code; they do not change a device grade.
 
 ## 10. Credential rotation

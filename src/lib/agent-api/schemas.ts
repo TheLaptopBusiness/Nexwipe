@@ -298,7 +298,8 @@ const KeyboardDiagnostic = z
     },
   );
 
-// "full": the hardware test run on the NexWipe boot stick (agent-handoff/station/nd_station/hwtest.py).
+// "full": the complete test suite — run in the laptop's own Windows (agent-handoff/windows-helper/
+// nexwipe-test.html) or on the NexWipe boot stick (agent-handoff/station/nd_station/hwtest.py).
 export const FULL_TEST_PARTS = [
   "keyboard",
   "display",
@@ -329,8 +330,7 @@ const FullKeyboardPart = FullPart.extend({
 const FullDiagnostic = z
   .object({
     test: z.literal("full"),
-    // handoff: the Windows helper restarted into the stick, which runs the suite and reports the result.
-    outcome: z.enum(["pass", "fail", "incomplete", "handoff"]),
+    outcome: z.enum(["pass", "fail", "incomplete"]),
     result: z.object({
       layout: shortText(20).optional(),
       tests: z.object({

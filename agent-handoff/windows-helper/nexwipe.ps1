@@ -3,7 +3,8 @@
 
   Runs from a USB stick (or any folder) on a laptop whose own Windows is running. It reads the
   laptop's hardware details, sends them to NexWipe cloud, and then waits for two commands from
-  the cloud: Rescan, and Reboot into NexWipe (one-time boot from the NexWipe stick).
+  the cloud: Rescan, Reboot into NexWipe (one-time boot from the NexWipe stick), and Run complete test
+  suite (a local test page in Edge/Chrome, see nexwipe-test.html).
 
   It NEVER erases, formats, partitions or writes to any disk. The only programs it may start are
   listed in $Allowed below; anything else is refused before it runs.
@@ -17,7 +18,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.5.0-win"
+$VERSION = "0.6.0-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -32,7 +33,10 @@ $Allowed = @(
   @{ exe = "bcdedit";  rx = '^/enum firmware$' },
   @{ exe = "bcdedit";  rx = '^/enum \{current\}$' },
   @{ exe = "bcdedit";  rx = '^/set \{fwbootmgr\} bootsequence \{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$' },
-  @{ exe = "shutdown"; rx = '^/r /t ([0-9]|[1-5][0-9]|60) /c NexWipe: restarting into the NexWipe USB stick$' }
+  @{ exe = "shutdown"; rx = '^/r /t ([0-9]|[1-5][0-9]|60) /c NexWipe: restarting into the NexWipe USB stick$' },
+  # complete test suite: Edge/Chrome showing ONLY the local test page; Windows camera/microphone privacy pages
+  @{ exe = "browser";  rx = '^--app=http://127\.0\.0\.1:[0-9]{2,5}/\?t=[0-9a-f]{32} --user-data-dir="[^"]{1,200}" --no-first-run --no-default-browser-check --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required --start-maximized$' },
+  @{ exe = "ms-settings"; rx = '^privacy-(webcam|microphone)$' }
 )
 
 function Test-Allowed([string]$exe, [string[]]$argv) {
@@ -157,6 +161,11 @@ function ConvertTo-NdJson($v) {
     [void]$sb.Append('"')
     return $sb.ToString()
   }
+  if ($v -is [Management.Automation.PSCustomObject]) {
+    # ConvertFrom-Json (PowerShell 3+ without System.Web.Extensions) returns these, not dictionaries.
+    $h = @{}; foreach ($p in $v.PSObject.Properties) { $h[$p.Name] = $p.Value }
+    return (ConvertTo-NdJson $h)
+  }
   if ($v -is [Collections.IDictionary]) {
     $parts = @()
     foreach ($k in @($v.Keys | Sort-Object)) {
@@ -226,12 +235,15 @@ function Invoke-SelfTest {
   Check "JSON parse" ((Get-Field $p "inventory_requested") -eq $true -and (Get-Field (Get-Field $p "x") "y") -eq 2)
   Check "JSON parse: missing field is empty" ($null -eq (Get-Field $p "wifi") -and $null -eq (Get-Field (Get-Field $p "wifi") "ssid"))
   Check "heartbeat diagnostic command parsed" ((Get-Field $p "diagnostic_requested") -eq $true -and (Get-Field $p "diagnostic_test") -eq "keyboard")
-  # complete test suite hand-off
-  $sr = New-SuiteResult $true "One-time boot set; restarting in 10 s"
-  Check "suite hand-off payload" ($sr.test -eq "full" -and $sr.outcome -eq "handoff" -and $sr.result.tests.keyboard.outcome -eq "incomplete")
-  $sd = New-SuiteResult $false "Declined at the laptop"
-  Check "suite declined payload" ($sd.outcome -eq "incomplete" -and $sd.result.tests.keyboard.note -eq "Declined at the laptop")
-  Check "suite lists 10 tests and asks for restart permission" ($SuiteTests.Count -eq 10 -and ($SuitePermissions[0] -match '^Restart'))
+  # complete test suite
+  $sd = New-SuiteDecline "Declined at the laptop"
+  Check "suite declined payload" ($sd.test -eq "full" -and $sd.outcome -eq "incomplete" -and $sd.result.tests.keyboard.note -eq "Declined at the laptop")
+  Check "suite lists 10 tests and the camera/microphone permissions" ($SuiteTests.Count -eq 10 -and (($SuitePermissions -join " ") -match "Camera") -and (($SuitePermissions -join " ") -match "Microphone"))
+  $ba = Get-BrowserArgs 51234 "0123456789abcdef0123456789abcdef" "C:\Users\Tech\AppData\Local\Temp\nexwipe-test-browser"
+  Check "test window allowed for the local page" (Test-Allowed "browser" $ba)
+  $bad = Get-BrowserArgs 51234 "0123456789abcdef0123456789abcdef" "x"; $bad[0] = "--app=http://evil.example/?t=0123456789abcdef0123456789abcdef"
+  Check "test window refused for any other address" (-not (Test-Allowed "browser" $bad))
+  Check "only camera/microphone privacy pages" ((Test-Allowed "ms-settings" @("privacy-webcam")) -and -not (Test-Allowed "ms-settings" @("windowsupdate")))
   # identity helpers
   Check "placeholder serials rejected" ((Test-Placeholder "To be filled by O.E.M.") -and (Test-Placeholder "0000000") -and (Test-Placeholder " ") -and -not (Test-Placeholder "5CG8123ABC"))
   Check "Windows 7 swapped hex serial decoded" ((ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637") -eq "1WD-XMA1L1234567".Substring(0,0) + (ConvertFrom-Win7Serial "3157442d4d5841314c31323334353637"))
@@ -709,15 +721,12 @@ function Send-Inventory {
 }
 
 # ============================================================== Reboot into NexWipe
-$script:SuiteMode = $false  # true while the restart is part of "Run complete test suite"
-
 function Send-ActionResult([bool]$ok, [string]$detail) {
-  if ($script:SuiteMode) { Send-SuiteResult $ok $detail; return }
   [void](Invoke-Nd "POST" "/actions/result" @{ action = "reboot_to_usb"; ok = $ok; detail = (Cap $detail 300) } -Auth)
 }
 
 function Invoke-RebootToUsb($stick) {
-  if (-not $script:SuiteMode) { Say "NexWipe cloud asked to restart this laptop into the NexWipe stick." "Yellow" }
+  Say "NexWipe cloud asked to restart this laptop into the NexWipe stick." "Yellow"
   $bm = Get-BootMode
   if ($bm.mode -ne "uefi") {
     Send-ActionResult $false "Legacy BIOS boot: use the boot menu key (Dell/Lenovo F12, HP F9)"
@@ -752,7 +761,6 @@ function Invoke-RebootToUsb($stick) {
     }
   }
   Write-Host ""
-  if ($script:SuiteMode -and -not (Write-SuiteMarker)) { Send-ActionResult $false "Could not write the test request to the stick"; Say "Could not write to the NexWipe stick." "Red"; return }
   # One-time boot (BootNext): the permanent boot order is not changed.
   $set = Invoke-Tool "bcdedit" @("/set", "{fwbootmgr}", "bootsequence", $entry.guid)
   if ($set.code -ne 0) { Send-ActionResult $false (Cap "bcdedit failed: $($set.text)" 300); Say "Could not set the one-time boot entry: $($set.text)" "Red"; return }
@@ -761,11 +769,11 @@ function Invoke-RebootToUsb($stick) {
   Say "Restarting in 10 seconds." "Yellow"
 }
 
-# ============================================================== Complete test suite
-# The tests run on the NexWipe stick (the same Linux on every laptop), not inside Windows, so they do not
-# depend on this laptop's Windows version, drivers or .NET. Here we only ask the person at the laptop,
-# leave a one-time request file on the stick, and restart into it; the stick starts the suite by itself
-# (agent-handoff/station/nd_station/hwtest.py) and reports the result.
+# ============================================================== Complete test suite (runs in this Windows)
+# Like retest.us: a test page in an Edge/Chrome app window uses the browser's own keyboard, camera,
+# microphone, audio and pointer features, so it works on any laptop whose Windows runs. This helper only
+# asks the person at the laptop, serves nexwipe-test.html to 127.0.0.1 with a one-time token, reads
+# battery/charger/Wi-Fi from Windows for the page, and forwards the finished result to NexWipe.
 $SuiteTests = @(
   "Keyboard        - press every key; each lights on the screen",
   "Display         - full-screen colours to spot dead pixels and lines",
@@ -779,40 +787,117 @@ $SuiteTests = @(
   "Physical checks - USB ports, hinges, screen and case (your answers)"
 )
 $SuitePermissions = @(
-  "Restart: this laptop restarts into the NexWipe stick (unsaved work is lost; Windows and its files are not changed)",
-  "Keyboard: captured only by the test while it runs",
+  "Test window: a NexWipe test page opens in Edge or Chrome (served only to this laptop)",
+  "Keyboard: captured by the test page while it runs",
   "Camera: on during the webcam test only; no picture is saved or sent",
   "Microphone: listens during the microphone test only; no sound is saved or sent",
   "Speakers: sound is played",
   "Touchpad: movement and clicks are read",
-  "Charger: you will be asked to unplug and plug it back in"
+  "Charger: you will be asked to unplug and plug it back in",
+  "Battery and Wi-Fi: read from Windows"
 )
-$SuiteMarker = "nexwipe-run-tests.json"  # read by nd_station/station.py from the stick's root
+$SuitePage = Join-Path $Here "nexwipe-test.html"
+$SuiteMaxMinutes = 60
 
-# Pure: payload for /diagnostics/result. ok = handed over to the stick; otherwise why it did not start.
-function New-SuiteResult([bool]$ok, [string]$detail) {
-  $note = $(if ($ok) { "Runs on the NexWipe stick after the restart" } else { Cap $detail 300 })
-  return @{ test = "full"; outcome = $(if ($ok) { "handoff" } else { "incomplete" }); detail = (Cap $detail 300)
-            result = @{ tests = @{ keyboard = @{ outcome = "incomplete"; note = $note } } } }
+# Pure: the result sent when the suite did not run (declined, window closed, no browser...).
+function New-SuiteDecline([string]$why) {
+  return @{ test = "full"; outcome = "incomplete"; detail = (Cap $why 300); result = @{ tests = @{ keyboard = @{ outcome = "incomplete"; note = (Cap $why 300) } } } }
 }
 
-function Send-SuiteResult([bool]$ok, [string]$detail) {
-  $r = Invoke-Nd "POST" "/diagnostics/result" (New-SuiteResult $ok $detail) -Auth
-  if ($r.status -ne 200) { Say "NexWipe did not accept the test status: $($r.error)" "Yellow" }
+# Pure: arguments for the test window (checked against $Allowed before it starts).
+function Get-BrowserArgs([int]$port, [string]$token, [string]$profileDir) {
+  return @("--app=http://127.0.0.1:$port/?t=$token", "--user-data-dir=""$profileDir""", "--no-first-run", "--no-default-browser-check",
+           "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--start-maximized")
 }
 
-function Write-SuiteMarker {
-  if ($Here -notmatch '^[A-Za-z]:') { return $false }
-  try {
-    $id = [Guid]::NewGuid().ToString("N")
-    Save-Text (Join-Path ($Here.Substring(0, 2) + "\") $SuiteMarker) (ConvertTo-NdJson @{ id = $id; requested_at = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", $Culture) })
-    return $true
-  } catch { return $false }
+function Send-SuiteResult($payload) {
+  $r = Invoke-Nd "POST" "/diagnostics/result" $payload -Auth
+  if ($r.status -eq 200) { Say "Test result sent to NexWipe ($(Get-Field $payload 'outcome'))." "Green" } else { Say "NexWipe did not accept the test result: $($r.error)" "Yellow" }
+  return $r
 }
 
-function Invoke-TestSuite($stick) {
+function Find-Browser {
+  foreach ($p in @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+                   "$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+                   "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")) {
+    if ($p -and (Test-Path $p)) { return $p }
+  }
+  return $null
+}
+
+# Battery, charger and Wi-Fi as the test page needs them (read-only WMI; root\wmi needs the admin rights we have).
+function Get-SuiteInfo {
+  $w32 = @(Get-Wmi "Win32_Battery")
+  $static = @(Get-Wmi "BatteryStaticData" "root\wmi"); $full = @(Get-Wmi "BatteryFullChargedCapacity" "root\wmi"); $cyc = @(Get-Wmi "BatteryCycleCount" "root\wmi")
+  $bat = $null
+  if ($w32.Count -gt 0 -or $static.Count -gt 0) {
+    $design = $null; if ($static.Count -gt 0) { $design = Num $static[0].DesignedCapacity }
+    $fc = $null; if ($full.Count -gt 0) { $fc = Num $full[0].FullChargedCapacity }
+    $status = $null; $charge = $null
+    if ($w32.Count -gt 0) {
+      $charge = Num $w32[0].EstimatedChargeRemaining
+      switch ([int]$w32[0].BatteryStatus) { 1 { $status = "Discharging" } 2 { $status = "On AC power" } 3 { $status = "Fully charged" } 6 { $status = "Charging" } default { $status = $null } }
+    }
+    $cycles = $null; if ($cyc.Count -gt 0 -and (Num $cyc[0].CycleCount) -gt 0) { $cycles = Num $cyc[0].CycleCount }
+    $h = Get-BatteryHealth $design $fc; if ($null -ne $h) { $h = [int][Math]::Round($h) }
+    $bat = @{ health_pct = $h; charge_pct = $charge; cycles = $cycles; status = $status }
+  }
+  $ac = $null
+  $ps = @(Get-Wmi "BatteryStatus" "root\wmi")
+  if ($ps.Count -gt 0) { $ac = [bool]$ps[0].PowerOnline } elseif ($w32.Count -gt 0) { $ac = @(2, 3, 6, 7, 8, 9) -contains [int]$w32[0].BatteryStatus }
+  $wifi = @{}
+  foreach ($a in @(Get-Wmi "Win32_NetworkAdapter")) {
+    if (-not $a.MACAddress -or [string]$a.Name -notmatch '(?i)wi-?fi|wireless|802\.11|wlan') { continue }
+    try { if ($a.PhysicalAdapter -eq $false) { continue } } catch {}
+    $wifi = @{ adapter = (Cap $a.Name 120); connected = ([int]$a.NetConnectionStatus -eq 2) }
+    break
+  }
+  return @{ battery = $bat; ac_online = $ac; wifi = $wifi }
+}
+
+function Send-Http($ctx, [int]$code, [string]$type, [string]$text) {
+  $b = [Text.Encoding]::UTF8.GetBytes($text)
+  $res = $ctx.Response
+  $res.StatusCode = $code; $res.ContentType = $type; $res.Headers.Add("Cache-Control", "no-store"); $res.ContentLength64 = $b.Length
+  $res.OutputStream.Write($b, 0, $b.Length); $res.OutputStream.Close()
+}
+
+# One request from the test page. Returns $true when the suite is finished (result sent or not wanted).
+function Invoke-SuiteRequest($ctx, [int]$port, [string]$token, [string]$page) {
+  $req = $ctx.Request
+  # Only our page: right host (no DNS-rebinding tricks) and the one-time token.
+  if ([string]$req.Headers["Host"] -ne "127.0.0.1:$port" -or [string]$req.QueryString["t"] -ne $token) { Send-Http $ctx 403 "text/plain" "Forbidden"; return $false }
+  $path = $req.Url.AbsolutePath
+  $body = $null
+  if ($req.HttpMethod -eq "POST") {
+    $rd = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8); $raw = $rd.ReadToEnd(); $rd.Close()
+    if ($raw.Length -gt 262144) { Send-Http $ctx 413 "text/plain" "Too large"; return $false }
+    try { $body = ConvertFrom-NdJson $raw } catch { $body = $null }
+  }
+  if ($req.HttpMethod -eq "GET" -and $path -eq "/") { Send-Http $ctx 200 "text/html; charset=utf-8" $page; return $false }
+  if ($req.HttpMethod -eq "GET" -and $path -eq "/info") { Send-Http $ctx 200 "application/json" (ConvertTo-NdJson (Get-SuiteInfo)); return $false }
+  if ($req.HttpMethod -eq "POST" -and $path -eq "/settings") {
+    $what = @{ camera = "privacy-webcam"; microphone = "privacy-microphone" }[[string](Get-Field $body "what")]
+    if ($what -and (Test-Allowed "ms-settings" @($what))) { try { Start-Process "ms-settings:$what" } catch {} }
+    Send-Http $ctx 200 "application/json" '{"ok":true}'; return $false
+  }
+  if ($req.HttpMethod -eq "POST" -and $path -eq "/result") {
+    if ($null -eq $body) {
+      [void](Send-SuiteResult (New-SuiteDecline "Result not sent: chosen at the laptop"))
+      Send-Http $ctx 200 "application/json" '{"ok":true}'; return $true
+    }
+    if ((Get-Field $body "test") -ne "full") { Send-Http $ctx 400 "application/json" '{"ok":false,"error":"Not a test suite result"}'; return $false }
+    $r = Send-SuiteResult $body
+    if ($r.status -eq 200) { Send-Http $ctx 200 "application/json" '{"ok":true}'; return $true }
+    $err = $(if ($r.status -eq 0) { "No connection to NexWipe ($($r.error)). Check the network, then try again." } else { [string]$r.error })
+    Send-Http $ctx 200 "application/json" (ConvertTo-NdJson @{ ok = $false; error = $err }); return $false
+  }
+  Send-Http $ctx 404 "text/plain" "Not found"; return $false
+}
+
+function Invoke-TestSuite {
   Say "NexWipe cloud asked to run the complete test suite on this laptop." "Yellow"
-  try { [void][Console]::KeyAvailable } catch { Send-SuiteResult $false "No console to confirm at the laptop"; return }
+  try { [void][Console]::KeyAvailable } catch { [void](Send-SuiteResult (New-SuiteDecline "No console to confirm at the laptop")); return }
   Write-Host ""
   Write-Host "  TESTS THAT WILL RUN:" -ForegroundColor Cyan
   $i = 0; foreach ($t in $SuiteTests) { $i++; Write-Host ("   {0,2}. {1}" -f $i, $t) }
@@ -820,11 +905,49 @@ function Invoke-TestSuite($stick) {
   Write-Host "  PERMISSIONS REQUIRED:" -ForegroundColor Cyan
   foreach ($p in $SuitePermissions) { Write-Host "   - $p" }
   Write-Host ""
-  Write-Host "  Nothing is written to the laptop's drives." -ForegroundColor Gray
+  Write-Host "  Nothing is written to the laptop's drives. No restart is needed." -ForegroundColor Gray
   $ans = (Read-Host "  Do you want to initiate the test? [Y/N]").Trim()
-  if ($ans -notmatch '^[Yy]') { Say "Test suite declined at the laptop." "Gray"; Send-SuiteResult $false "Declined at the laptop"; return }
-  $script:SuiteMode = $true
-  try { Invoke-RebootToUsb $stick } finally { $script:SuiteMode = $false }
+  if ($ans -notmatch '^[Yy]') { Say "Test suite declined at the laptop." "Gray"; [void](Send-SuiteResult (New-SuiteDecline "Declined at the laptop")); return }
+
+  if (-not (Test-Path $SuitePage)) { Say "nexwipe-test.html is missing next to nexwipe.ps1; prepare the stick again." "Red"; [void](Send-SuiteResult (New-SuiteDecline "Test page missing from the stick")); return }
+  $exe = Find-Browser
+  if (-not $exe) { Say "Microsoft Edge or Google Chrome is needed for the test suite." "Red"; [void](Send-SuiteResult (New-SuiteDecline "No Edge or Chrome on this laptop")); return }
+  $page = [IO.File]::ReadAllText($SuitePage)
+  $token = New-Nonce
+  $listener = $null; $browser = $null
+  try {
+    $probe = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, 0); $probe.Start(); $port = $probe.LocalEndpoint.Port; $probe.Stop()
+    $listener = New-Object Net.HttpListener
+    $listener.Prefixes.Add("http://127.0.0.1:$port/")
+    $listener.Start()
+    $args2 = Get-BrowserArgs $port $token (Join-Path $env:TEMP "nexwipe-test-browser")
+    if (-not (Test-Allowed "browser" $args2)) { throw "browser arguments refused by the allow-list" }
+    $browser = Start-Process -FilePath $exe -ArgumentList ($args2 -join " ") -PassThru
+  } catch {
+    Say "Could not open the test window: $($_.Exception.Message)" "Red"
+    if ($listener) { $listener.Close() }
+    [void](Send-SuiteResult (New-SuiteDecline (Cap "Could not open the test window: $($_.Exception.Message)" 300)))
+    return
+  }
+  Say "Test window opened. Follow the steps there; this window waits for the result." "Cyan"
+  $deadline = (Get-Date).AddMinutes($SuiteMaxMinutes); $nextHb = (Get-Date).AddSeconds(30); $done = $false
+  try {
+    $ar = $listener.BeginGetContext($null, $null)
+    while (-not $done) {
+      if ($ar.AsyncWaitHandle.WaitOne(1000)) {
+        $ctx = $listener.EndGetContext($ar)
+        try { $done = Invoke-SuiteRequest $ctx $port $token $page } catch { try { Send-Http $ctx 500 "text/plain" "Error" } catch {} }
+        if (-not $done) { $ar = $listener.BeginGetContext($null, $null) }
+        continue
+      }
+      if ($browser.HasExited) { Say "The test window was closed before the end." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test window closed before the end")); break }
+      if ((Get-Date) -gt $deadline) { Say "The test suite timed out." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test suite not finished within $SuiteMaxMinutes minutes")); break }
+      if ((Get-Date) -gt $nextHb) { [void](Invoke-Nd "POST" "/heartbeat" @{ state = "testing"; agent_version = $VERSION } -Auth); $nextHb = (Get-Date).AddSeconds(30) }
+    }
+  } finally {
+    $listener.Close()
+  }
+  Say "Test suite finished." "Green"
 }
 
 # ============================================================== main
@@ -885,7 +1008,7 @@ while ($true) {
   if ((Get-Field $hb.body "reboot_to_usb_requested") -eq $true) { Invoke-RebootToUsb $inv.stick }
   # Hardware tests run on the NexWipe stick (same Linux on every laptop), not inside Windows.
   if ((Get-Field $hb.body "diagnostic_requested") -eq $true) {
-    if ((Get-Field $hb.body "diagnostic_test") -eq "full") { Invoke-TestSuite $inv.stick }
+    if ((Get-Field $hb.body "diagnostic_test") -eq "full") { Invoke-TestSuite }
     else { Say "NexWipe asked for an unknown diagnostic ('$(Get-Field $hb.body 'diagnostic_test')'); ignoring." "Yellow" }
   }
 }

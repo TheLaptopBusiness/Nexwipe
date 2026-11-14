@@ -63,7 +63,8 @@ const REBOOT_STATUS: Record<string, string> = {
 
 const DIAGNOSTIC_STATUS: Record<string, string> = {
   requested: "Waiting for the laptop to pick up the test suite…",
-  delivered: "Laptop received the request and is asking the technician to confirm",
+  delivered:
+    "Laptop received it: the technician confirms, then follows the tests in the test window",
   done: "Test suite finished — see the result below",
   failed: "Test suite did not run at the laptop",
   expired: "Request expired: the laptop did not check in within 2 minutes",
@@ -291,11 +292,9 @@ function ConnectedDevicePage() {
           <p
             className={`text-sm ${ag.diagnostic_status === "failed" || ag.diagnostic_status === "expired" ? "text-warning" : "text-muted-foreground"}`}
           >
-            Test suite:{" "}
-            {canRebootToUsb(ag.platform) && ag.diagnostic_status === "done"
-              ? "Confirmed at the laptop; it is restarting into the NexWipe stick, where the tests run. The result appears below when they finish"
-              : `${DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status}${ag.diagnostic_detail ? ` (${ag.diagnostic_detail})` : ""}`}{" "}
-            · {formatDateTime(ag.diagnostic_status_at)}
+            Test suite: {DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status}
+            {ag.diagnostic_detail ? ` (${ag.diagnostic_detail})` : ""} ·{" "}
+            {formatDateTime(ag.diagnostic_status_at)}
           </p>
         )}
         {!canRebootToUsb(ag?.platform) && (
