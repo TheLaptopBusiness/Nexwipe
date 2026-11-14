@@ -262,7 +262,7 @@ export function useChromebookEvents(recordId: string) {
 // ----- Connected devices (station reports) -----
 
 const CONNECTED_COLUMNS =
-  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at, diagnostic_status, diagnostic_test, diagnostic_detail, diagnostic_status_at), devices(asset_tag, grade, hardware_verified, hardware_origin, source)";
+  "id, agent_id, device_id, device_code, system_serial, payload, is_simulated, is_read_only_test, reported_at, last_reported_at, report_count, review_flags, hardware_origin, hardware_origin_reason, agents(name, platform, status, agent_version, last_heartbeat_at, reboot_status, reboot_detail, reboot_status_at, diagnostic_status, diagnostic_test, diagnostic_detail, diagnostic_status_at), devices(asset_tag, grade, hardware_verified, hardware_origin, source)";
 
 const DIAGNOSTIC_COLUMNS = "id, test, outcome, result, detail, is_simulated, created_at";
 

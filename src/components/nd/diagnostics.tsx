@@ -38,7 +38,7 @@ const OUTCOME: Record<string, { label: string; tone: Tone }> = {
 
 const TEST_LABEL: Record<string, string> = {
   keyboard: "Keyboard test",
-  full: "Full hardware test",
+  full: "Complete test suite",
 };
 
 // Same order and names as the station's test (agent-handoff/station/nd_station/hwtest.py).
@@ -168,7 +168,7 @@ export function DiagnosticResultsCard({
                 )
               )}
               {r.detail && <p className="mt-1 text-xs text-muted-foreground">{r.detail}</p>}
-              {k && (
+              {k && (k.keys_registered?.length ?? 0) > 0 && (
                 <Button variant="outline" size="sm" className="mt-2" onClick={() => setMapFor(r)}>
                   <LayoutGrid /> View keyboard map
                 </Button>

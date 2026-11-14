@@ -82,6 +82,30 @@ export function canRebootToUsb(platform: string | null | undefined): boolean {
   return !!platform?.toLowerCase().startsWith("windows");
 }
 
+/**
+ * A Rescan/Reboot/test request blocks a new one only for 2 minutes after its last status change —
+ * the same window the database uses — so a request the laptop never answered cannot lock the button.
+ */
+export function isCommandPending(
+  status: string | null | undefined,
+  statusAt: string | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (status !== "requested" && status !== "delivered") return false;
+  const t = statusAt ? Date.parse(statusAt) : NaN;
+  return Number.isFinite(t) && now - t < 120_000;
+}
+
+/** The complete test suite needs NexWipe for Windows 0.6.2 or newer (older helpers restart or ignore it). */
+export const SUITE_MIN_HELPER = "0.6.2";
+export function helperRunsSuite(version: string | null | undefined): boolean {
+  const m = /^(\d+)\.(\d+)\.(\d+)/.exec(version ?? "");
+  if (!m) return false;
+  const have = Number(m[1]) * 1e6 + Number(m[2]) * 1e3 + Number(m[3]);
+  const [a = 0, b = 0, c = 0] = SUITE_MIN_HELPER.split(".").map(Number);
+  return have >= a * 1e6 + b * 1e3 + c;
+}
+
 /** A station is online when its last heartbeat is recent. The boot-stick station heartbeats every 30 s. */
 export function isOnline(lastHeartbeat: string | null | undefined, now = Date.now()): boolean {
   if (!lastHeartbeat) return false;

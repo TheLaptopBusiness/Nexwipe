@@ -6,6 +6,8 @@ import {
   deviceSummary,
   groupLaptopCards,
   isOnline,
+  isCommandPending,
+  helperRunsSuite,
   needsDbUpdate,
 } from "./connected-device";
 
@@ -192,5 +194,27 @@ describe("groupLaptopCards", () => {
     });
     const cards = groupLaptopCards([plain, inInventory], now);
     expect(cards[0]!.linked?.device_id).toBe("dev-1");
+  });
+});
+
+describe("isCommandPending", () => {
+  const now = Date.parse("2026-11-14T09:30:00Z");
+  it("blocks a new request only for 2 minutes, like the database", () => {
+    expect(isCommandPending("delivered", "2026-11-14T09:29:00Z", now)).toBe(true);
+    expect(isCommandPending("requested", "2026-11-14T09:29:30Z", now)).toBe(true);
+    expect(isCommandPending("delivered", "2026-11-14T09:20:00Z", now)).toBe(false); // never answered: unlocked
+    expect(isCommandPending("done", "2026-11-14T09:29:59Z", now)).toBe(false);
+    expect(isCommandPending("delivered", null, now)).toBe(false);
+  });
+});
+
+describe("helperRunsSuite", () => {
+  it("needs NexWipe for Windows 0.6.2 or newer", () => {
+    expect(helperRunsSuite("0.6.2-win")).toBe(true);
+    expect(helperRunsSuite("0.7.0-win")).toBe(true);
+    expect(helperRunsSuite("1.0.0-win")).toBe(true);
+    expect(helperRunsSuite("0.6.1-win")).toBe(false);
+    expect(helperRunsSuite("0.5.0-win")).toBe(false);
+    expect(helperRunsSuite(null)).toBe(false);
   });
 });

@@ -38,6 +38,9 @@ import { formatDateTime, useConnectedDevice, useDiagnosticResults } from "@/lib/
 import { DiagnosticResultsCard } from "@/components/nd/diagnostics";
 import {
   canRebootToUsb,
+  helperRunsSuite,
+  isCommandPending,
+  SUITE_MIN_HELPER,
   deviceSections,
   deviceSummary,
   isOnline,
@@ -111,9 +114,13 @@ function ConnectedDevicePage() {
   const flags = reviewFlags(d.review_flags);
   const online = ag?.status === "active" && isOnline(ag?.last_heartbeat_at);
   const mayAct = can(role, "stations.act") && ag?.status === "active";
-  const rebootPending = ag?.reboot_status === "requested" || ag?.reboot_status === "delivered";
-  const diagPending =
-    ag?.diagnostic_status === "requested" || ag?.diagnostic_status === "delivered";
+  const rebootPending = isCommandPending(ag?.reboot_status, ag?.reboot_status_at);
+  const diagPending = isCommandPending(ag?.diagnostic_status, ag?.diagnostic_status_at);
+  // A Windows laptop needs helper 0.6.2+ for the suite; older stick files restart or ignore it.
+  const oldHelper = canRebootToUsb(ag?.platform) && !helperRunsSuite(ag?.agent_version);
+  const diagStale =
+    (ag?.diagnostic_status === "requested" || ag?.diagnostic_status === "delivered") &&
+    !diagPending;
 
   async function act(action: "rescan" | "reboot_to_usb") {
     setBusy(action);
@@ -227,7 +234,7 @@ function ConnectedDevicePage() {
           )}
           <Button
             variant="outline"
-            disabled={!mayAct || !online || diagPending || busy !== null}
+            disabled={!mayAct || !online || diagPending || oldHelper || busy !== null}
             onClick={() => runDiagnostic("full")}
           >
             <ClipboardCheck /> Run complete test suite
@@ -279,6 +286,13 @@ function ConnectedDevicePage() {
             )}
           </span>
         </div>
+        {oldHelper && (
+          <p className="text-sm text-warning">
+            This laptop runs NexWipe for Windows {ag?.agent_version ?? "(unknown version)"}; the
+            test suite needs {SUITE_MIN_HELPER} or newer. Prepare the USB stick again (Agents &amp;
+            stations → Prepare USB stick), copy all 4 files to it, and start NexWipe again.
+          </p>
+        )}
         {ag?.reboot_status && (
           <p
             className={`text-sm ${ag.reboot_status === "failed" || ag.reboot_status === "expired" ? "text-warning" : "text-muted-foreground"}`}
@@ -292,7 +306,10 @@ function ConnectedDevicePage() {
           <p
             className={`text-sm ${ag.diagnostic_status === "failed" || ag.diagnostic_status === "expired" ? "text-warning" : "text-muted-foreground"}`}
           >
-            Test suite: {DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status}
+            Test suite:{" "}
+            {diagStale
+              ? "The laptop got the request but has not answered (window closed or test still open). You can send it again."
+              : (DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status)}
             {ag.diagnostic_detail ? ` (${ag.diagnostic_detail})` : ""} ·{" "}
             {formatDateTime(ag.diagnostic_status_at)}
           </p>
