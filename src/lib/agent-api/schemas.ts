@@ -268,20 +268,23 @@ export const ActionResultRequest = z.object({
   detail: shortText(300).optional(),
 });
 
-// Result of a diagnostic the heartbeat delivered. Reads hardware only; never touches storage.
+// Result of a diagnostic. Reads hardware only; never touches storage.
 // keys_registered / keys_flagged are physical scancode names (e.g. "SC_1E", "E0_1D"), not characters.
-// A keyboard test cannot "pass" without this many keys actually registering — otherwise a window that
-// captured nothing could be marked all-good. The Windows helper enforces the same floor in its UI.
+// A keyboard cannot "pass" without this many keys actually registering — otherwise a test that
+// captured nothing could be marked all-good. The station (hwtest.py) enforces the same floor.
 export const KEYBOARD_PASS_MIN_KEYS = 20;
-export const DiagnosticResultRequest = z
+const keyIds = z.array(shortText(24)).max(200);
+
+// "keyboard": the retired Windows-helper test (still accepted for requests delivered before 0025).
+const KeyboardDiagnostic = z
   .object({
-    test: z.enum(["keyboard"]),
+    test: z.literal("keyboard"),
     outcome: z.enum(["pass", "fail", "incomplete"]),
     result: z
       .object({
         layout: shortText(20).optional(),
-        keys_registered: z.array(shortText(24)).max(200).default([]),
-        keys_flagged: z.array(shortText(24)).max(200).optional(),
+        keys_registered: keyIds.default([]),
+        keys_flagged: keyIds.optional(),
         note: shortText(500).optional(),
       })
       .default({ keys_registered: [] }),
@@ -294,6 +297,77 @@ export const DiagnosticResultRequest = z
       path: ["outcome"],
     },
   );
+
+// "full": the hardware test run on the NexWipe boot stick (agent-handoff/station/nd_station/hwtest.py).
+export const FULL_TEST_PARTS = [
+  "keyboard",
+  "display",
+  "webcam",
+  "microphone",
+  "speakers",
+  "touchpad",
+  "battery",
+  "charging",
+  "wifi",
+  "ports",
+  "hinges",
+  "body",
+] as const;
+const partValues = z
+  .record(z.string().max(40), z.union([shortText(200), z.number(), z.boolean(), z.null()]))
+  .refine((v) => Object.keys(v).length <= 30, { message: "Too many values" });
+const FullPart = z.object({
+  outcome: z.enum(["pass", "fail", "skipped", "incomplete"]),
+  note: shortText(500).optional(),
+  values: partValues.optional(),
+});
+const FullKeyboardPart = FullPart.extend({
+  keys_registered: keyIds.default([]),
+  keys_flagged: keyIds.optional(),
+  extra_keys: keyIds.optional(),
+});
+const FullDiagnostic = z
+  .object({
+    test: z.literal("full"),
+    // handoff: the Windows helper restarted into the stick, which runs the suite and reports the result.
+    outcome: z.enum(["pass", "fail", "incomplete", "handoff"]),
+    result: z.object({
+      layout: shortText(20).optional(),
+      tests: z.object({
+        keyboard: FullKeyboardPart,
+        display: FullPart.optional(),
+        webcam: FullPart.optional(),
+        microphone: FullPart.optional(),
+        speakers: FullPart.optional(),
+        touchpad: FullPart.optional(),
+        battery: FullPart.optional(),
+        charging: FullPart.optional(),
+        wifi: FullPart.optional(),
+        ports: FullPart.optional(),
+        hinges: FullPart.optional(),
+        body: FullPart.optional(),
+      }),
+    }),
+    detail: shortText(300).optional(),
+  })
+  .refine(
+    (v) => {
+      if (v.outcome !== "pass") return true;
+      const t = v.result.tests;
+      const parts = Object.values(t).filter(Boolean) as { outcome: string }[];
+      return (
+        t.keyboard.outcome === "pass" &&
+        t.keyboard.keys_registered.length >= KEYBOARD_PASS_MIN_KEYS &&
+        parts.every((p) => p.outcome === "pass" || p.outcome === "skipped")
+      );
+    },
+    {
+      message: `A full test passes only when the keyboard passes (${KEYBOARD_PASS_MIN_KEYS}+ keys) and no part failed or was incomplete`,
+      path: ["outcome"],
+    },
+  );
+
+export const DiagnosticResultRequest = z.union([KeyboardDiagnostic, FullDiagnostic]);
 
 export const ReconcileRequest = z.object({
   jobs: z

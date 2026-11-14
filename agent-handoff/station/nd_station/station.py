@@ -10,7 +10,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from typing import Optional
 
-from . import VERSION, state
+from . import VERSION, hwtest, state
 from .api import Api, ApiError, NetworkError
 from .discovery import discover, upload_payload
 from .netcheck import NetStatus, check
@@ -64,6 +64,8 @@ class View:
     revoked: bool = False
     discovery: dict = field(default_factory=dict)
     refused_jobs: int = 0
+    test_requested: bool = False  # NexWipe cloud asked for the full hardware test; the console starts it
+    test_confirmed: bool = False  # ...and the person already said Yes in Windows before restarting into the stick
     log: list = field(default_factory=list)
 
 
@@ -75,10 +77,12 @@ class Station:
         self.v = View(server=self.cfg.get("server", ""))
         self.api: Optional[Api] = None
         self._want_inventory = True
+        self._pending_diag: Optional[dict] = None  # ponytail: in memory only; a reboot before upload loses it
         self._stop = threading.Event()
         self._binding = ""
         self.rescan()
         self._load()
+        self._check_suite_marker()
 
     # ---------------- helpers
     def note(self, msg: str, error: bool = False) -> None:
@@ -178,6 +182,13 @@ class Station:
             if hb.get("inventory_requested"):
                 self.note("Server asked for a fresh hardware report (Rescan).")
                 self.rescan()  # re-read the hardware, not just re-send the last snapshot
+            if hb.get("diagnostic_requested"):
+                if hb.get("diagnostic_test") == "full":
+                    with self.lock:
+                        self.v.test_requested = True
+                    self.note("NexWipe cloud asked for the full hardware test.")
+                else:
+                    self.note(f"Ignored unknown diagnostic request '{hb.get('diagnostic_test')}'.", error=True)
             if hb.get("rotate_recommended"):
                 rot = self.api.rotate()
                 how = state.save_credential(rot["credential"], self._binding)
@@ -192,6 +203,8 @@ class Station:
                     self.v.last_upload_note = (f"matched {res['asset_tag']}" if res.get("asset_tag") else "awaiting Add to inventory") + (
                         f", report #{res.get('report_count')}" if res.get("report_count") else "")
                 self.note(f"Hardware report uploaded ({self.v.last_upload_note}).")
+            if self._pending_diag:
+                self._send_diagnostic()
             for j in self.api.jobs():
                 with self.lock:
                     self.v.refused_jobs += 1
@@ -231,6 +244,45 @@ class Station:
         """Run the next cycle now instead of waiting for the heartbeat interval."""
         old, self._stop = self._stop, threading.Event()
         old.set()
+
+    def submit_diagnostic(self, payload: dict) -> None:
+        """Queue a finished hardware test; the next cycle uploads it (after the hardware report)."""
+        self._pending_diag = payload
+        with self.lock:
+            self.v.test_requested = False
+        self.note(f"Hardware test finished ({payload['outcome']}); sending to NexWipe.")
+        self.wake()
+
+    def clear_test_request(self) -> None:
+        with self.lock:
+            self.v.test_requested = self.v.test_confirmed = False
+
+    def _check_suite_marker(self) -> None:
+        """The Windows helper leaves a one-time request on the stick before restarting into it."""
+        meta = state.load_meta()
+        used = meta.get("used_test_requests", [])
+        mid = hwtest.suite_marker(self.sysroot, used)
+        if not mid:
+            return
+        try:
+            meta["used_test_requests"] = (used + [mid])[-20:]
+            state.save_meta(meta)
+        except OSError:
+            pass  # ponytail: no state partition -> the request runs again on every boot until the file is deleted in Windows
+        with self.lock:
+            self.v.test_requested = self.v.test_confirmed = True
+        self.note("Complete test suite confirmed in Windows on this laptop - starting it.")
+
+    def _send_diagnostic(self) -> None:
+        try:
+            res = self.api.diagnostic_result(self._pending_diag)
+            self.note(f"Hardware test result sent to NexWipe ({res.get('outcome', self._pending_diag['outcome'])}).")
+            self._pending_diag = None
+        except ApiError as e:
+            if e.revoked_or_invalid:
+                raise
+            self._pending_diag = None  # the server refused this result; retrying will not change that
+            self.note(f"NexWipe refused the hardware test result: {e.message}", error=True)
 
     def request_inventory(self) -> None:
         self.rescan()

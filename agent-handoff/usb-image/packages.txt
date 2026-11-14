@@ -22,3 +22,13 @@ firmware-misc-nonfree 20250410-2
 firmware-intel-misc 20250410-2
 wireless-regdb 2026.05.30-1~deb13u1
 ca-certificates 20250419
+# Hardware test (nd_station/hwtest.py): audio, webcam, and firmware so sound, mics and Wi-Fi work on
+# any laptop (most Intel laptops since 2019 need SOF firmware + UCM for speakers and built-in mics).
+alsa-utils 1.2.14-1
+alsa-ucm-conf 1.2.14-1
+v4l-utils 1.30.1-1
+firmware-sof-signed 2025.01-1
+firmware-intel-sound 20250410-2
+firmware-atheros 20250410-2
+firmware-mediatek 20250410-2
+firmware-brcm80211 20250410-2

@@ -112,15 +112,22 @@ An authorization row is bound to **organization + job + station + device + drive
 
 `POST /heartbeat` returns `server_time`, `queued_jobs`, `heartbeat_timeout_seconds`, `inventory_requested`, plus
 `mode` (`read_only` | `standard` | `simulated`), `credential_expires_at` and `rotate_recommended` (true when < 14 days remain).
-It also returns `reboot_to_usb_requested`, and `diagnostic_requested` + `diagnostic_test` (currently `keyboard`). Each
+It also returns `reboot_to_usb_requested`, and `diagnostic_requested` + `diagnostic_test` (`full`; boot-stick stations only since migration 0025). Each
 command is delivered **exactly once** (next heartbeat flips it on, then off); if no heartbeat picks it up within 2 minutes it expires.
 
-## 9a. Diagnostics (keyboard test)
+## 9a. Diagnostics (full hardware test)
 
-When a heartbeat returns `diagnostic_requested: true`, the Windows helper runs the named test on the laptop (reads hardware
-only; never touches a disk) and reports with `POST /diagnostics/result`:
-`{ "test": "keyboard", "outcome": "pass" | "fail" | "incomplete", "result": { "keys_registered": ["SC_1E", …], "keys_flagged": [...], "note": "..." }, "detail": "..." }`.
-Keys are scancode names (physical position, layout-independent). Results are recorded against the laptop's device code; they do not change a device grade.
+When a heartbeat returns `diagnostic_requested: true` with `diagnostic_test: "full"` ("Run complete test suite"):
+- **Windows helper:** asks the person at the laptop; reports `{ "test": "full", "outcome": "handoff" }` after setting the
+  one-time boot into the stick (closes the request, no result row), or `"incomplete"` with the reason (declined / cannot restart).
+  Any other outcome from the helper is refused (409 without a delivered request, 422 otherwise).
+- **Boot-stick station:** runs the suite on the laptop screen (reads hardware only; never touches a disk). It also runs it
+  without a request when started at the laptop (key T, or after the Windows hand-off). It reports:
+`{ "test": "full", "outcome": "pass" | "fail" | "incomplete", "result": { "layout": "ansi", "tests": { "keyboard": { "outcome", "keys_registered": ["SC_1E", …], "extra_keys": ["LK_224", …], "note"? }, "display" | "webcam" | "microphone" | "speakers" | "touchpad" | "battery" | "charging" | "wifi" | "ports" | "hinges" | "body": { "outcome": "pass" | "fail" | "skipped" | "incomplete", "note"?, "values"?: { name: string | number | boolean | null } (≤ 30) } } }, "detail": "..." }`.
+`keyboard` is required. `outcome: "pass"` is refused unless the keyboard passed with ≥ 20 keys and no part failed or is incomplete.
+Keys are PC scancode names (physical position, layout-independent); `LK_<code>` are Linux key codes with no scancode (media/Fn).
+`handoff` from a boot-stick station is refused. The Windows helper never runs tests itself (`"keyboard"` results are accepted only for a keyboard request delivered before 0025).
+Results are recorded against the laptop's device code; they do not change a device grade.
 
 ## 10. Credential rotation
 

@@ -1,6 +1,6 @@
-// A standard keyboard, row by row, mirroring Get-KeyboardTemplate in agent-handoff/windows-helper/
-// nexwipe.ps1 (same scancode ids). Used to draw the keyboard map in a diagnostic report. Keep the two
-// in sync: ids here must match the ids the helper reports in keys_registered.
+// A standard keyboard, row by row, mirroring KEY_ROWS in agent-handoff/station/nd_station/hwtest.py
+// (same scancode ids; tests/test_hwtest.py fails if they drift). Used to draw the keyboard map in a
+// diagnostic report: ids here must match the ids the station reports in keys_registered.
 export type KeyCell = { t: string; id: string; w?: number };
 
 export const KEYBOARD_ROWS: KeyCell[][] = [

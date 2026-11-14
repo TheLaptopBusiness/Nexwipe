@@ -6,7 +6,7 @@ import datetime as dt
 import subprocess
 import time
 
-from . import VERSION
+from . import VERSION, hwtest
 from .safety import check as allowed
 from .station import Station
 
@@ -97,7 +97,9 @@ def draw(scr, st: Station) -> None:
         put(y, 0, v.error, R); y += 1
     elif v.message:
         put(y, 0, v.message); y += 1
-    put(h - 1, 0, " [E] Enroll  [S] Server  [R] Re-scan & upload  [W] Wi-Fi  [L] Log  [P] Power off ".ljust(w - 1), curses.A_REVERSE)
+    if v.test_requested:
+        put(h - 2, 0, "Complete test suite requested - starting...", Y | B)
+    put(h - 1, 0, " [T] Complete test suite  [E] Enroll  [S] Server  [R] Re-scan & upload  [W] Wi-Fi  [L] Log  [P] Power off ".ljust(w - 1), curses.A_REVERSE)
     scr.refresh()
 
 
@@ -134,13 +136,23 @@ def main(scr, st: Station) -> None:
     while True:
         draw(scr, st)
         try:
-            ch = scr.getkey()
+            ch = "t" if st.snapshot().test_requested else scr.getkey()
         except curses.error:
             continue
         ch = ch.lower()
         h = scr.getmaxyx()[0]
         try:
-            if ch == "s":
+            if ch == "t":
+                v = st.snapshot()
+                st.clear_test_request()
+                payload = hwtest.run(scr, st.sysroot, can_send=v.enrolled, confirmed=v.test_confirmed)
+                st.clear_test_request()  # this run answers any request that arrived while it ran
+                if not payload and v.test_requested and v.enrolled:
+                    # Close the cloud request instead of leaving it "received" forever.
+                    payload = hwtest.build_payload({"keyboard": {"outcome": "incomplete", "note": "Declined at the laptop"}})
+                if payload:
+                    st.submit_diagnostic(payload)
+            elif ch == "s":
                 url = _prompt(scr, h - 2, "Server address (https://…): ")
                 if url:
                     st.set_server(url)

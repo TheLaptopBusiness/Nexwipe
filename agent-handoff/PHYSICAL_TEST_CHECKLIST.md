@@ -111,4 +111,19 @@ A failure in step 3 or 4 (wrong identifier, missing internal drive, boot stick r
 | Restart without duplicate records | | |
 | Credential revocation | | |
 
+**Complete test suite** — start it from the app ("Run complete test suite") on a laptop running NexWipe for Windows: the console lists tests + permissions, Y restarts into the stick, and the suite starts there without asking again (and does NOT start again on the next boot). Run on each laptop model; note anything that needed a retry
+
+| Part | PASS / FAIL / not fitted | Notes (what the station showed; Fn/media keys counted as extra?) |
+|---|---|---|
+| Keyboard: every key lights; holding Esc 2 s finishes; Ctrl+Alt+Del during the test does NOT restart | | |
+| Display: five colour fills; white is white, not grey | | |
+| Webcam: live text preview moves when you wave; IR camera not picked | | |
+| Microphone: bar moves when speaking (which device: DMIC / analog?) | | |
+| Speakers: tone from LEFT then RIGHT | | |
+| Touchpad: four corners + left/right click (clickpad right half) | | |
+| Battery: health % and cycles match the vendor tool / BIOS | | |
+| Charging port: unplug → plug detected (barrel and USB-C) | | |
+| Wi-Fi adapter found | | |
+| Result appears in the app (Diagnostics) with the right per-part outcomes | | |
+
 Attach the photos: firmware screens (as found, and after restoring), station screen after step 5, any error screens.

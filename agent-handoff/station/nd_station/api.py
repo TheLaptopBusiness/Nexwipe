@@ -72,5 +72,8 @@ class Api:
     def reconcile(self) -> dict:
         return self._call("POST", "/reconcile", {"jobs": []})
 
+    def diagnostic_result(self, payload: dict) -> dict:
+        return self._call("POST", "/diagnostics/result", payload)
+
     def rotate(self) -> dict:
         return self._call("POST", "/credentials/rotate", {})

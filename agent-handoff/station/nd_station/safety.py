@@ -3,6 +3,8 @@ Command allow-list for the read-only station.
 
 The station may only run the exact command shapes below. None of them can write to, erase,
 partition, format, trim or read data from a storage device. Anything else raises.
+The hardware-test tools (camera frames, microphone, speaker tone, mixer volume) touch only the
+camera and sound card, and stream to stdout; they never name a file.
 """
 from __future__ import annotations
 
@@ -20,6 +22,13 @@ ALLOWED = [
     ("nmcli", re.compile(r"-t -f [A-Z,.-]+ (device|general|connection show --active)")),
     ("nmtui", re.compile(r"connect")),                       # interactive Wi-Fi setup
     ("timedatectl", re.compile(r"show -p NTPSynchronized --value")),
+    # hardware test (hwtest.py)
+    ("v4l2-ctl", re.compile(r"-d /dev/video\d+ --set-fmt-video=width=\d+,height=\d+,pixelformat=YUYV --get-fmt-video")),
+    ("v4l2-ctl", re.compile(r"-d /dev/video\d+ --set-fmt-video=width=\d+,height=\d+,pixelformat=YUYV --stream-mmap --stream-count=\d+ --stream-to=-")),
+    ("arecord", re.compile(r"-q -D plughw:\d+,\d+ -f S16_LE -r 16000 -c 1 -t raw -d \d+")),  # no file: writes to stdout
+    ("speaker-test", re.compile(r"-D plughw:\d+,\d+ -c 2 -t sine -f \d+ -s [12]")),
+    ("amixer", re.compile(r"-q -c \d+ sset (Master|Speaker|PCM|Headphone) 80% unmute")),
+    ("amixer", re.compile(r"-q -c \d+ sset (Capture|Mic|Internal Mic) 80% cap")),
 ]
 
 DESTRUCTIVE_TOOLS = {
@@ -53,3 +62,14 @@ def run_read_only(argv: list, timeout: int = 20) -> str:
         return subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
+
+
+def popen_read_only(argv: list):
+    """Start an allow-listed streaming command (stdout piped); None if the tool is missing."""
+    check(argv)
+    if shutil.which(argv[0]) is None:
+        return None
+    try:
+        return subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    except OSError:
+        return None

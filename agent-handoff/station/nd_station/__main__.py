@@ -5,6 +5,7 @@ nd-station — NexWipe read-only station.
   python3 -m nd_station discover        print the hardware report that would be uploaded
   python3 -m nd_station headless [--once]   no screen; log to stdout (serial console / tests)
   python3 -m nd_station enroll --server URL --token ndenr_... [--name NAME]
+  python3 -m nd_station hwtest          full hardware test on this screen; prints the result (nothing sent)
 """
 from __future__ import annotations
 
@@ -29,10 +30,18 @@ def main() -> None:
     en.add_argument("--token", required=True)
     en.add_argument("--name", default="")
     sub.add_parser("version")
+    sub.add_parser("hwtest")
     a = p.parse_args()
 
     if a.cmd == "version":
         print(VERSION)
+        return
+    if a.cmd == "hwtest":
+        import curses
+
+        from .hwtest import run as hwrun
+
+        print(json.dumps(curses.wrapper(lambda scr: (curses.start_color(), curses.use_default_colors(), hwrun(scr, a.sysroot, can_send=True))[2]), indent=2))
         return
     if a.cmd == "discover":
         print(json.dumps(discover(a.sysroot), indent=2))

@@ -89,7 +89,7 @@ paths:
       requestBody:
         content: { application/json: { schema: { type: object, properties: { state: { type: string, enum: [idle, busy, reconciling] }, agent_version: { type: string } } } } }
       responses:
-        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report). When `diagnostic_requested` is true, run the test named by `diagnostic_test` and POST /diagnostics/result.", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean }, reboot_to_usb_requested: { type: boolean }, diagnostic_requested: { type: boolean }, diagnostic_test: { type: [string, "null"], enum: [keyboard, null] }, mode: { type: string, enum: [read_only, standard, simulated] }, credential_expires_at: { type: [string, "null"], format: date-time }, rotate_recommended: { type: boolean } } } } } }
+        "200": { description: "OK. When `inventory_requested` is true, send POST /inventory again (a technician registered this station's last report). When `diagnostic_requested` is true, run the test named by `diagnostic_test` and POST /diagnostics/result.", content: { application/json: { schema: { type: object, properties: { server_time: { type: string }, queued_jobs: { type: integer }, heartbeat_timeout_seconds: { type: integer }, inventory_requested: { type: boolean }, reboot_to_usb_requested: { type: boolean }, diagnostic_requested: { type: boolean }, diagnostic_test: { type: [string, "null"], enum: [full, null] }, mode: { type: string, enum: [read_only, standard, simulated] }, credential_expires_at: { type: [string, "null"], format: date-time }, rotate_recommended: { type: boolean } } } } } }
         "401": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
   /diagnostics/result:
@@ -104,14 +104,15 @@ paths:
               type: object
               required: [test, outcome]
               properties:
-                test: { type: string, enum: [keyboard] }
-                outcome: { type: string, enum: [pass, fail, incomplete] }
+                test: { type: string, enum: [full, keyboard], description: "full = boot-stick hardware test; keyboard = retired Windows-helper test (only for a request delivered before migration 0025)" }
+                outcome: { type: string, enum: [pass, fail, incomplete, handoff], description: "handoff: Windows helper only, after restarting into the stick" }
                 detail: { type: string, maxLength: 300 }
                 result:
                   type: object
-                  description: "Keyboard test: scancode names of keys pressed and any flagged dead/sticky. Physical positions, layout-independent."
+                  description: "full: `tests` holds one entry per part (keyboard required; see CONTRACT.md 9a). keyboard: scancode names of keys pressed and any flagged dead/sticky. Physical positions, layout-independent."
                   properties:
                     layout: { type: string }
+                    tests: { type: object, additionalProperties: { type: object, required: [outcome], properties: { outcome: { type: string, enum: [pass, fail, skipped, incomplete] }, note: { type: string, maxLength: 500 }, values: { type: object, maxProperties: 30 }, keys_registered: { type: array, maxItems: 200, items: { type: string } }, extra_keys: { type: array, maxItems: 200, items: { type: string } } } } }
                     keys_registered: { type: array, maxItems: 200, items: { type: string } }
                     keys_flagged: { type: array, maxItems: 200, items: { type: string } }
                     note: { type: string }

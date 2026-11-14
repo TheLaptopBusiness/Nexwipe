@@ -7,7 +7,7 @@ import {
   DatabaseZap,
   Eraser,
   FlaskConical,
-  Keyboard,
+  ClipboardCheck,
   Laptop,
   Plus,
   Power,
@@ -62,10 +62,10 @@ const REBOOT_STATUS: Record<string, string> = {
 };
 
 const DIAGNOSTIC_STATUS: Record<string, string> = {
-  requested: "Waiting for the laptop to pick up the keyboard test…",
-  delivered: "Laptop received the request; the technician runs the test on the laptop",
-  done: "Keyboard test finished — see the result below",
-  failed: "Keyboard test was cancelled at the laptop",
+  requested: "Waiting for the laptop to pick up the test suite…",
+  delivered: "Laptop received the request and is asking the technician to confirm",
+  done: "Test suite finished — see the result below",
+  failed: "Test suite did not run at the laptop",
   expired: "Request expired: the laptop did not check in within 2 minutes",
 };
 
@@ -134,7 +134,7 @@ function ConnectedDevicePage() {
     qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
   }
 
-  async function runDiagnostic(test: "keyboard") {
+  async function runDiagnostic(test: "full") {
     setBusy(test);
     const { error } = await supabase.rpc("request_diagnostic", { _agent: d.agent_id, _test: test });
     setBusy(null);
@@ -143,7 +143,7 @@ function ConnectedDevicePage() {
       return;
     }
     toast.success(
-      "Keyboard test requested. The laptop asks the technician to permit it, then press every key.",
+      "Complete test suite sent. The laptop lists the tests and permissions and asks the technician to confirm with Y.",
     );
     qc.invalidateQueries({ queryKey: ["connected-device", orgId, discoveryId] });
   }
@@ -224,15 +224,13 @@ function ConnectedDevicePage() {
               <Power /> Reboot into NexWipe
             </Button>
           )}
-          {canRebootToUsb(ag?.platform) && (
-            <Button
-              variant="outline"
-              disabled={!mayAct || !online || diagPending || busy !== null}
-              onClick={() => runDiagnostic("keyboard")}
-            >
-              <Keyboard /> Run keyboard test
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            disabled={!mayAct || !online || diagPending || busy !== null}
+            onClick={() => runDiagnostic("full")}
+          >
+            <ClipboardCheck /> Run complete test suite
+          </Button>
           <Button variant="outline" disabled title="Planned for v2">
             <Eraser /> Start wipe <ToneBadge tone="neutral">Planned · v2</ToneBadge>
           </Button>
@@ -293,9 +291,11 @@ function ConnectedDevicePage() {
           <p
             className={`text-sm ${ag.diagnostic_status === "failed" || ag.diagnostic_status === "expired" ? "text-warning" : "text-muted-foreground"}`}
           >
-            Keyboard test: {DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status}
-            {ag.diagnostic_detail ? ` (${ag.diagnostic_detail})` : ""} ·{" "}
-            {formatDateTime(ag.diagnostic_status_at)}
+            Test suite:{" "}
+            {canRebootToUsb(ag.platform) && ag.diagnostic_status === "done"
+              ? "Confirmed at the laptop; it is restarting into the NexWipe stick, where the tests run. The result appears below when they finish"
+              : `${DIAGNOSTIC_STATUS[ag.diagnostic_status] ?? ag.diagnostic_status}${ag.diagnostic_detail ? ` (${ag.diagnostic_detail})` : ""}`}{" "}
+            · {formatDateTime(ag.diagnostic_status_at)}
           </p>
         )}
         {!canRebootToUsb(ag?.platform) && (

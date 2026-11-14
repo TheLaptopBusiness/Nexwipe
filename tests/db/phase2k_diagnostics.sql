@@ -1,5 +1,6 @@
--- NexWipe Phase 2i checks: agent-run diagnostics (keyboard test). Request from the app, exactly-once
--- delivery by heartbeat, result reported by the Windows helper, append-only results, and access rules.
+-- NexWipe Phase 2k checks: agent-run diagnostics. Since 0025 the full hardware test runs on the NexWipe
+-- boot stick: request from the app (boot-stick stations only), exactly-once delivery by heartbeat,
+-- result reported by the stick (also when started at the laptop), append-only results, access rules.
 -- Single DO block; always rolls back.
 DO $$
 DECLARE
@@ -35,7 +36,8 @@ BEGIN
   tok := public.create_enrollment_token(oa, 'Boot stick A', null, 1);
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
-  lin := (public.agent_enroll(tok, 'Boot A', '0.2.4', 'x86_64 6.12.107', 'nexwipe')->>'agent_id')::uuid;
+  lin := (public.agent_enroll(tok, 'Boot A', '0.3.0-readonly', 'x86_64 6.12.107', 'nexwipe')->>'agent_id')::uuid;
+  PERFORM public.agent_report_inventory(lin, '{"system":{"manufacturer":"HP","model":"EliteBook 840 G5","serial":"P2K-SYS-2"},"station":{"hardware_source":"physical"},"drives":[]}');
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ux, 'role','authenticated','aal','aal2')::text, true);
   tok := public.create_enrollment_token(ox, 'Win stick X', null, 1);
@@ -46,77 +48,121 @@ BEGIN
   -- ===== Request (technician, AAL2) =====
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal2')::text, true);
-  res := public.request_diagnostic(win, 'keyboard');
-  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
-  r := r || ' [technician_requests ' || CASE WHEN res->>'test' = 'keyboard' AND st = 'requested' THEN 'PASS' ELSE 'FAIL' END || ']';
+  res := public.request_diagnostic(lin, 'full');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = lin;
+  r := r || ' [technician_requests_full ' || CASE WHEN res->>'test' = 'full' AND st = 'requested' THEN 'PASS' ELSE 'FAIL' END || ']';
 
-  -- Already in progress: a second request is refused.
-  BEGIN PERFORM public.request_diagnostic(win, 'keyboard'); r := r || ' [no_double_request FAIL]';
+  BEGIN PERFORM public.request_diagnostic(lin, 'full'); r := r || ' [no_double_request FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [no_double_request PASS]'; END;
 
-  -- Unknown test is refused (on A's own station, so this fails on the test name, not on permission).
-  BEGIN PERFORM public.request_diagnostic(win, 'display'); r := r || ' [unknown_test FAIL]';
+  -- The old Windows keyboard test and unknown tests are refused (on A's own stations: test name, not permission).
+  BEGIN PERFORM public.request_diagnostic(win, 'keyboard'); r := r || ' [keyboard_request_refused FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [keyboard_request_refused PASS]'; END;
+  BEGIN PERFORM public.request_diagnostic(lin, 'display'); r := r || ' [unknown_test FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [unknown_test PASS]'; END;
 
-  -- Boot-stick station (not the Windows helper) is refused.
-  BEGIN PERFORM public.request_diagnostic(lin, 'keyboard'); r := r || ' [boot_stick_refused FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [boot_stick_refused PASS]'; END;
+  -- A Windows laptop can be sent the suite too (the helper asks, then restarts into the stick).
+  res := public.request_diagnostic(win, 'full');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
+  r := r || ' [windows_laptop_can_be_sent_suite ' || CASE WHEN st = 'requested' THEN 'PASS' ELSE 'FAIL' END || ']';
 
-  -- Auditor cannot act.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', uau, 'role','authenticated','aal','aal2')::text, true);
-  BEGIN PERFORM public.request_diagnostic(win, 'keyboard'); r := r || ' [auditor_cannot FAIL]';
+  BEGIN PERFORM public.request_diagnostic(lin, 'full'); r := r || ' [auditor_cannot FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [auditor_cannot PASS]'; END;
 
-  -- Another company cannot act on A's station.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ux, 'role','authenticated','aal','aal2')::text, true);
-  BEGIN PERFORM public.request_diagnostic(win, 'keyboard'); r := r || ' [other_company_cannot FAIL]';
+  BEGIN PERFORM public.request_diagnostic(lin, 'full'); r := r || ' [other_company_cannot FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [other_company_cannot PASS]'; END;
 
   -- ===== Delivery (heartbeat delivers exactly once) =====
   PERFORM set_config('role', 'service_role', true);
   PERFORM set_config('request.jwt.claims', json_build_object('role','service_role')::text, true);
-  hb := public.agent_heartbeat(win, 'idle', '0.1.0-win');
-  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
-  r := r || ' [heartbeat_delivers ' || CASE WHEN (hb->>'diagnostic_requested')::boolean AND hb->>'diagnostic_test' = 'keyboard' AND st = 'delivered' THEN 'PASS' ELSE 'FAIL' END || ']';
-  hb := public.agent_heartbeat(win, 'idle', '0.1.0-win');
+  hb := public.agent_heartbeat(lin, 'idle', '0.3.0-readonly');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = lin;
+  r := r || ' [heartbeat_delivers ' || CASE WHEN (hb->>'diagnostic_requested')::boolean AND hb->>'diagnostic_test' = 'full' AND st = 'delivered' THEN 'PASS' ELSE 'FAIL' END || ']';
+  hb := public.agent_heartbeat(lin, 'idle', '0.3.0-readonly');
   r := r || ' [delivered_only_once ' || CASE WHEN (hb->>'diagnostic_requested')::boolean IS FALSE THEN 'PASS' ELSE 'FAIL' END || ']';
 
   -- ===== Report =====
-  res := public.agent_report_diagnostic(win, 'keyboard', 'pass', '{"layout":"ansi","keys_registered":["KEY_A","KEY_B"]}', 'all keys ok');
-  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
-  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = win AND test = 'keyboard' AND outcome = 'pass';
-  r := r || ' [report_records_result ' || CASE WHEN res->>'outcome' = 'pass' AND st = 'done' AND n = 1 THEN 'PASS' ELSE 'FAIL' END || ']';
+  res := public.agent_report_diagnostic(lin, 'full', 'fail',
+    '{"layout":"ansi","tests":{"keyboard":{"outcome":"pass","keys_registered":["SC_1E"]},"speakers":{"outcome":"fail","note":"left silent"}}}', '1 pass, 1 fail');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = lin;
+  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = lin AND test = 'full' AND outcome = 'fail'
+    AND result->'tests'->'speakers'->>'outcome' = 'fail';
+  r := r || ' [report_records_result ' || CASE WHEN res->>'outcome' = 'fail' AND st = 'done' AND n = 1 THEN 'PASS' ELSE 'FAIL' END || ']';
 
-  -- The result carries the laptop's stable device_code, resolved from its discovery.
   SELECT count(*) INTO n FROM public.diagnostic_results dr JOIN public.agent_discoveries ad ON ad.agent_id = dr.agent_id
-    WHERE dr.agent_id = win AND dr.device_code = ad.device_code;
+    WHERE dr.agent_id = lin AND dr.device_code = ad.device_code;
   r := r || ' [result_linked_to_device_code ' || CASE WHEN n >= 1 THEN 'PASS' ELSE 'FAIL' END || ']';
 
-  -- Reporting again without a fresh delivery is refused.
-  BEGIN PERFORM public.agent_report_diagnostic(win, 'keyboard', 'pass', '{}', null); r := r || ' [no_report_without_delivery FAIL]';
-  EXCEPTION WHEN others THEN r := r || ' [no_report_without_delivery PASS]'; END;
+  -- Started by the technician at the laptop (no cloud request): recorded, station status untouched.
+  res := public.agent_report_diagnostic(lin, 'full', 'pass', '{"tests":{}}', 'started at the laptop');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = lin;
+  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = lin AND test = 'full';
+  r := r || ' [laptop_started_full_test ' || CASE WHEN st = 'done' AND n = 2 THEN 'PASS' ELSE 'FAIL' END || ']';
+
+  -- ===== Windows hand-off =====
+  hb := public.agent_heartbeat(win, 'idle', '0.5.0-win');
+  r := r || ' [windows_gets_suite ' || CASE WHEN hb->>'diagnostic_test' = 'full' THEN 'PASS' ELSE 'FAIL' END || ']';
+  -- The helper can never report test results, only hand over or say why not.
+  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'pass', '{}', null); r := r || ' [windows_cannot_report_results FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [windows_cannot_report_results PASS]'; END;
+  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = win;
+  res := public.agent_report_diagnostic(win, 'full', 'handoff', '{}', 'restarting');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
+  r := r || ' [windows_handoff_closes_request ' || CASE WHEN res->>'outcome' = 'handoff' AND st = 'done'
+    AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win) = n THEN 'PASS' ELSE 'FAIL' END || ']';
+  BEGIN PERFORM public.agent_report_diagnostic(win, 'full', 'handoff', '{}', null); r := r || ' [no_handoff_without_delivery FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [no_handoff_without_delivery PASS]'; END;
+  -- Declined at the laptop: recorded as incomplete, request marked failed.
+  UPDATE public.agents SET diagnostic_status = 'delivered', diagnostic_test = 'full', diagnostic_status_at = now() WHERE id = win;
+  PERFORM public.agent_report_diagnostic(win, 'full', 'incomplete', '{"tests":{"keyboard":{"outcome":"incomplete","note":"Declined at the laptop"}}}', 'Declined at the laptop');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
+  r := r || ' [windows_decline_recorded ' || CASE WHEN st = 'failed' AND (SELECT count(*) FROM public.diagnostic_results WHERE agent_id = win) = n + 1 THEN 'PASS' ELSE 'FAIL' END || ']';
+  -- Only the Windows helper hands over.
+  BEGIN PERFORM public.agent_report_diagnostic(lin, 'full', 'handoff', '{}', null); r := r || ' [stick_cannot_handoff FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [stick_cannot_handoff PASS]'; END;
+  -- A keyboard result needs a delivered keyboard request.
+  BEGIN PERFORM public.agent_report_diagnostic(win, 'keyboard', 'pass', '{}', null); r := r || ' [no_keyboard_report_without_delivery FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [no_keyboard_report_without_delivery PASS]'; END;
+  BEGIN PERFORM public.agent_report_diagnostic(lin, 'display', 'pass', '{}', null); r := r || ' [unknown_test_report FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [unknown_test_report PASS]'; END;
+  BEGIN PERFORM public.agent_report_diagnostic(lin, 'full', 'great', '{}', null); r := r || ' [unknown_outcome FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [unknown_outcome PASS]'; END;
+
+  -- A keyboard test handed out before 0025 can still report (old helpers already in the field).
+  UPDATE public.agents SET diagnostic_status = 'delivered', diagnostic_test = 'keyboard', diagnostic_status_at = now() WHERE id = win;
+  res := public.agent_report_diagnostic(win, 'keyboard', 'pass', '{"layout":"ansi","keys_registered":["SC_1E"]}', 'all keys ok');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = win;
+  r := r || ' [delivered_keyboard_still_reports ' || CASE WHEN st = 'done' THEN 'PASS' ELSE 'FAIL' END || ']';
 
   -- ===== Append-only results =====
-  BEGIN UPDATE public.diagnostic_results SET outcome = 'fail' WHERE agent_id = win; r := r || ' [results_no_update FAIL]';
+  BEGIN UPDATE public.diagnostic_results SET outcome = 'pass' WHERE agent_id = lin; r := r || ' [results_no_update FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [results_no_update PASS]'; END;
-  BEGIN DELETE FROM public.diagnostic_results WHERE agent_id = win; r := r || ' [results_no_delete FAIL]';
+  BEGIN DELETE FROM public.diagnostic_results WHERE agent_id = lin; r := r || ' [results_no_delete FAIL]';
   EXCEPTION WHEN others THEN r := r || ' [results_no_delete PASS]'; END;
 
   -- ===== Expiry (no heartbeat within 2 minutes) =====
-  UPDATE public.agents SET diagnostic_status = 'requested', diagnostic_test = 'keyboard',
-    diagnostic_status_at = now() - interval '3 minutes', diagnostic_requested_at = now() - interval '3 minutes' WHERE id = winx;
-  hb := public.agent_heartbeat(winx, 'idle', '0.1.0-win');
-  SELECT diagnostic_status INTO st FROM public.agents WHERE id = winx;
+  UPDATE public.agents SET diagnostic_status = 'requested', diagnostic_test = 'full',
+    diagnostic_status_at = now() - interval '3 minutes', diagnostic_requested_at = now() - interval '3 minutes' WHERE id = lin;
+  hb := public.agent_heartbeat(lin, 'idle', '0.3.0-readonly');
+  SELECT diagnostic_status INTO st FROM public.agents WHERE id = lin;
   r := r || ' [stale_request_expires ' || CASE WHEN (hb->>'diagnostic_requested')::boolean IS FALSE AND st = 'expired' THEN 'PASS' ELSE 'FAIL' END || ']';
 
   -- ===== RLS read =====
   PERFORM set_config('role', 'authenticated', true);
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal2')::text, true);
-  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = win;
-  r := r || ' [staff_reads_own ' || CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END || ']';
+  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id IN (lin, win);
+  r := r || ' [staff_reads_own ' || CASE WHEN n = 4 THEN 'PASS' ELSE 'FAIL' END || ']';
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ux, 'role','authenticated','aal','aal2')::text, true);
-  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id = win;
+  SELECT count(*) INTO n FROM public.diagnostic_results WHERE agent_id IN (lin, win);
   r := r || ' [other_company_cannot_read ' || CASE WHEN n = 0 THEN 'PASS' ELSE 'FAIL' END || ']';
+  -- Nobody in the app can write a result directly.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ut, 'role','authenticated','aal','aal2')::text, true);
+  BEGIN
+    INSERT INTO public.diagnostic_results(org_id, agent_id, device_code, test, outcome) VALUES (oa, lin, 'X', 'full', 'pass');
+    r := r || ' [app_cannot_insert FAIL]';
+  EXCEPTION WHEN others THEN r := r || ' [app_cannot_insert PASS]'; END;
 
   PERFORM set_config('role', me, true);
   RAISE EXCEPTION 'RESULTS:%', r;
