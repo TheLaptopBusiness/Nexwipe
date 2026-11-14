@@ -41,6 +41,8 @@
   #pad .c.on { background:#d7f2e1; } #dot { position:absolute; width:14px; height:14px; border-radius:50%; background:var(--accent); transform:translate(-50%,-50%); display:none; }
   ul.list { list-style:none; padding:0; margin:10px 0; } ul.list li { padding:7px 0; border-bottom:1px solid var(--line); display:flex; gap:12px; }
   ul.list li b { width:150px; flex:none; }
+  .spin { width:34px; height:34px; border:4px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin:14px 0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
   .pill { padding:1px 10px; border-radius:20px; font-size:13px; font-weight:600; color:#fff; } .pill.pass{background:var(--ok)} .pill.fail{background:var(--bad)} .pill.skipped,.pill.incomplete{background:#7b8594}
 </style>
 </head>
@@ -86,9 +88,31 @@ const buttons = (list) => `<div class="btns">${list.map(([id, label, cls]) => `<
 function choose(ids) {
   return new Promise((res) => ids.forEach((id) => $(id) && $(id).addEventListener("click", () => res(id), { once: true })));
 }
+// Calls the NexWipe helper on this laptop. Retries briefly; a clear message if the helper window was closed.
 async function api(path, body) {
-  const r = await fetch(`${path}?t=${encodeURIComponent(TOKEN)}`, body === undefined ? {} : { method: "POST", body: JSON.stringify(body) });
-  return r.json();
+  for (let i = 0; ; i++) {
+    try {
+      const r = await fetch(`${path}?t=${encodeURIComponent(TOKEN)}`, body === undefined ? {} : { method: "POST", body: JSON.stringify(body) });
+      return await r.json();
+    } catch (e) {
+      if (i >= 2) throw new Error("The NexWipe window on this laptop is not answering (keep it open while testing)");
+      await sleep(800);
+    }
+  }
+}
+// The helper ends the suite if the page goes quiet, so tell it we are still here.
+setInterval(() => fetch(`/ping?t=${encodeURIComponent(TOKEN)}`).catch(() => {}), 10000);
+function loading(title, text = "Please wait…") { show(title, `<div class="spin"></div><p class="big">${text}</p>`); }
+// Windows facts (battery, charger, Wi-Fi) from the helper; Retry / Skip instead of failing the test.
+async function info(title) {
+  for (;;) {
+    loading(title, "Reading from Windows…");
+    try { return await api("/info"); }
+    catch (e) {
+      show(title, `<h1 class="bad">Could not read from Windows</h1><p>${esc(e.message)}</p>` + buttons([["again", "Try again", "primary"], ["skip", "Skip this test"]]));
+      if ((await choose(["again", "skip"])) === "skip") return null;
+    }
+  }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const scalars = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 200) : v]));
@@ -158,21 +182,27 @@ async function testDisplay() {
 // ---------------------------------------------------------------- camera / microphone access
 // Windows can block a browser from the camera/microphone (Settings > Privacy); that is a setting, not a fault.
 async function getMedia(kind, constraints) {
+  const what = kind === "camera" ? "camera" : "microphone";
   for (;;) {
+    loading(LABELS[kind === "camera" ? "webcam" : "microphone"], `Starting the ${what}… If the browser asks, click <b>Allow</b>.`);
     // A stuck driver can leave getUserMedia pending forever; give up after 10 s and show the choices.
     try { return { stream: await Promise.race([navigator.mediaDevices.getUserMedia(constraints),
       new Promise((_, no) => setTimeout(() => no({ name: "TimeoutError" }), 10000))]) }; }
     catch (e) {
-      const name = e && e.name;
-      if (name === "NotFoundError" || name === "OverconstrainedError") return { missing: true };
-      const what = kind === "camera" ? "camera" : "microphone";
+      const name = (e && e.name) || "Error", detail = `${name}${e && e.message ? ": " + e.message : ""}`.slice(0, 200);
+      if (name === "NotFoundError") return { missing: true };
+      if (name === "OverconstrainedError") { constraints = { [kind === "camera" ? "video" : "audio"]: true }; continue; }
       show(LABELS[kind === "camera" ? "webcam" : "microphone"], `<h1>Windows blocked the ${what}</h1>
-        <p>${name === "TimeoutError" ? `The ${what} did not respond.` : name === "NotReadableError" ? `Another app may be using the ${what}, or Windows privacy settings block it.` : `Windows privacy settings do not let apps use the ${what}.`}</p>
-        <p>Click <b>Open settings</b>, switch on <b>${what} access</b> and <b>Let desktop apps access your ${what}</b>, then click <b>Try again</b>.</p>`
+        <p>${name === "TimeoutError" ? `The ${what} did not respond.`
+          : name === "NotReadableError" ? `Windows could not start the ${what}: another app may be using it, a privacy shutter or ${what}-off key may be on, or Windows privacy settings block it.`
+          : name === "NotAllowedError" ? `The ${what} permission was refused, either in the browser question or by Windows privacy settings.`
+          : `The ${what} could not be opened.`}</p>
+        <p>Check the ${what} privacy shutter / key. Click <b>Open settings</b>, switch on <b>${what} access</b> and <b>Let desktop apps access your ${what}</b>, then <b>Try again</b>. If the browser asks, click <b>Allow</b>.</p>
+        <p class="muted">Windows said: ${esc(detail)}</p>`
         + buttons([["set", "Open settings", "primary"], ["again", "Try again"], ["bad", `The ${what} is faulty`, "bad"]]));
       let a = await choose(["set", "again", "bad"]);
-      if (a === "set") { await api("/settings", { what }); a = await choose(["again", "bad"]); }
-      if (a === "bad") return { error: `${what} could not be opened (${name || "unknown error"})` };
+      if (a === "set") { await api("/settings", { what }).catch(() => {}); a = await choose(["again", "bad"]); }
+      if (a === "bad") return { error: `${what} could not be opened (${detail})` };
     }
   }
 }
@@ -283,7 +313,9 @@ async function testTouchpad() {
 
 // ---------------------------------------------------------------- 7-9. battery, charger, Wi-Fi (read by the helper from Windows)
 async function testBattery() {
-  const info = await api("/info"); const b = info.battery;
+  const inf = await info("Battery");
+  if (!inf) return { outcome: "skipped", note: "Could not read the battery from Windows" };
+  const b = inf.battery;
   let r;
   if (!b) r = { outcome: "fail", note: "No battery detected" };
   else if (b.health_pct == null) r = { outcome: "incomplete", note: "The battery did not report its capacity", values: scalars(b) };
@@ -297,7 +329,9 @@ async function testBattery() {
 }
 
 async function testCharging() {
-  let on = (await api("/info")).ac_online;
+  const inf = await info("Charging port");
+  if (!inf) return { outcome: "skipped", note: "Could not read the charger from Windows" };
+  const on = inf.ac_online;
   if (on == null) {
     const a = await ask("Charging port", "Windows does not report the charger. Plug it in: does the charging light come on?", [], true);
     return { outcome: { y: "pass", n: "fail", s: "skipped" }[a], note: "Checked by eye (charging light)" };
@@ -307,7 +341,7 @@ async function testCharging() {
       + buttons([["s", "No charger here"], ["f", "Port does not work", "bad"]]));
     let pick = null; $("s").onclick = () => (pick = "s"); $("f").onclick = () => (pick = "f");
     const end = Date.now() + 90000;
-    while ((await api("/info")).ac_online !== want) {
+    while ((await api("/info").catch(() => ({}))).ac_online !== want) {
       if (pick === "s") return { outcome: "skipped", note: "No charger available at the bench" };
       if (pick === "f" || Date.now() > end) return { outcome: "fail", note: "Charger plug-in was not detected" };
       await sleep(1000);
@@ -317,7 +351,9 @@ async function testCharging() {
 }
 
 async function testWifi() {
-  const w = (await api("/info")).wifi;
+  const inf = await info("Wi-Fi");
+  if (!inf) return { outcome: "skipped", note: "Could not read Wi-Fi from Windows" };
+  const w = inf.wifi;
   const r = w && w.adapter ? { outcome: "pass", values: scalars({ adapter: w.adapter, connected: !!w.connected }) } : { outcome: "fail", note: "No Wi-Fi adapter found by Windows" };
   show("Wi-Fi", `<h1>Wi-Fi</h1><p class="big">Adapter: ${esc(w && w.adapter || "none")} · Connected: ${w && w.connected ? "yes" : "no"}</p>
     <p class="big ${r.outcome === "pass" ? "ok" : "bad"}">${r.outcome.toUpperCase()}${r.note ? " — " + esc(r.note) : ""}</p>` + buttons([["go", "Continue", "primary"]]));
@@ -361,6 +397,7 @@ async function main() {
   await choose(["go"]);
   for (const [key, fn] of STEPS) {
     stepNo++;
+    loading(LABELS[key] || "Physical checks");
     let r;
     try { r = await fn(); } catch (e) { r = { outcome: "incomplete", note: ("Test error: " + (e && e.message || e)).slice(0, 500) }; }
     if (key) tests[key] = r; else Object.assign(tests, r);

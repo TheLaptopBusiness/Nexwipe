@@ -18,7 +18,7 @@
 param([switch]$DryRun, [switch]$SelfTest, [string]$Out = "")
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.6.0-win"
+$VERSION = "0.6.2-win"
 $API = "/api/public/agent/v1"
 $HEARTBEAT_SECONDS = 5
 $Culture = [Globalization.CultureInfo]::InvariantCulture
@@ -35,7 +35,7 @@ $Allowed = @(
   @{ exe = "bcdedit";  rx = '^/set \{fwbootmgr\} bootsequence \{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$' },
   @{ exe = "shutdown"; rx = '^/r /t ([0-9]|[1-5][0-9]|60) /c NexWipe: restarting into the NexWipe USB stick$' },
   # complete test suite: Edge/Chrome showing ONLY the local test page; Windows camera/microphone privacy pages
-  @{ exe = "browser";  rx = '^--app=http://127\.0\.0\.1:[0-9]{2,5}/\?t=[0-9a-f]{32} --user-data-dir="[^"]{1,200}" --no-first-run --no-default-browser-check --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required --start-maximized$' },
+  @{ exe = "browser";  rx = '^--app=http://127\.0\.0\.1:[0-9]{2,5}/\?t=[0-9a-f]{32} --user-data-dir="[^"]{1,200}" --no-first-run --no-default-browser-check --autoplay-policy=no-user-gesture-required --start-maximized$' },
   @{ exe = "ms-settings"; rx = '^privacy-(webcam|microphone)$' }
 )
 
@@ -787,7 +787,8 @@ $SuiteTests = @(
   "Physical checks - USB ports, hinges, screen and case (your answers)"
 )
 $SuitePermissions = @(
-  "Test window: a NexWipe test page opens in Edge or Chrome (served only to this laptop)",
+  "Test window: a NexWipe test page opens in Chrome (or Edge if Chrome is not installed), served only to this laptop",
+  "The browser will ask to use the camera and microphone: click Allow",
   "Keyboard: captured by the test page while it runs",
   "Camera: on during the webcam test only; no picture is saved or sent",
   "Microphone: listens during the microphone test only; no sound is saved or sent",
@@ -807,7 +808,7 @@ function New-SuiteDecline([string]$why) {
 # Pure: arguments for the test window (checked against $Allowed before it starts).
 function Get-BrowserArgs([int]$port, [string]$token, [string]$profileDir) {
   return @("--app=http://127.0.0.1:$port/?t=$token", "--user-data-dir=""$profileDir""", "--no-first-run", "--no-default-browser-check",
-           "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--start-maximized")
+           "--autoplay-policy=no-user-gesture-required", "--start-maximized")
 }
 
 function Send-SuiteResult($payload) {
@@ -816,12 +817,16 @@ function Send-SuiteResult($payload) {
   return $r
 }
 
+# Chrome first (the technician's usual browser), then Edge, which every Windows 10/11 has.
 function Find-Browser {
-  foreach ($p in @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
-                   "$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
-                   "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")) {
-    if ($p -and (Test-Path $p)) { return $p }
+  $cands = @()
+  foreach ($hive in @("HKCU", "HKLM")) {  # where Windows itself records the installed chrome.exe
+    try { $cands += [string](Get-ItemProperty "$($hive):\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" -ErrorAction Stop).'(default)' } catch {}
   }
+  $cands += @("$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+              "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe",
+              "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe")
+  foreach ($p in $cands) { if ($p -and (Test-Path $p)) { return $p } }
   return $null
 }
 
@@ -875,6 +880,7 @@ function Invoke-SuiteRequest($ctx, [int]$port, [string]$token, [string]$page) {
     try { $body = ConvertFrom-NdJson $raw } catch { $body = $null }
   }
   if ($req.HttpMethod -eq "GET" -and $path -eq "/") { Send-Http $ctx 200 "text/html; charset=utf-8" $page; return $false }
+  if ($req.HttpMethod -eq "GET" -and $path -eq "/ping") { Send-Http $ctx 200 "application/json" '{"ok":true}'; return $false }
   if ($req.HttpMethod -eq "GET" -and $path -eq "/info") { Send-Http $ctx 200 "application/json" (ConvertTo-NdJson (Get-SuiteInfo)); return $false }
   if ($req.HttpMethod -eq "POST" -and $path -eq "/settings") {
     $what = @{ camera = "privacy-webcam"; microphone = "privacy-microphone" }[[string](Get-Field $body "what")]
@@ -895,6 +901,28 @@ function Invoke-SuiteRequest($ctx, [int]$port, [string]$token, [string]$page) {
   Send-Http $ctx 404 "text/plain" "Not found"; return $false
 }
 
+# Serve the page until the result is in. The open page pings every 10 s; if it goes quiet (window closed)
+# or never loads, the suite is reported incomplete. Timeouts are parameters so the self-test can shorten them.
+function Wait-SuiteResult($listener, [int]$port, [string]$token, [string]$page, [int]$loadSec = 120, [int]$quietSec = 45, [int]$maxMin = $SuiteMaxMinutes) {
+  $start = Get-Date; $lastSeen = $null; $nextHb = (Get-Date).AddSeconds(30)
+  $ar = $listener.BeginGetContext($null, $null)
+  while ($true) {
+    if ($ar.AsyncWaitHandle.WaitOne(1000)) {
+      $ctx = $listener.EndGetContext($ar)
+      $done = $false
+      try { $done = Invoke-SuiteRequest $ctx $port $token $page; if ($ctx.Response.StatusCode -lt 400) { $lastSeen = Get-Date } } catch { try { Send-Http $ctx 500 "text/plain" "Error" } catch {} }
+      if ($done) { return "done" }
+      $ar = $listener.BeginGetContext($null, $null)
+      continue
+    }
+    $now = Get-Date
+    if ($null -eq $lastSeen -and ($now - $start).TotalSeconds -gt $loadSec) { Say "The test window did not open." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test window did not open")); return "noload" }
+    if ($null -ne $lastSeen -and ($now - $lastSeen).TotalSeconds -gt $quietSec) { Say "The test window was closed before the end." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test window closed before the end")); return "closed" }
+    if (($now - $start).TotalMinutes -gt $maxMin) { Say "The test suite timed out." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test suite not finished within $maxMin minutes")); return "timeout" }
+    if ($now -gt $nextHb) { [void](Invoke-Nd "POST" "/heartbeat" @{ state = "testing"; agent_version = $VERSION } -Auth); $nextHb = $now.AddSeconds(30) }
+  }
+}
+
 function Invoke-TestSuite {
   Say "NexWipe cloud asked to run the complete test suite on this laptop." "Yellow"
   try { [void][Console]::KeyAvailable } catch { [void](Send-SuiteResult (New-SuiteDecline "No console to confirm at the laptop")); return }
@@ -911,10 +939,11 @@ function Invoke-TestSuite {
 
   if (-not (Test-Path $SuitePage)) { Say "nexwipe-test.html is missing next to nexwipe.ps1; prepare the stick again." "Red"; [void](Send-SuiteResult (New-SuiteDecline "Test page missing from the stick")); return }
   $exe = Find-Browser
-  if (-not $exe) { Say "Microsoft Edge or Google Chrome is needed for the test suite." "Red"; [void](Send-SuiteResult (New-SuiteDecline "No Edge or Chrome on this laptop")); return }
+  if (-not $exe) { Say "Google Chrome (or Microsoft Edge) is needed for the test suite. Install Chrome, then run the test again." "Red"; [void](Send-SuiteResult (New-SuiteDecline "No Chrome or Edge on this laptop")); return }
+  Say "Opening the test window in $(if ($exe -match 'chrome\.exe$') { 'Google Chrome' } else { 'Microsoft Edge' })." "Gray"
   $page = [IO.File]::ReadAllText($SuitePage)
   $token = New-Nonce
-  $listener = $null; $browser = $null
+  $listener = $null
   try {
     $probe = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, 0); $probe.Start(); $port = $probe.LocalEndpoint.Port; $probe.Stop()
     $listener = New-Object Net.HttpListener
@@ -922,7 +951,9 @@ function Invoke-TestSuite {
     $listener.Start()
     $args2 = Get-BrowserArgs $port $token (Join-Path $env:TEMP "nexwipe-test-browser")
     if (-not (Test-Allowed "browser" $args2)) { throw "browser arguments refused by the allow-list" }
-    $browser = Start-Process -FilePath $exe -ArgumentList ($args2 -join " ") -PassThru
+    # Not tracked by process: Edge started from an elevated window restarts itself un-elevated, so the
+    # process we start exits at once. The page pings instead (see Wait-SuiteResult).
+    [void](Start-Process -FilePath $exe -ArgumentList ($args2 -join " ") -PassThru)
   } catch {
     Say "Could not open the test window: $($_.Exception.Message)" "Red"
     if ($listener) { $listener.Close() }
@@ -930,23 +961,7 @@ function Invoke-TestSuite {
     return
   }
   Say "Test window opened. Follow the steps there; this window waits for the result." "Cyan"
-  $deadline = (Get-Date).AddMinutes($SuiteMaxMinutes); $nextHb = (Get-Date).AddSeconds(30); $done = $false
-  try {
-    $ar = $listener.BeginGetContext($null, $null)
-    while (-not $done) {
-      if ($ar.AsyncWaitHandle.WaitOne(1000)) {
-        $ctx = $listener.EndGetContext($ar)
-        try { $done = Invoke-SuiteRequest $ctx $port $token $page } catch { try { Send-Http $ctx 500 "text/plain" "Error" } catch {} }
-        if (-not $done) { $ar = $listener.BeginGetContext($null, $null) }
-        continue
-      }
-      if ($browser.HasExited) { Say "The test window was closed before the end." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test window closed before the end")); break }
-      if ((Get-Date) -gt $deadline) { Say "The test suite timed out." "Yellow"; [void](Send-SuiteResult (New-SuiteDecline "Test suite not finished within $SuiteMaxMinutes minutes")); break }
-      if ((Get-Date) -gt $nextHb) { [void](Invoke-Nd "POST" "/heartbeat" @{ state = "testing"; agent_version = $VERSION } -Auth); $nextHb = (Get-Date).AddSeconds(30) }
-    }
-  } finally {
-    $listener.Close()
-  }
+  try { Wait-SuiteResult $listener $port $token $page } finally { $listener.Close() }
   Say "Test suite finished." "Green"
 }
 
